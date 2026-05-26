@@ -1,6 +1,11 @@
+// const CONFIG = {
+//     API_URL     : 'http://127.0.0.1:8000/api',
+//     STORAGE_URL : 'http://127.0.0.1:8000/storage',
+// }
+
 const CONFIG = {
-    API_URL     : 'http://127.0.0.1:8000/api',
-    STORAGE_URL : 'http://127.0.0.1:8000/storage',
+    API_URL     : window.location.origin + '/api',
+    STORAGE_URL : window.location.origin + '/storage',
 }
 
 const IA_URL = 'http://127.0.0.1:8001/api/ia'
