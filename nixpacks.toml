@@ -1,0 +1,14 @@
+cat > nixpacks.toml << 'EOF'
+[phases.setup]
+nixPkgs = ["php82", "composer"]
+
+[phases.build]
+cmds = [
+  "composer install --no-dev --optimize-autoloader",
+  "php artisan config:clear",
+  "php artisan migrate --force"
+]
+
+[start]
+cmd = "php artisan serve --host=0.0.0.0 --port=$PORT"
+EOF
