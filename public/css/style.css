@@ -1,0 +1,405 @@
+/* ============================================
+   VARIABLES
+   ============================================ */
+:root {
+    --primary     : #2563eb;
+    --primary-dark: #1d4ed8;
+    --secondary   : #0ea5e9;
+    --success     : #16a34a;
+    --text        : #1e293b;
+    --text-light  : #64748b;
+    --border      : #e2e8f0;
+    --bg          : #f8fafc;
+}
+
+body {
+    font-family   : 'Segoe UI', sans-serif;
+    background    : var(--bg);
+    color         : var(--text);
+}
+
+/* ============================================
+   NAVBAR
+   ============================================ */
+.navbar-brand span {
+    color: var(--primary);
+}
+
+.navbar {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+/* ============================================
+   HERO
+   ============================================ */
+.hero {
+    background: linear-gradient(135deg, #1d4ed8 0%, #0ea5e9 100%);
+    padding: 80px 0;
+    color: white;
+}
+
+.hero .search-box {
+    background    : white;
+    border-radius : 16px;
+    padding       : 12px;
+    box-shadow    : 0 20px 60px rgba(0,0,0,0.15);
+}
+
+.hero .search-box input,
+.hero .search-box select {
+    border    : none;
+    outline   : none;
+    box-shadow: none;
+}
+
+/* ============================================
+   CARTES ANNONCES
+   ============================================ */
+.carte-annonce {
+    border-radius : 16px;
+    overflow      : hidden;
+    transition    : transform 0.2s, box-shadow 0.2s;
+    border        : 1px solid var(--border);
+    text-decoration: none;
+    color         : inherit;
+    display       : block;
+}
+
+.carte-annonce:hover {
+    transform  : translateY(-4px);
+    box-shadow : 0 12px 30px rgba(0,0,0,0.1);
+    color      : inherit;
+}
+
+.carte-annonce .card-img-top {
+    height     : 200px;
+    object-fit : cover;
+    transition : transform 0.4s;
+}
+
+.carte-annonce:hover .card-img-top {
+    transform: scale(1.03);
+}
+
+.carte-annonce .card-img-wrapper {
+    overflow: hidden;
+    position: relative;
+}
+
+.badge-transaction {
+    position     : absolute;
+    top          : 12px;
+    left         : 12px;
+    border-radius: 20px;
+    font-size    : 0.75rem;
+    padding      : 4px 10px;
+}
+
+.prix-annonce {
+    color      : var(--primary);
+    font-weight: 700;
+    font-size  : 1.2rem;
+}
+
+/* ============================================
+   STATS
+   ============================================ */
+.stat-card {
+    text-align    : center;
+    padding       : 24px;
+    border-radius : 16px;
+    background    : white;
+    border        : 1px solid var(--border);
+}
+
+.stat-icon {
+    width          : 48px;
+    height         : 48px;
+    border-radius  : 12px;
+    display        : flex;
+    align-items    : center;
+    justify-content: center;
+    margin         : 0 auto 12px;
+    font-size      : 1.4rem;
+    background     : #eff6ff;
+}
+
+/* ============================================
+   DASHBOARD
+   ============================================ */
+.sidebar {
+    background    : white;
+    border-radius : 16px;
+    border        : 1px solid var(--border);
+    padding       : 16px;
+    position      : sticky;
+    top           : 80px;
+}
+
+.sidebar .nav-link {
+    border-radius : 10px;
+    color         : var(--text-light);
+    padding       : 10px 14px;
+    font-weight   : 500;
+    transition    : all 0.2s;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+    background : #eff6ff;
+    color      : var(--primary);
+}
+
+.sidebar .nav-link i {
+    width: 20px;
+}
+
+.dashboard-card {
+    border-radius : 16px;
+    border        : 1px solid var(--border);
+    background    : white;
+}
+
+/* ============================================
+   FORMULAIRES AUTH
+   ============================================ */
+.auth-card {
+    border-radius : 24px;
+    border        : 1px solid var(--border);
+    box-shadow    : 0 10px 40px rgba(0,0,0,0.08);
+    background    : white;
+    padding       : 40px;
+}
+
+.form-control, .form-select {
+    border-radius : 10px;
+    border        : 1px solid var(--border);
+    padding       : 10px 14px;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary);
+    box-shadow  : 0 0 0 3px rgba(37,99,235,0.1);
+}
+
+/* ============================================
+   BOUTONS
+   ============================================ */
+.btn-primary {
+    background    : var(--primary);
+    border-color  : var(--primary);
+    border-radius : 10px;
+    padding       : 10px 20px;
+    font-weight   : 600;
+}
+
+.btn-primary:hover {
+    background  : var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.btn-outline-primary {
+    border-radius: 10px;
+    font-weight  : 600;
+}
+
+/* ============================================
+   PLANS
+   ============================================ */
+.plan-card {
+    border-radius : 20px;
+    border        : 2px solid var(--border);
+    transition    : all 0.2s;
+}
+
+.plan-card.popular {
+    border-color: var(--primary);
+    position    : relative;
+}
+
+.plan-card:hover {
+    transform  : translateY(-4px);
+    box-shadow : 0 12px 30px rgba(0,0,0,0.1);
+}
+/* =========================
+   Skeleton Loading Premium
+========================= */
+
+.skeleton-card {
+    overflow: hidden;
+    border-radius: 18px;
+    border: none;
+    background: #fff;
+    transition: all 0.3s ease;
+}
+
+.skeleton-card:hover {
+    transform: translateY(-4px);
+}
+
+/* Animation shimmer */
+
+.skeleton {
+    position: relative;
+    overflow: hidden;
+    background: #e5e7eb;
+}
+
+.skeleton::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -200px;
+    width: 200px;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255,255,255,0.7),
+        transparent
+    );
+    animation: shimmer 1.3s infinite;
+}
+
+@keyframes shimmer {
+    100% {
+        left: 100%;
+    }
+}
+
+/* Image */
+
+.skeleton-img {
+    height: 220px;
+    width: 100%;
+}
+
+/* Badge */
+
+.skeleton-badge-top {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: 75px;
+    height: 26px;
+    border-radius: 20px;
+}
+
+/* IA score */
+
+.skeleton-score {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    width: 55px;
+    height: 24px;
+    border-radius: 20px;
+}
+
+/* Textes */
+
+.skeleton-title {
+    height: 22px;
+    width: 85%;
+    border-radius: 8px;
+}
+
+.skeleton-text {
+    height: 14px;
+    width: 100%;
+    border-radius: 8px;
+}
+
+.skeleton-text.short {
+    width: 60%;
+}
+
+.skeleton-text.tiny {
+    width: 40%;
+}
+
+/* Prix */
+
+.skeleton-price {
+    width: 120px;
+    height: 24px;
+    border-radius: 8px;
+}
+
+/* Bouton */
+
+.skeleton-btn {
+    width: 100%;
+    height: 40px;
+    border-radius: 10px;
+}
+
+/* Avatar agent */
+
+.skeleton-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+}
+
+/* Ligne agent */
+
+.skeleton-agent-name {
+    width: 90px;
+    height: 12px;
+    border-radius: 6px;
+}
+
+.skeleton-agent-role {
+    width: 60px;
+    height: 10px;
+    border-radius: 6px;
+}
+
+/* Pulse animation */
+
+.pulse {
+    animation: pulseAnim 1.5s infinite;
+}
+
+@keyframes pulseAnim {
+    0% { opacity: 1; }
+    50% { opacity: .65; }
+    100% { opacity: 1; }
+}
+
+.loading-blur {
+    filter: blur(3px);
+    pointer-events: none;
+}
+
+.carte-annonce {
+    transition: all 0.25s ease;
+}
+
+.carte-annonce:hover {
+    transform: translateY(-4px);
+}
+
+.carte-annonce {
+    animation: fadeUp .4s ease;
+}
+
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+    .hero { padding: 50px 0; }
+    .auth-card { padding: 24px; }
+}

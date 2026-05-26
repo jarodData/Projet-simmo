@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+     <link rel="shortcut icon" href="favicon.png" type="image/png">   
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifier l'annonce — SIMMo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-light bg-white sticky-top border-bottom">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="index.html">
+            <i class="bi bi-buildings text-primary me-1"></i>SIMm<span class="text-primary">o</span>
+        </a>
+        <div id="navAuth"></div>
+    </div>
+</nav>
+
+<div class="container py-5">
+    <div class="row g-4">
+
+        <!-- SIDEBAR -->
+        <div class="col-12 col-lg-3">
+            <div class="sidebar">
+                <p class="small fw-bold text-muted text-uppercase px-2 mb-2">Espace Agent</p>
+                <nav class="nav flex-column gap-1">
+                    <a class="nav-link" href="dashboard.html"><i class="bi bi-grid me-2"></i>Dashboard</a>
+                    <a class="nav-link active" href="mes-annonces.html"><i class="bi bi-house me-2"></i>Mes annonces</a>
+                    <a class="nav-link" href="mes-contacts.html"><i class="bi bi-chat-dots me-2"></i>Mes contacts</a>
+                    <a class="nav-link" href="plan.html"><i class="bi bi-credit-card me-2"></i>Mon plan</a>
+                    <hr>
+                    <button class="nav-link text-danger border-0 bg-transparent text-start w-100"
+                        onclick="deconnexion()">
+                        <i class="bi bi-box-arrow-right me-2"></i>Déconnexion
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- CONTENU -->
+        <div class="col-12 col-lg-9">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <a href="mes-annonces.html" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <h3 class="fw-bold mb-0">Modifier l'annonce</h3>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <!-- Spinner de chargement -->
+            <div id="chargement" class="text-center py-5">
+                <div class="spinner-border text-primary"></div>
+                <p class="text-muted mt-2">Chargement de l'annonce...</p>
+            </div>
+
+            <!-- Formulaire (caché pendant le chargement) -->
+            <form id="formModifier" style="display:none">
+
+                <!-- Informations du bien -->
+                <div class="dashboard-card p-4 mb-4">
+                    <h5 class="fw-bold mb-4">
+                        <i class="bi bi-house text-primary me-2"></i>Informations du bien
+                    </h5>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Titre *</label>
+                            <input type="text" id="titre" class="form-control" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Description *</label>
+                            <textarea id="description" class="form-control" rows="5" required></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Catégorie *</label>
+                            <select id="idCategorie" class="form-select" required>
+                                <option value="">Sélectionner...</option>
+                                <option value="1">Appartement</option>
+                                <option value="2">Studio</option>
+                                <option value="3">Villa</option>
+                                <option value="4">Chambre</option>
+                                <option value="5">Bureau</option>
+                                <option value="6">Terrain</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Transaction *</label>
+                            <select id="typeTransaction" class="form-select" required>
+                                <option value="location">🔑 Location</option>
+                                <option value="vente">🏠 Vente</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Statut</label>
+                            <select id="statut" class="form-select">
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="vendu">Vendu/Loué</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Prix (F CFA) *</label>
+                            <input type="number" id="prix" class="form-control" required min="0">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Surface (m²)</label>
+                            <input type="number" id="surfaceM2" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Nb. pièces</label>
+                            <input type="number" id="nbPieces" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Nb. chambres</label>
+                            <input type="number" id="nbChambres" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nb. salles de bain</label>
+                            <input type="number" id="nbSallesBain" class="form-control">
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end pb-1">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="meuble">
+                                <label class="form-check-label fw-semibold" for="meuble">
+                                    Bien meublé
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Localisation -->
+                <div class="dashboard-card p-4 mb-4">
+                    <h5 class="fw-bold mb-4">
+                        <i class="bi bi-geo-alt text-primary me-2"></i>Localisation
+                    </h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Ville *</label>
+                            <input type="text" id="ville" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Quartier</label>
+                            <input type="text" id="quartier" class="form-control">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Adresse complète</label>
+                            <input type="text" id="adresseComplete" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Latitude</label>
+                            <input type="number" step="any" id="latitude" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Longitude</label>
+                            <input type="number" step="any" id="longitude" class="form-control">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Photos existantes -->
+                <div class="dashboard-card p-4 mb-4">
+                    <h5 class="fw-bold mb-4">
+                        <i class="bi bi-images text-primary me-2"></i>Photos actuelles
+                    </h5>
+                    <div class="row g-2" id="photosExistantes"></div>
+
+                    <!-- Ajouter nouvelles photos -->
+                    <div class="mt-4">
+                        <label class="form-label fw-semibold">Ajouter de nouvelles photos</label>
+                        <div class="border-2 border-dashed rounded-3 p-4 text-center"
+                            style="border-color:#dee2e6;cursor:pointer"
+                            onclick="document.getElementById('nouvellesPhotos').click()">
+                            <i class="bi bi-plus-circle text-muted fs-3 d-block mb-2"></i>
+                            <p class="text-muted small mb-0">Cliquez pour ajouter des photos</p>
+                            <input type="file" id="nouvellesPhotos" class="d-none"
+                                multiple accept="image/*" onchange="afficherNouvellesPreviews(this.files)">
+                        </div>
+                        <div class="row g-2 mt-3" id="nouvellesPreviews"></div>
+                    </div>
+                </div>
+
+                <!-- Boutons -->
+                <div class="d-flex gap-3">
+                    <button type="submit" id="btnModifier" class="btn btn-primary btn-lg px-5">
+                        <i class="bi bi-check2 me-2"></i>Enregistrer les modifications
+                    </button>
+                    <a href="mes-annonces.html" class="btn btn-outline-secondary btn-lg px-4">
+                        Annuler
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+   // requiertAgent()
+
+    const params     = new URLSearchParams(window.location.search)
+    const idAnnonce  = params.get('id')
+    let nouvellesFichiers = []
+
+    if (!idAnnonce) window.location.href = 'mes-annonces.html'
+
+    // ── Navbar ───────────────────────────────
+    function initNavbar() {
+        const user = getUser()
+        document.getElementById('navAuth').innerHTML = `
+            <div class="d-flex align-items-center gap-2">
+                <span class="small fw-semibold">👤 ${user?.prenom}</span>
+                <button class="btn btn-outline-danger btn-sm" onclick="deconnexion()">
+                    <i class="bi bi-box-arrow-right"></i>
+                </button>
+            </div>`
+    }
+
+    // ── Charger l'annonce à modifier ─────────
+    async function chargerAnnonce() {
+        try {
+            const annonce = await apiRequest(`/annonces/${idAnnonce}`)
+
+            // Remplir le formulaire
+            document.getElementById('titre').value           = annonce.titre || ''
+            document.getElementById('description').value     = annonce.description || ''
+            document.getElementById('prix').value            = annonce.prix || ''
+            document.getElementById('surfaceM2').value       = annonce.surface_m2 || ''
+            document.getElementById('nbPieces').value        = annonce.nb_pieces || ''
+            document.getElementById('nbChambres').value      = annonce.nb_chambres || ''
+            document.getElementById('nbSallesBain').value    = annonce.nb_salles_bain || ''
+            document.getElementById('typeTransaction').value = annonce.type_transaction || 'location'
+            document.getElementById('statut').value          = annonce.statut || 'active'
+            document.getElementById('meuble').checked        = !!annonce.meuble
+            document.getElementById('idCategorie').value     = annonce.id_categorie || ''
+            document.getElementById('ville').value           = annonce.localisation?.ville || ''
+            document.getElementById('quartier').value        = annonce.localisation?.quartier || ''
+            document.getElementById('adresseComplete').value = annonce.localisation?.adresse_complete || ''
+            document.getElementById('latitude').value        = annonce.localisation?.latitude || ''
+            document.getElementById('longitude').value       = annonce.localisation?.longitude || ''
+
+            // Afficher photos existantes
+            afficherPhotosExistantes(annonce.photos || [])
+
+            // Cacher spinner, afficher formulaire
+            document.getElementById('chargement').style.display  = 'none'
+            document.getElementById('formModifier').style.display = 'block'
+
+        } catch (e) {
+            document.getElementById('chargement').innerHTML = `
+                <div class="alert alert-danger">
+                    Annonce introuvable ou accès refusé.
+                    <a href="mes-annonces.html" class="alert-link">Retour</a>
+                </div>`
+        }
+    }
+
+    // ── Afficher les photos existantes ───────
+    function afficherPhotosExistantes(photos) {
+        const container = document.getElementById('photosExistantes')
+        if (photos.length === 0) {
+            container.innerHTML = `
+                <div class="col-12">
+                    <p class="text-muted small">Aucune photo pour cette annonce.</p>
+                </div>`
+            return
+        }
+
+        container.innerHTML = photos.map(p => `
+            <div class="col-4 col-md-2" id="photo_${p.id}">
+                <div class="position-relative">
+                    <img src="${imageUrl(p.chemin_image)}"
+                        class="rounded-3 w-100 border ${p.est_principale ? 'border-primary border-2' : ''}"
+                        style="height:80px;object-fit:cover">
+                    ${p.est_principale
+                        ? '<span class="position-absolute bottom-0 start-0 badge bg-primary m-1" style="font-size:9px">Principale</span>'
+                        : ''}
+                    <button type="button"
+                        class="position-absolute top-0 end-0 btn btn-danger btn-sm rounded-circle m-1 p-0 d-flex align-items-center justify-content-center"
+                        style="width:20px;height:20px;font-size:10px"
+                        onclick="supprimerPhoto(${p.id})">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('')
+    }
+
+    // ── Supprimer une photo existante ────────
+    async function supprimerPhoto(idPhoto) {
+        if (!confirm('Supprimer cette photo ?')) return
+        try {
+            await apiRequest(`/agent/photos/${idPhoto}`, 'DELETE', null, true)
+            document.getElementById(`photo_${idPhoto}`)?.remove()
+            showAlert('Photo supprimée.', 'success')
+        } catch (e) {
+            showAlert('Erreur lors de la suppression.', 'danger')
+        }
+    }
+
+    // ── Nouvelles photos preview ─────────────
+    function afficherNouvellesPreviews(files) {
+        nouvellesFichiers = Array.from(files)
+        const container   = document.getElementById('nouvellesPreviews')
+        container.innerHTML = nouvellesFichiers.map((f, i) => `
+            <div class="col-4 col-md-2">
+                <img src="${URL.createObjectURL(f)}"
+                    class="rounded-3 w-100 border"
+                    style="height:80px;object-fit:cover">
+            </div>
+        `).join('')
+    }
+
+    // ── Soumettre la modification ────────────
+    document.getElementById('formModifier').addEventListener('submit', async function(e) {
+        e.preventDefault()
+        showSpinner('btnModifier', 'Enregistrement...')
+
+        try {
+            // 1. Modifier les infos textuelles avec PUT
+            await apiRequest(`/agent/annonces/${idAnnonce}`, 'PUT', {
+                titre            : document.getElementById('titre').value,
+                description      : document.getElementById('description').value,
+                prix             : document.getElementById('prix').value,
+                surface_m2       : document.getElementById('surfaceM2').value,
+                nb_pieces        : document.getElementById('nbPieces').value,
+                nb_chambres      : document.getElementById('nbChambres').value,
+                nb_salles_bain   : document.getElementById('nbSallesBain').value,
+                type_transaction : document.getElementById('typeTransaction').value,
+                statut           : document.getElementById('statut').value,
+                meuble           : document.getElementById('meuble').checked,
+                ville            : document.getElementById('ville').value,
+                quartier         : document.getElementById('quartier').value,
+                adresse_complete : document.getElementById('adresseComplete').value,
+                latitude         : document.getElementById('latitude').value,
+                longitude        : document.getElementById('longitude').value,
+            }, true)
+
+            // 2. Ajouter les nouvelles photos si présentes
+            if (nouvellesFichiers.length > 0) {
+                const formData = new FormData()
+                nouvellesFichiers.forEach(f => formData.append('photos[]', f))
+                await apiFormData(`/agent/annonces/${idAnnonce}/photos`, formData)
+            }
+
+            showAlert(' Annonce modifiée avec succès !', 'success')
+            setTimeout(() => window.location.href = 'mes-annonces.html', 1500)
+
+        } catch (err) {
+            const errors = err.data?.errors
+            if (errors) {
+                showAlert(Object.values(errors).flat().join('<br>'), 'danger')
+            } else {
+                showAlert(err.data?.message || 'Erreur lors de la modification.', 'danger')
+            }
+            hideSpinner('btnModifier', '<i class="bi bi-check2 me-2"></i>Enregistrer les modifications')
+        }
+    })
+
+    initNavbar()
+    chargerAnnonce()
+</script>
+</body>
+</html>

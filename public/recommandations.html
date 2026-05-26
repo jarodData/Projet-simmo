@@ -1,0 +1,1663 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recommandations IA — SIMMo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <style>
+        .hero-ia {
+            background : linear-gradient(135deg, #4f46e5, #7c3aed);
+            color      : white;
+            padding    : 60px 0 40px;
+        }
+        .score-bar {
+            height       : 6px;
+            border-radius: 3px;
+            background   : #e2e8f0;
+            overflow     : hidden;
+        }
+        .score-bar-fill {
+            height       : 100%;
+            border-radius: 3px;
+            background   : #2563eb;
+            transition   : width 1s ease;
+        }
+        .carte-ia {
+            border-radius : 16px;
+            border        : 1px solid #e2e8f0;
+            overflow      : hidden;
+            transition    : all 0.2s;
+            background    : white;
+            cursor        : pointer;
+        }
+        .carte-ia:hover {
+            transform  : translateY(-4px);
+            box-shadow : 0 12px 30px rgba(0,0,0,0.1);
+        }
+        .ia-badge {
+            background   : linear-gradient(135deg, #7c3aed, #2563eb);
+            color        : white;
+            font-size    : 11px;
+            padding      : 3px 10px;
+            border-radius: 20px;
+            font-weight  : 600;
+        }
+        .filtre-section {
+            background   : white;
+            border-radius: 16px;
+            border       : 1px solid #e2e8f0;
+            padding      : 24px;
+        }
+        .religion-btn {
+            border       : 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding      : 12px;
+            cursor       : pointer;
+            transition   : all 0.2s;
+            text-align   : center;
+            background   : white;
+        }
+        .religion-btn:hover,
+        .religion-btn.actif {
+            border-color : #7c3aed;
+            background   : #f5f3ff;
+        }
+        .commodite-btn {
+            border       : 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding      : 8px 6px;
+            cursor       : pointer;
+            transition   : all 0.2s;
+            text-align   : center;
+            font-size    : 12px;
+            background   : white;
+        }
+        .commodite-btn:hover,
+        .commodite-btn.actif {
+            border-color : #7c3aed;
+            background   : #f5f3ff;
+            color        : #7c3aed;
+        }
+        .section-filtre {
+            display      : none;
+        }
+        .section-filtre.actif {
+            display      : block;
+        }
+        .tab-filtre {
+            padding      : 8px 16px;
+            border-radius: 20px;
+            border       : 2px solid #e2e8f0;
+            cursor       : pointer;
+            font-size    : 13px;
+            font-weight  : 600;
+            transition   : all 0.2s;
+            background   : white;
+            display      : inline-flex;
+            align-items  : center;
+            gap          : 6px;
+            user-select  : none;
+        }
+        .tab-filtre:hover,
+        .tab-filtre.actif {
+            border-color : #7c3aed;
+            background   : #f5f3ff;
+            color        : #7c3aed;
+        }
+        .prix-estime-box {
+            background   : #f0fdf4;
+            border-radius: 10px;
+            padding      : 12px 16px;
+            border-left  : 4px solid #16a34a;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold fs-4" href="index.html">
+            <i class="bi bi-buildings text-primary me-1"></i>
+            SIMMo
+        </a>
+        <button class="navbar-toggler" type="button"
+            data-bs-toggle="collapse" data-bs-target="#navMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navMenu">
+            <ul class="navbar-nav me-auto ms-4 gap-2">
+                <li class="nav-item">
+                    <a class="nav-link" href="index.html">Accueil</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="annonces.html">Annonces</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active fw-bold"
+                        href="recommandations.html">
+                        Recommandations IA
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link"
+                        href="recherche-contextuelle.html">
+                        Recherche Intelligente
+                    </a>
+                </li>
+            </ul>
+            <div class="d-flex gap-2" id="navAuth"></div>
+        </div>
+    </div>
+</nav>
+
+<div id="bandeauIA" class="d-none"
+    style="background:#f59e0b;color:#1c1917;padding:10px 0">
+    <div class="container d-flex align-items-center gap-3">
+        <i class="bi bi-lock-fill"></i>
+        <span class="fw-semibold small">
+            Connectez-vous pour acceder aux recommandations IA.
+        </span>
+        <a href="login.html" class="btn btn-dark btn-sm ms-auto">
+            Se connecter
+        </a>
+        <a href="register.html" class="btn btn-outline-dark btn-sm">
+            S'inscrire
+        </a>
+    </div>
+</div>
+
+<section class="hero-ia">
+    <div class="container text-center">
+        <span class="badge mb-3 px-3 py-2 fs-6"
+            style="background:rgba(255,255,255,0.2)">
+            Intelligence Artificielle
+        </span>
+        <h1 class="fw-bold mb-3">
+            Recommandations personnalisees par l'IA
+        </h1>
+        <p class="mb-0"
+            style="color:rgba(255,255,255,0.7);
+                max-width:550px;margin:0 auto">
+            Notre IA analyse vos criteres, religion, loisirs et zone
+            de reference pour vous proposer le logement ideal.
+        </p>
+    </div>
+</section>
+
+<section class="py-4 bg-light">
+    <div class="container">
+        <div class="filtre-section">
+
+            <div class="d-flex flex-wrap gap-2 mb-4">
+                <div class="tab-filtre actif" id="tab_base"
+                    onclick="changerSection('base')">
+                    Logement
+                </div>
+                <div class="tab-filtre" id="tab_zone"
+                    onclick="changerSection('zone')">
+                    Zone de reference
+                </div>
+                <div class="tab-filtre" id="tab_religion_ia"
+                    onclick="changerSection('religion_ia')">
+                    Religion
+                </div>
+                <div class="tab-filtre" id="tab_loisirs_ia"
+                    onclick="changerSection('loisirs_ia')">
+                    Loisirs et Services
+                </div>
+                <div class="tab-filtre" id="tab_estimation"
+                    onclick="changerSection('estimation')">
+                    Estimer un prix
+                </div>
+            </div>
+
+            <!-- Section Logement -->
+            <div id="section_base" class="section-filtre actif">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold small">
+                            Ville
+                        </label>
+                        <select id="iaVille" class="form-select">
+                            <option value="">Toutes les villes</option>
+                            <option value="Douala">Douala</option>
+                            <option value="Yaounde">Yaounde</option>
+                            <option value="Bafoussam">Bafoussam</option>
+                            <option value="Garoua">Garoua</option>
+                            <option value="Bamenda">Bamenda</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold small">
+                            Type de bien
+                        </label>
+                        <select id="iaTypeBien" class="form-select">
+                            <option value="">Tous les types</option>
+                            <option value="appartement">Appartement</option>
+                            <option value="studio">Studio</option>
+                            <option value="villa">Villa</option>
+                            <option value="chambre">Chambre</option>
+                            <option value="bureau">Bureau</option>
+                            <option value="terrain">Terrain</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold small">
+                            Transaction
+                        </label>
+                        <select id="iaTransaction" class="form-select">
+                            <option value="">Tout</option>
+                            <option value="location">Location</option>
+                            <option value="vente">Vente</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold small">
+                            Chambres minimum
+                        </label>
+                        <select id="iaChambres" class="form-select">
+                            <option value="">Peu importe</option>
+                            <option value="1">1 et plus</option>
+                            <option value="2">2 et plus</option>
+                            <option value="3">3 et plus</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold small">
+                            Budget minimum (F CFA)
+                        </label>
+                        <input type="number" id="iaBudgetMin"
+                            class="form-control" placeholder="50000">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold small">
+                            Budget maximum (F CFA)
+                        </label>
+                        <input type="number" id="iaBudgetMax"
+                            class="form-control" placeholder="500000">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold small">
+                            Surface minimum (m2)
+                        </label>
+                        <input type="number" id="iaSurface"
+                            class="form-control" placeholder="20">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end pb-1">
+                        <div class="form-check">
+                            <input class="form-check-input"
+                                type="checkbox" id="iaMeuble">
+                            <label class="form-check-label fw-semibold"
+                                for="iaMeuble">
+                                Meuble uniquement
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Zone de reference -->
+            <div id="section_zone" class="section-filtre">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="alert alert-primary border-0
+                            d-flex align-items-center gap-2 py-2">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <small>
+                                Entrez votre lieu de travail ou ecole.
+                                L'IA calculera la distance et triera
+                                les annonces les plus proches.
+                            </small>
+                        </div>
+                    </div>
+                    <div class="col-md-5 position-relative">
+                        <label class="form-label fw-semibold small">
+                            Lieu de travail ou ecole
+                        </label>
+                        <input type="text" id="iaZoneRef"
+                            class="form-control"
+                            placeholder="Universite de Douala , Total Cameroun..."
+                            oninput="autocompleteZoneIA(this.value)"
+                            autocomplete="off">
+                        <div id="autocompleteZoneIA"
+                            class="position-absolute bg-white border
+                                rounded-3 shadow mt-1 d-none"
+                            style="z-index:1000;width:100%;
+                                max-height:200px;overflow-y:auto;
+                                top:100%;left:0">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">
+                            Ville du lieu
+                        </label>
+                        <select id="iaVilleZone" class="form-select">
+                            <option value="">Selectionner...</option>
+                            <option value="Douala">Douala</option>
+                            <option value="Yaounde">Yaounde</option>
+                            <option value="Bafoussam">Bafoussam</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold small">
+                            Distance maximum
+                        </label>
+                        <select id="iaDistanceZone" class="form-select">
+                            <option value="1">1 km</option>
+                            <option value="2">2 km</option>
+                            <option value="3" selected>3 km</option>
+                            <option value="5">5 km</option>
+                            <option value="10">10 km</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Religion -->
+            <div id="section_religion_ia" class="section-filtre">
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <label class="form-label fw-semibold small mb-3">
+                            Votre religion
+                        </label>
+                        <div class="row g-2">
+                            <div class="col-4">
+                                <div class="religion-btn"
+                                    id="ia_opt_musulman"
+                                    onclick="selectionnerReligionIA('musulman')">
+                                    <p class="fw-bold small mb-0">
+                                        Musulman
+                                    </p>
+                                    <p class="text-muted mb-0"
+                                        style="font-size:11px">
+                                        Proche mosquee
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="religion-btn"
+                                    id="ia_opt_catholique"
+                                    onclick="selectionnerReligionIA('catholique')">
+                                    <p class="fw-bold small mb-0">
+                                        Catholique
+                                    </p>
+                                    <p class="text-muted mb-0"
+                                        style="font-size:11px">
+                                        Eglise catholique
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="religion-btn"
+                                    id="ia_opt_protestant"
+                                    onclick="selectionnerReligionIA('protestant')">
+                                    <p class="fw-bold small mb-0">
+                                        Protestant
+                                    </p>
+                                    <p class="text-muted mb-0"
+                                        style="font-size:11px">
+                                        Eglise protestante
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">
+                            Ville
+                        </label>
+                        <select id="iaVilleReligion"
+                            class="form-select mb-3">
+                            <option value="">Selectionner...</option>
+                            <option value="Douala">Douala</option>
+                            <option value="Yaounde">Yaounde</option>
+                            <option value="Bafoussam">Bafoussam</option>
+                        </select>
+                        <label class="form-label fw-semibold small">
+                            Distance maximum du lieu de culte
+                        </label>
+                        <select id="iaDistanceCulte" class="form-select">
+                            <option value="1">1 km</option>
+                            <option value="2" selected>2 km</option>
+                            <option value="3">3 km</option>
+                            <option value="5">5 km</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="bg-light rounded-3 p-3 h-100">
+                            <p class="fw-semibold small mb-2">
+                                L'IA va analyser :
+                            </p>
+                            <ul class="list-unstyled small
+                                text-muted mb-0">
+                                <li class="mb-1">
+                                    Localiser les lieux de culte
+                                </li>
+                                <li class="mb-1">
+                                    Calculer les distances
+                                </li>
+                                <li class="mb-1">
+                                    Scorer les annonces proches
+                                </li>
+                                <li>
+                                    Analyser le quartier
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Loisirs -->
+            <div id="section_loisirs_ia" class="section-filtre">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">
+                            Ville
+                        </label>
+                        <select id="iaVilleLoisirs" class="form-select">
+                            <option value="">Selectionner...</option>
+                            <option value="Douala">Douala</option>
+                            <option value="Yaounde">Yaounde</option>
+                            <option value="Bafoussam">Bafoussam</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold small">
+                            Services importants
+                        </label>
+                        <div class="row g-2 mt-1">
+                            <div class="col-3 col-md-2">
+                                <div class="commodite-btn"
+                                    id="ia_cmd_marche"
+                                    onclick="toggleCommoditeIA(
+                                        'marche', this)">
+                                    Marche
+                                </div>
+                            </div>
+                            <div class="col-3 col-md-2">
+                                <div class="commodite-btn"
+                                    id="ia_cmd_hopital"
+                                    onclick="toggleCommoditeIA(
+                                        'hopital', this)">
+                                    Hopital
+                                </div>
+                            </div>
+                            <div class="col-3 col-md-2">
+                                <div class="commodite-btn"
+                                    id="ia_cmd_ecole"
+                                    onclick="toggleCommoditeIA(
+                                        'ecole', this)">
+                                    Ecole
+                                </div>
+                            </div>
+                            <div class="col-3 col-md-2">
+                                <div class="commodite-btn"
+                                    id="ia_cmd_pharmacie"
+                                    onclick="toggleCommoditeIA(
+                                        'pharmacie', this)">
+                                    Pharmacie
+                                </div>
+                            </div>
+                            <div class="col-3 col-md-2">
+                                <div class="commodite-btn"
+                                    id="ia_cmd_supermarche"
+                                    onclick="toggleCommoditeIA(
+                                        'supermarche', this)">
+                                    Supermarche
+                                </div>
+                            </div>
+                            <div class="col-3 col-md-2">
+                                <div class="commodite-btn"
+                                    id="ia_cmd_banque"
+                                    onclick="toggleCommoditeIA(
+                                        'banque', this)">
+                                    Banque
+                                </div>
+                            </div>
+                            <div class="col-3 col-md-2">
+                                <div class="commodite-btn"
+                                    id="ia_cmd_stade"
+                                    onclick="toggleCommoditeIA(
+                                        'stade', this)">
+                                    Stade
+                                </div>
+                            </div>
+                            <div class="col-3 col-md-2">
+                                <div class="commodite-btn"
+                                    id="ia_cmd_restaurant"
+                                    onclick="toggleCommoditeIA(
+                                        'restaurant', this)">
+                                    Restaurant
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Estimation prix -->
+            <div id="section_estimation" class="section-filtre">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="alert alert-warning border-0
+                            d-flex align-items-center gap-2 py-2">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <small>
+                                Notre IA predit le prix juste selon
+                                les caracteristiques du bien.
+                            </small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold small">
+                            Ville
+                        </label>
+                        <select id="estVille" class="form-select">
+                            <option value="">Selectionner...</option>
+                            <option value="Douala">Douala</option>
+                            <option value="Yaounde">Yaounde</option>
+                            <option value="Bafoussam">Bafoussam</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold small">
+                            Categorie
+                        </label>
+                        <select id="estCategorie" class="form-select">
+                            <option value="appartement">
+                                Appartement
+                            </option>
+                            <option value="studio">Studio</option>
+                            <option value="villa">Villa</option>
+                            <option value="chambre">Chambre</option>
+                            <option value="bureau">Bureau</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold small">
+                            Surface (m2)
+                        </label>
+                        <input type="number" id="estSurface"
+                            class="form-control" placeholder="50">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold small">
+                            Chambres
+                        </label>
+                        <input type="number" id="estChambres"
+                            class="form-control" placeholder="2">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold small">
+                            Transaction
+                        </label>
+                        <select id="estTransaction" class="form-select">
+                            <option value="location">Location</option>
+                            <option value="vente">Vente</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-center">
+                        <div class="form-check mt-3">
+                            <input class="form-check-input"
+                                type="checkbox" id="estMeuble">
+                            <label class="form-check-label fw-semibold"
+                                for="estMeuble">
+                                Meuble
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold small">
+                            &nbsp;
+                        </label>
+                        <button class="btn btn-success w-100 fw-bold"
+                            id="btnEstimer"
+                            onclick="lancerEstimation()">
+                            <i class="bi bi-calculator me-2"></i>
+                            Estimer le prix
+                        </button>
+                    </div>
+                    <div class="col-12">
+                        <div id="resultatEstimation"
+                            class="d-none"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Criteres communs -->
+            <hr class="my-4">
+            <h6 class="fw-semibold text-muted mb-3" id="labelCommuns">
+                Criteres supplementaires du logement
+            </h6>
+            <div class="row g-3" id="criteresCommuns">
+                <!-- Masques pour section estimation -->
+            </div>
+
+            <!-- Bouton principal -->
+            <div class="mt-4 d-flex gap-3 align-items-center"
+                id="zoneBtn">
+                <button class="btn btn-primary btn-lg px-5 fw-bold"
+                    id="btnLancerIA"
+                    onclick="lancerIA()">
+                    <i class="bi bi-cpu me-2"></i>
+                    Lancer la recommandation IA
+                </button>
+                <button class="btn btn-outline-secondary"
+                    onclick="reinitialiserIA()">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>
+                    Reinitialiser
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+
+        <div id="etatInitialIA" class="text-center py-5">
+            <i class="bi bi-cpu-fill display-1 text-muted opacity-25
+                d-block mb-3"></i>
+            <h4 class="fw-bold">Pret a vous recommander</h4>
+            <p class="text-muted">
+                Definissez vos criteres et lancez la recommandation IA
+            </p>
+        </div>
+
+        <div id="chargementIA" class="text-center py-5 d-none">
+            <div class="spinner-border text-primary mb-3"
+                style="width:3rem;height:3rem"></div>
+            <h5 class="fw-bold">L'IA analyse vos criteres...</h5>
+            <p class="text-muted small">
+                Analyse NLP - Prediction prix - Distance - Popularite
+            </p>
+        </div>
+
+        <div id="infoZoneRef" class="d-none mb-4"></div>
+        <div id="lieuxCulteIA" class="d-none mb-4"></div>
+
+        <div id="resultatsIA" class="d-none">
+            <div class="d-flex justify-content-between
+                align-items-center mb-4">
+                <div>
+                    <h4 class="fw-bold mb-1">
+                        <span class="ia-badge me-2">IA</span>
+                        Recommandations personnalisees
+                    </h4>
+                    <p class="text-muted small mb-0"
+                        id="nbResultatsIA"></p>
+                </div>
+                <button class="btn btn-outline-primary btn-sm"
+                    onclick="lancerIA()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>
+                    Actualiser
+                </button>
+            </div>
+            <div class="row g-4" id="grilleIA"></div>
+        </div>
+
+        <div id="aucunResultatIA" class="text-center py-5 d-none">
+            <i class="bi bi-search display-4 text-muted opacity-25
+                d-block mb-3"></i>
+            <h5 class="fw-semibold">Aucune recommandation trouvee</h5>
+            <p class="text-muted">Elargissez vos criteres de recherche</p>
+        </div>
+
+    </div>
+</section>
+
+<footer class="bg-dark text-white py-4">
+    <div class="container text-center">
+        <p class="mb-0">2026 SIMMo - Solution Immobiliere</p>
+    </div>
+</footer>
+
+<!--  config.js DOIT être chargé EN PREMIER -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+
+
+   
+
+    // ============================================
+    // VARIABLES GLOBALES
+    // ============================================
+    var sectionActive        = 'base'
+    var religionSelectionnee = null
+    var commoditesIA         = []
+
+    // Lieux locaux pour l'autocomplete
+const LIEUX_LOCAUX = {
+
+    // ── YAOUNDÉ ─────────────────────────────
+    "université de yaoundé i"        : [3.8667, 11.5021],
+    "université de yaoundé ii"       : [3.8847, 11.5174],
+    "total cameroun yaoundé"         : [3.8650, 11.5200],
+    "marché mokolo"                  : [3.8789, 11.5076],
+    "marché central yaoundé"         : [3.8667, 11.5167],
+    "hôpital central yaoundé"        : [3.8634, 11.5048],
+    "palais de l'unité"              : [3.8693, 11.5174],
+    "ministère des finances"         : [3.8700, 11.5180],
+    "lycée général leclerc"          : [3.8720, 11.5160],
+    "iut yaoundé"                    : [3.8612, 11.5134],
+
+    // ── DOUALA ─────────────────────────────
+    "université de douala"           : [4.0511, 9.7679],
+    "total cameroun douala"          : [4.0500, 9.7000],
+    "marché sandaga douala"          : [4.0550, 9.7050],
+    "hôpital général douala"         : [4.0511, 9.7679],
+    "port de douala"                 : [4.0500, 9.6900],
+    "aéroport international douala"  : [4.0067, 9.7194],
+
+    // ── QUARTIERS DOUALA ───────────────────
+    "akwa"                           : [4.0515, 9.7043],
+    "bonapriso"                      : [4.0327, 9.7076],
+    "bonamoussadi"                   : [4.0903, 9.7568],
+    "deido"                          : [4.0612, 9.7311],
+    "makepe"                         : [4.0725, 9.7481],
+    "ndogbong"                       : [4.0702, 9.7643],
+    "logpom"                         : [4.0891, 9.7822],
+    "pk8"                            : [4.0981, 9.7690],
+    "pk11"                           : [4.1205, 9.8012],
+    "cite cicam"                     : [4.0820, 9.7421],
+    "bali douala"                    : [4.0480, 9.7163],
+    "new bell"                       : [4.0430, 9.7210],
+    "nylon"                          : [4.0188, 9.7332],
+    "bonaberi"                       : [4.0715, 9.6814],
+    "yassa"                          : [3.9874, 9.7415],
+    "kotto"                          : [4.0832, 9.7793],
+    "bepanda"                        : [4.0678, 9.7389],
+
+    // ── UNIVERSITÉS & ÉCOLES DOUALA ────────
+    "iut douala"                     : [4.0518, 9.7651],
+    "université des montagnes douala": [4.0610, 9.7420],
+    "essec douala"                   : [4.0505, 9.7681],
+    "institut siantou douala"        : [4.0583, 9.7412],
+    "lycée joss"                     : [4.0460, 9.7008],
+    "lycée deido"                    : [4.0618, 9.7315],
+
+    // ── HÔPITAUX DOUALA ────────────────────
+    "hôpital laquintinie"            : [4.0489, 9.7158],
+    "clinique idimed"                : [4.0600, 9.7400],
+    "hôpital deido"                  : [4.0615, 9.7305],
+    "hôpital gynéco obstétrique"     : [4.0701, 9.7791],
+
+    // ── MARCHÉS & COMMERCES ────────────────
+    "marché central douala"          : [4.0482, 9.7105],
+    "marché deido"                   : [4.0620, 9.7308],
+    "marché bonamoussadi"            : [4.0895, 9.7561],
+    "carrefour market douala"        : [4.0498, 9.7062],
+    "super u douala"                 : [4.0369, 9.7085],
+
+    // ── ENTREPRISES & BUREAUX ──────────────
+    "orange cameroun douala"         : [4.0510, 9.7055],
+    "mtn cameroun douala"            : [4.0533, 9.7071],
+    "camtel douala"                  : [4.0502, 9.7044],
+    "douala business park"           : [4.0664, 9.7425],
+    "socaver douala"                 : [4.0471, 9.7002],
+
+    // ── LIEUX RELIGIEUX ─────────────────────
+    "mosquée centrale douala"        : [4.0485, 9.7088],
+    "cathédrale saint pierre et paul": [4.0462, 9.7004],
+    "paroisse notre dame"            : [4.0391, 9.7130],
+    "eglise evangelique deido"       : [4.0610, 9.7310],
+
+    // ── LOISIRS & STADES ────────────────────
+    "stade de la reunification"      : [4.0667, 9.7167],
+    "canal olympia douala"           : [4.0814, 9.7572],
+    "doual'art"                      : [4.0492, 9.7001],
+    "parcours vita douala"           : [4.0850, 9.7650],
+
+    // ── AUTRES LIEUX DOUALA ─────────────────────
+
+    "akwa nord"                        : [4.0835, 9.7412],
+    "brazzaville douala"                : [4.0561, 9.7354],
+    "nyalla"                            : [3.9954, 9.7487],
+    "ndokoti"                           : [4.0364, 9.7448],
+    "pk14 douala"                       : [4.1350, 9.8300],
+    "pk13 douala"                       : [4.1285, 9.8190],
+    "bonendalè"                         : [4.1020, 9.7201],
+    "ange raphael"                      : [4.0522, 9.7200],
+    "cite des palmiers"                 : [4.0628, 9.7560],
+    "ndokpassi"                         : [4.0201, 9.7543],
+    "malangue"                          : [4.0804, 9.7705],
+    "soboum"                            : [4.0732, 9.7450],
+    "bonanjo"                           : [4.0432, 9.6931],
+    "bonamikano"                        : [4.0901, 9.7425],
+    "pk5 douala"                        : [4.0525, 9.7350],
+    "pk9 douala"                        : [4.1022, 9.7733],
+    "nyalla pariso"                     : [3.9920, 9.7520],
+    "bonassama"                         : [4.0654, 9.6832],
+    "bois des singes"                   : [4.0794, 9.7360],
+    "vallée bessengue"                  : [4.0488, 9.7320],
+    "bessengue"                         : [4.0500, 9.7290],
+    "village douala"                    : [4.0411, 9.7110],
+    "ndobo"                             : [4.0910, 9.7605],
+    "nyalla grand hangar"               : [3.9905, 9.7468],
+    "bonapriso ancien aeroport"         : [4.0281, 9.7115],
+    "hotel sawa douala"                 : [4.0435, 9.6950],
+    "hotel akwa palace"                 : [4.0505, 9.7030],
+    "camrail bassa"                     : [4.0412, 9.7615],
+    "tradex bonamoussadi"               : [4.0899, 9.7555],
+    "tradex yassa"                      : [3.9870, 9.7390],
+    "shell new bell"                    : [4.0425, 9.7220],
+    "college libermann"                 : [4.0632, 9.7421],
+    "college de la salle douala"        : [4.0472, 9.7112],
+    "ecole publique deido"              : [4.0608, 9.7309],
+    "ecole publique bonamoussadi"       : [4.0882, 9.7568],
+    "ecole publique makepe"             : [4.0712, 9.7472],
+    "lycee bilingue deido"              : [4.0614, 9.7318],
+    "lycee bilingue nylon"              : [4.0190, 9.7340],
+    "universite adventiste douala"      : [4.0740, 9.7641],
+    "hopital de district bonassama"     : [4.0660, 9.6820],
+    "hopital de district nylon"         : [4.0210, 9.7355],
+    "hopital de district cite sic"      : [4.0394, 9.7475],
+    "clinique generale aeroport"        : [4.0095, 9.7182],
+    "mosquee bonamoussadi"              : [4.0880, 9.7570],
+    "mosquee akwa"                      : [4.0512, 9.7040],
+    "eglise catholique deido"           : [4.0610, 9.7320],
+    "eglise catholique bonapriso"       : [4.0325, 9.7088],
+    "eglise presbyterienne akwa"        : [4.0501, 9.7058],
+    "eglise evangelique nylon"          : [4.0182, 9.7344],
+    "stade bepanda"                     : [4.0672, 9.7395],
+    "stade bonamoussadi"                : [4.0888, 9.7582],
+    "mairie de douala 1"                : [4.0455, 9.7000],
+    "mairie de douala 5"                : [4.0890, 9.7565],
+    "tribunal de bonanjo"               : [4.0420, 9.6922],
+    "direction generale orange"         : [4.0507, 9.7052],
+    "camwater douala"                   : [4.0494, 9.7047],
+    "port autonome de douala"           : [4.0410, 9.6845],
+    "gare routiere bonaberi"            : [4.0720, 9.6800],
+    "gare routiere ndokoti"             : [4.0355, 9.7441],
+    "ancienne route japonaise"          : [4.0730, 9.7590],
+    "entree bille"                      : [4.0760, 9.7535],
+    "carrefour arno"                    : [4.0508, 9.7060],
+    "carrefour shell new bell"          : [4.0431, 9.7219],
+    "carrefour santa barbara"           : [4.0972, 9.7740],
+    "carrefour yoro joss"               : [4.0442, 9.7068]
+}
+
+
+    // ============================================
+    // INITIALISATION
+    // ============================================
+    document.addEventListener('DOMContentLoaded', function() {
+        initNavbar()
+
+        if (!estConnecte()) {
+            document.getElementById('bandeauIA')
+                .classList.remove('d-none')
+            var btn = document.getElementById('btnLancerIA')
+            btn.disabled  = true
+            btn.innerHTML = '<i class="bi bi-lock me-2"></i>Connexion requise'
+        }
+
+        remplirCriteresCommuns()
+    })
+
+    // ============================================
+    // NAVBAR
+    // ============================================
+    function initNavbar() {
+        var navAuth = document.getElementById('navAuth')
+        if (estConnecte()) {
+            var user = getUser()
+            navAuth.innerHTML =
+                '<span class="small fw-semibold me-2">' +
+                    (user ? user.prenom : '') +
+                '</span>' +
+                '<button class="btn btn-outline-danger btn-sm"' +
+                    ' onclick="deconnexion()">' +
+                    '<i class="bi bi-box-arrow-right"></i>' +
+                '</button>'
+        } else {
+            navAuth.innerHTML =
+                '<a href="login.html"' +
+                    ' class="btn btn-outline-primary btn-sm">' +
+                    'Connexion' +
+                '</a>' +
+                '<a href="register.html"' +
+                    ' class="btn btn-primary btn-sm">' +
+                    "S'inscrire" +
+                '</a>'
+        }
+    }
+
+    // ============================================
+    // CRITERES COMMUNS
+    // ============================================
+    function remplirCriteresCommuns() {
+        document.getElementById('criteresCommuns').innerHTML =
+            '<div class="col-md-3">' +
+                '<label class="form-label fw-semibold small">' +
+                    'Type de bien' +
+                '</label>' +
+                '<select id="ctxTypeBien" class="form-select">' +
+                    '<option value="">Tous</option>' +
+                    '<option value="appartement">Appartement</option>' +
+                    '<option value="studio">Studio</option>' +
+                    '<option value="villa">Villa</option>' +
+                    '<option value="chambre">Chambre</option>' +
+                '</select>' +
+            '</div>' +
+            '<div class="col-md-3">' +
+                '<label class="form-label fw-semibold small">' +
+                    'Transaction' +
+                '</label>' +
+                '<select id="ctxTransaction" class="form-select">' +
+                    '<option value="">Tout</option>' +
+                    '<option value="location">Location</option>' +
+                    '<option value="vente">Vente</option>' +
+                '</select>' +
+            '</div>' +
+            '<div class="col-md-3">' +
+                '<label class="form-label fw-semibold small">' +
+                    'Budget maximum (F CFA)' +
+                '</label>' +
+                '<input type="number" id="ctxBudget"' +
+                    ' class="form-control" placeholder="300000">' +
+            '</div>' +
+            '<div class="col-md-3">' +
+                '<label class="form-label fw-semibold small">' +
+                    'Chambres minimum' +
+                '</label>' +
+                '<select id="ctxChambres" class="form-select">' +
+                    '<option value="">Peu importe</option>' +
+                    '<option value="1">1 et plus</option>' +
+                    '<option value="2">2 et plus</option>' +
+                    '<option value="3">3 et plus</option>' +
+                '</select>' +
+            '</div>'
+    }
+
+    // ============================================
+    // CHANGER SECTION
+    // ============================================
+    function changerSection(section) {
+        sectionActive = section ;
+
+        var tabs = ['base', 'zone', 'religion_ia',
+                    'loisirs_ia', 'estimation']
+        tabs.forEach(function(t) {
+            var el = document.getElementById('tab_' + t)
+            if (el) el.classList.remove('actif')
+        })
+
+        var tabEl = document.getElementById('tab_' + section)
+        if (tabEl) tabEl.classList.add('actif')
+
+        document.querySelectorAll('.section-filtre').forEach(
+            function(f) { f.classList.remove('actif') }
+        )
+
+        var sectionEl = document.getElementById(
+            'section_' + section
+        )
+        if (sectionEl) sectionEl.classList.add('actif')
+
+        var zoneBtn     = document.getElementById('zoneBtn')
+        var labelCommuns = document.getElementById('labelCommuns')
+        var criteresCommuns = document.getElementById('criteresCommuns')
+
+        if (section === 'estimation') {
+            zoneBtn.style.display        = 'none'
+            labelCommuns.style.display   = 'none'
+            criteresCommuns.style.display = 'none'
+        } else {
+            zoneBtn.style.display        = 'flex'
+            labelCommuns.style.display   = 'block'
+            criteresCommuns.style.display = ''
+        }
+    }
+
+    // ============================================
+    // RELIGION
+    // ============================================
+    function selectionnerReligionIA(religion) {
+        religionSelectionnee = religion ;
+
+        var religions = ['musulman', 'catholique', 'protestant']
+        religions.forEach(function(r) {
+            var el = document.getElementById('ia_opt_' + r)
+            if (el) el.classList.remove('actif')
+        })
+
+        var el = document.getElementById('ia_opt_' + religion)
+        if (el) el.classList.add('actif')
+    }
+
+    // ============================================
+    // COMMODITES
+    // ============================================
+    function toggleCommoditeIA(valeur, el) {
+        el.classList.toggle('actif')
+        var idx = commoditesIA.indexOf(valeur)
+        if (idx === -1) {
+            commoditesIA.push(valeur)
+        } else {
+            commoditesIA.splice(idx, 1)
+        }
+    }
+
+    // ============================================
+    // AUTOCOMPLETE ZONE
+    // ============================================
+    function autocompleteZoneIA(valeur) {
+        var liste = document.getElementById('autocompleteZoneIA')
+        if (!valeur || valeur.length < 3) {
+            liste.classList.add('d-none')
+            return
+        }
+
+        var valeurLower = valeur.toLowerCase()
+        var suggestions = Object.keys(LIEUX_LOCAUX).filter(
+            function(cle) {
+                return cle.indexOf(valeurLower) !== -1
+            }
+        ).slice(0, 6)
+
+        if (suggestions.length > 0) {
+            liste.innerHTML = suggestions.map(function(s) {
+                return '<div style="padding:10px 16px;' +
+                    'cursor:pointer;font-size:13px;' +
+                    'border-bottom:1px solid #f1f5f9"' +
+                    ' onmouseover="this.style.background=\'#eff6ff\'"' +
+                    ' onmouseout="this.style.background=\'white\'"' +
+                    ' onclick="selectionnerZoneIA(\'' +
+                        s.replace(/'/g, "\\'") + '\')">' +
+                    '<i class="bi bi-geo-alt text-primary me-2"></i>' +
+                    s.charAt(0).toUpperCase() + s.slice(1) +
+                    '</div>'
+            }).join('')
+            liste.classList.remove('d-none')
+        } else {
+            liste.classList.add('d-none')
+        }
+    }
+
+    function selectionnerZoneIA(cle) {
+        document.getElementById('iaZoneRef').value =
+            cle.charAt(0).toUpperCase() + cle.slice(1)
+        document.getElementById('autocompleteZoneIA')
+            .classList.add('d-none')
+    }
+
+    document.addEventListener('click', function(e) {
+        var input = document.getElementById('iaZoneRef')
+        var liste = document.getElementById('autocompleteZoneIA')
+        if (input && liste &&
+            !input.contains(e.target) &&
+            !liste.contains(e.target)) {
+            liste.classList.add('d-none')
+        }
+    })
+
+    // ============================================
+    // CONSTRUIRE LA REQUETE
+    // ============================================
+    function construireRequete() {
+        var requete = {
+            limite : 12
+        }
+
+        // Logement base
+        var ville = document.getElementById('iaVille')
+        if (ville && ville.value)
+            requete.ville = ville.value
+
+        var typeBien = document.getElementById('iaTypeBien')
+        if (typeBien && typeBien.value)
+            requete.type_bien = typeBien.value
+
+        var transaction = document.getElementById('iaTransaction')
+        if (transaction && transaction.value)
+            requete.type_transaction = transaction.value
+
+        var chambres = document.getElementById('iaChambres')
+        if (chambres && chambres.value)
+            requete.nb_chambres = parseInt(chambres.value)
+
+        var budgetMin = document.getElementById('iaBudgetMin')
+        if (budgetMin && budgetMin.value)
+            requete.budget_min = parseFloat(budgetMin.value)
+
+        var budgetMax = document.getElementById('iaBudgetMax')
+        if (budgetMax && budgetMax.value)
+            requete.budget_max = parseFloat(budgetMax.value)
+
+        var surface = document.getElementById('iaSurface')
+        if (surface && surface.value)
+            requete.surface_min = parseFloat(surface.value)
+
+        var meuble = document.getElementById('iaMeuble')
+        if (meuble && meuble.checked)
+            requete.meuble = true
+
+        // Criteres communs
+        var ctxType = document.getElementById('ctxTypeBien')
+        if (ctxType && ctxType.value && !requete.type_bien)
+            requete.type_bien = ctxType.value
+
+        var ctxTrans = document.getElementById('ctxTransaction')
+        if (ctxTrans && ctxTrans.value && !requete.type_transaction)
+            requete.type_transaction = ctxTrans.value
+
+        var ctxBudget = document.getElementById('ctxBudget')
+        if (ctxBudget && ctxBudget.value && !requete.budget_max)
+            requete.budget_max = parseFloat(ctxBudget.value)
+
+        var ctxChambres = document.getElementById('ctxChambres')
+        if (ctxChambres && ctxChambres.value && !requete.nb_chambres)
+            requete.nb_chambres = parseInt(ctxChambres.value)
+
+        // Zone de reference
+        var zoneRef = document.getElementById('iaZoneRef')
+        if (zoneRef && zoneRef.value.trim()) {
+            requete.lieu_reference = zoneRef.value.trim()
+            var villeZone = document.getElementById('iaVilleZone')
+            if (villeZone && villeZone.value)
+                requete.ville_reference = villeZone.value
+        }
+
+        // Religion
+        if (religionSelectionnee) {
+            requete.religion = religionSelectionnee
+            var distCulte = document.getElementById('iaDistanceCulte')
+            if (distCulte)
+                requete.distance_culte_max = parseFloat(distCulte.value)
+            var villeReligion = document.getElementById('iaVilleReligion')
+            if (villeReligion && villeReligion.value &&
+                !requete.ville_reference)
+                requete.ville_reference = villeReligion.value
+        }
+
+        // Loisirs
+        if (commoditesIA.length > 0) {
+            requete.commodites = commoditesIA
+            var villeLoisirs = document.getElementById('iaVilleLoisirs')
+            if (villeLoisirs && villeLoisirs.value &&
+                !requete.ville_reference)
+                requete.ville_reference = villeLoisirs.value
+        }
+
+        return requete
+    }
+
+           
+    // ============================================
+    // LANCER L'IA — FONCTION PRINCIPALE
+    // ============================================
+    function lancerIA() {
+        if (!estConnecte()) {
+            verifierActionConnectee('utiliser les recommandations IA')
+            return
+        }
+
+        // Masquer resultats precedents
+        document.getElementById('etatInitialIA').classList.add('d-none')
+        document.getElementById('resultatsIA').classList.add('d-none')
+        document.getElementById('aucunResultatIA').classList.add('d-none')
+        document.getElementById('infoZoneRef').classList.add('d-none')
+        document.getElementById('lieuxCulteIA').classList.add('d-none')
+        document.getElementById('chargementIA').classList.remove('d-none')
+
+        var btn = document.getElementById('btnLancerIA')
+        if (btn) {
+            btn.disabled  = true
+            btn.innerHTML = '<span class="spinner-border' +
+                ' spinner-border-sm me-2"></span>Analyse en cours...'
+        }
+
+        var requete = construireRequete()
+        console.log('Requete IA envoyee :', requete)
+
+        // Choisir le bon endpoint
+        var endpoint = '/recommander'
+        if (requete.lieu_reference ||
+            requete.religion ||
+            requete.commodites) {
+            endpoint = '/recherche-contextuelle'
+        }
+        console.log("IA_URL =", IA_URL)
+        console.log("URL appelée =", IA_URL + endpoint)
+        // Appel API IA
+        fetch(IA_URL + endpoint, {
+            method  : 'POST',
+            headers : {
+                'Content-Type' : 'application/json',
+                'x-api-key'    : IA_KEY,
+            },
+            body : JSON.stringify(requete),
+        })
+        .then(function(response) {
+            if (!response.ok) {
+                throw new Error('Erreur HTTP ' + response.status)
+            }
+            return response.json()
+        })
+        .then(function(data) {
+            console.log('Reponse IA recue :', data)
+            document.getElementById('chargementIA')
+                .classList.add('d-none')
+
+            // Infos contextuelles
+            if (data.lieu_geocode) {
+                afficherInfoZone(data.lieu_geocode)
+            }
+            if (data.lieux_culte_trouves &&
+                data.lieux_culte_trouves.length > 0) {
+                afficherLieuxCulteIA(data.lieux_culte_trouves)
+            }
+
+            var annonces = data.recommandations ||
+                           data.annonces || []
+            var total    = data.total || annonces.length
+
+            if (annonces.length === 0) {
+                document.getElementById('aucunResultatIA')
+                    .classList.remove('d-none')
+            } else {
+                document.getElementById('nbResultatsIA').textContent =
+                    total + ' bien(s) recommande(s)'
+                afficherResultats(annonces)
+                document.getElementById('resultatsIA')
+                    .classList.remove('d-none')
+            }
+        })
+        .catch(function(erreur) {
+            console.warn('API IA indisponible:', erreur.message)
+            document.getElementById('chargementIA')
+                .classList.add('d-none')
+            // Fallback classique
+            fallbackClassique()
+        })
+        .finally(function() {
+            var btn = document.getElementById('btnLancerIA')
+            if (btn) {
+                btn.disabled  = false
+                btn.innerHTML = '<i class="bi bi-cpu me-2"></i>' +
+                    'Lancer la recommandation IA'
+            }
+        })
+    }
+
+    // ============================================
+    // AFFICHER INFO ZONE
+    // ============================================
+    function afficherInfoZone(lieu) {
+        document.getElementById('infoZoneRef').innerHTML =
+            '<div class="alert alert-primary border-0 rounded-3' +
+                ' d-flex align-items-center gap-3">' +
+                '<i class="bi bi-geo-alt-fill fs-4"></i>' +
+                '<div>' +
+                    '<p class="fw-bold mb-0">Lieu de reference localise</p>' +
+                    '<p class="small mb-0 opacity-75">' +
+                        lieu.nom +
+                    '</p>' +
+                '</div>' +
+            '</div>'
+        document.getElementById('infoZoneRef')
+            .classList.remove('d-none')
+    }
+
+    // ============================================
+    // AFFICHER LIEUX DE CULTE
+    // ============================================
+    function afficherLieuxCulteIA(lieux) {
+        var label = religionSelectionnee || 'culte'
+        document.getElementById('lieuxCulteIA').innerHTML =
+            '<div class="dashboard-card p-4">' +
+                '<h6 class="fw-bold mb-3">' +
+                    'Lieux de culte ' + label + ' trouves' +
+                '</h6>' +
+                '<div class="d-flex flex-wrap gap-2">' +
+                    lieux.slice(0, 5).map(function(l) {
+                        return '<span style="background:#f0fdf4;' +
+                            'color:#15803d;border-radius:20px;' +
+                            'padding:3px 10px;font-size:12px;' +
+                            'font-weight:600">' +
+                            l.nom + ' - ' + l.distance_km + ' km' +
+                            '</span>'
+                    }).join('') +
+                '</div>' +
+            '</div>'
+        document.getElementById('lieuxCulteIA')
+            .classList.remove('d-none')
+    }
+
+    // ============================================
+    // AFFICHER LES RESULTATS
+    // ============================================
+    function afficherResultats(annonces) {
+            console.log("PREMIÈRE ANNONCE COMPLÈTE:", JSON.stringify(annonces[0]))
+
+        var container = document.getElementById('grilleIA')
+
+        container.innerHTML = annonces.map(function(r, i){
+            var idAnnonce = r.id_annonce || r.id
+            var score     = Math.round((r.score_final || 0.5) * 100)
+            var scoreColor =
+                score >= 70 ? '#16a34a' :
+                score >= 40 ? '#d97706' : '#dc2626'
+        
+var urlPhoto = imageUrl(r.photo || (r.photo_principale?.chemin_image))
+console.log("photo brute:", r.photo)
+console.log("urlPhoto finale:", urlPhoto)
+            var distBadge = ''
+            if (r.distance_lieu_ref !== null &&
+                r.distance_lieu_ref !== undefined) {
+                distBadge = '<span style="background:#fff7ed;' +
+                    'color:#c2410c;border-radius:20px;' +
+                    'padding:3px 10px;font-size:11px;' +
+                    'font-weight:600;display:inline-block;' +
+                    'margin-right:4px">' +
+                    r.distance_lieu_ref + ' km' +
+                    '</span>'
+
+
+      
+                }
+        return '<div class="col-12 col-md-6 col-lg-4">' +
+                '<div class="carte-ia"' +
+                    ' onclick="window.location.href=' +
+                    '\'annonce-detail.html?id=' + idAnnonce + '\'">' +
+
+                    '<div class="position-relative"' +
+                        ' style="height:200px;overflow:hidden">' +
+                        '<img src="' + urlPhoto + '"' +
+                            ' style="width:100%;height:100%;' +
+                            'object-fit:cover"' +
+                            ' onerror="this.src=' +
+                            '\'https://placehold.co/400x250?text=SIMMo\'"' +
+                            ' alt="' + r.titre + '">' +
+
+                        '<div class="position-absolute' +
+                            ' top-0 start-0 m-2">' +
+                            '<span class="ia-badge">#' +
+                                (i + 1) + ' IA' +
+                            '</span>' +
+                        '</div>' +
+
+                        '<div class="position-absolute' +
+                            ' top-0 end-0 m-2">' +
+                            '<div class="bg-white rounded-pill' +
+                                ' px-2 py-1 shadow-sm' +
+                                ' d-flex align-items-center gap-1">' +
+                                '<div class="rounded-circle"' +
+                                    ' style="width:8px;height:8px;' +
+                                    'background:' + scoreColor + '">' +
+                                '</div>' +
+                                '<span class="fw-bold small"' +
+                                    ' style="color:' + scoreColor + '">' +
+                                    score + '%' +
+                                '</span>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+
+                    '<div class="p-3">' +
+                        '<p class="text-primary small fw-bold' +
+                            ' text-uppercase mb-1">' +
+                            (r.categorie || '') +
+                        '</p>' +
+                        '<h6 class="fw-bold mb-1 text-truncate">' +
+                            r.titre +
+                        '</h6>' +
+                        '<p class="text-muted small mb-2">' +
+                            '<i class="bi bi-geo-alt' +
+                                ' text-primary me-1"></i>' +
+                            (r.quartier ? r.quartier + ', ' : '') +
+                            (r.ville || '') +
+                        '</p>' +
+
+                        '<div class="mb-2">' + distBadge + '</div>' +
+
+                        '<div class="mb-2">' +
+                            '<div class="d-flex justify-content-between mb-1">' +
+                                '<span class="small text-muted">' +
+                                    'Pertinence' +
+                                '</span>' +
+                                '<span class="small fw-semibold">' +
+                                    Math.round((r.score_nlp || 0) * 100) +
+                                    '%' +
+                                '</span>' +
+                            '</div>' +
+                            '<div class="score-bar mb-1">' +
+                                '<div class="score-bar-fill"' +
+                                    ' style="width:' +
+                                    ((r.score_nlp || 0) * 100) + '%">' +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="d-flex justify-content-between mb-1">' +
+                                '<span class="small text-muted">Prix</span>' +
+                                '<span class="small fw-semibold">' +
+                                    Math.round((r.score_prix || 0) * 100) +
+                                    '%' +
+                                '</span>' +
+                            '</div>' +
+                            '<div class="score-bar">' +
+                                '<div class="score-bar-fill"' +
+                                    ' style="width:' +
+                                    ((r.score_prix || 0) * 100) +
+                                    '%;background:#16a34a">' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+
+                        '<div class="d-flex justify-content-between' +
+                            ' align-items-center mb-2">' +
+                            '<span class="prix-annonce">' +
+                                formatPrix(r.prix) +
+                            '</span>' +
+                            (r.prix_estime ?
+                                '<span class="badge bg-success' +
+                                    ' bg-opacity-10 text-success small">' +
+                                    '~' + formatPrix(r.prix_estime) +
+                                '</span>' : '') +
+                        '</div>' +
+
+                        '<div class="bg-light rounded-2 p-2 mb-3">' +
+                            '<p class="small text-muted mb-0">' +
+                                '<i class="bi bi-cpu' +
+                                    ' text-primary me-1"></i>' +
+                                (r.raison || 'Recommande pour vous') +
+                            '</p>' +
+                        '</div>' +
+
+                        '<a href="annonce-detail.html?id=' +
+                            idAnnonce + '"' +
+                            ' class="btn btn-primary w-100 btn-sm' +
+                            ' fw-semibold"' +
+                            ' onclick="event.stopPropagation()">' +
+                            'Voir l annonce' +
+                            ' <i class="bi bi-arrow-right ms-1"></i>' +
+                        '</a>' +
+                    '</div>' +
+                '</div>' +
+            '</div>'
+        }).join('') 
+    }
+
+
+    // ============================================
+    // FALLBACK CLASSIQUE
+    // ============================================
+    function fallbackClassique() {
+        var requete  = construireRequete()
+        var params   = new URLSearchParams()
+
+        if (requete.ville)
+            params.set('ville', requete.ville)
+        if (requete.ville_reference)
+            params.set('ville', requete.ville_reference)
+        if (requete.type_bien)
+            params.set('type_bien', requete.type_bien)
+        if (requete.budget_max)
+            params.set('prix_max', requete.budget_max)
+        if (requete.type_transaction)
+            params.set('type_transaction', requete.type_transaction)
+
+        apiRequest('/annonces?' + params.toString())
+        .then(function(data) {
+            var annonces = data.data || []
+
+            if (annonces.length === 0) {
+                document.getElementById('aucunResultatIA')
+                    .classList.remove('d-none')
+                return
+            }
+
+            var converties = annonces.map(function(a) {
+                return {
+                    id_annonce   : a.id,
+                    titre        : a.titre,
+                    prix         : a.prix,
+                    categorie    : a.categorie ? a.categorie.libelle : '',
+                    ville        : a.localisation ? a.localisation.ville : '',
+                    quartier     : a.localisation ? a.localisation.quartier : '',
+                    score_final  : 0.5,
+                    score_nlp    : 0.5,
+                    score_prix   : 0.5,
+                    prix_estime  : null,
+                    raison       : 'Resultat de recherche classique',
+                    photo        : a.photo_principale
+                        ? a.photo_principale.chemin_image : null,
+                }
+            })
+
+            document.getElementById('nbResultatsIA').textContent =
+                converties.length +
+                ' bien(s) trouve(s) (mode classique)'
+            afficherResultats(converties)
+            document.getElementById('resultatsIA')
+                .classList.remove('d-none')
+        })
+        .catch(function(e) {
+            console.error(e)
+            document.getElementById('aucunResultatIA')
+                .classList.remove('d-none')
+        })
+    }
+
+    // ============================================
+    // ESTIMATION DE PRIX
+    // ============================================
+    function lancerEstimation() {
+        if (!estConnecte()) {
+            verifierActionConnectee("estimer un prix")
+            return
+        }
+
+        var ville    = document.getElementById('estVille').value
+        var surface  = document.getElementById('estSurface').value
+        var chambres = document.getElementById('estChambres').value
+
+        if (!ville || !surface || !chambres) {
+            alert('Veuillez remplir tous les champs obligatoires.')
+            return
+        }
+
+        var btn = document.getElementById('btnEstimer')
+        btn.disabled  = true
+        btn.innerHTML = '<span class="spinner-border' +
+            ' spinner-border-sm me-2"></span>Calcul...'
+
+        fetch(IA_URL + '/predire-prix', {
+            method  : 'POST',
+            headers : {
+                'Content-Type' : 'application/json',
+                'x-api-key'    : IA_KEY,
+            },
+            body: JSON.stringify({
+                ville            : ville,
+                categorie        : document.getElementById('estCategorie').value,
+                surface_m2       : parseFloat(surface),
+                nb_chambres      : parseInt(chambres),
+                meuble           : document.getElementById('estMeuble').checked,
+                type_transaction : document.getElementById('estTransaction').value,
+            }),
+        })
+        .then(function(response) { return response.json() })
+        .then(function(data) {
+            var box = document.getElementById('resultatEstimation')
+            box.classList.remove('d-none')
+            box.innerHTML =
+                '<div class="prix-estime-box">' +
+                    '<div class="d-flex justify-content-between' +
+                        ' align-items-center mb-2">' +
+                        '<span class="fw-bold">Estimation IA</span>' +
+                        '<span class="badge bg-success bg-opacity-10' +
+                            ' text-success">' +
+                            'Fiabilite : ' + (data.fiabilite || 'moyenne') +
+                        '</span>' +
+                    '</div>' +
+                    '<h3 class="fw-bold text-success mb-1">' +
+                        formatPrix(data.prix_estime) +
+                    '</h3>' +
+                    '<p class="text-muted small mb-0">' +
+                        'Fourchette : ' + formatPrix(data.fourchette_min) +
+                        ' - ' + formatPrix(data.fourchette_max) +
+                    '</p>' +
+                '</div>'
+        })
+        .catch(function() {
+            var box = document.getElementById('resultatEstimation')
+            box.classList.remove('d-none')
+            box.innerHTML =
+                '<div class="alert alert-warning mb-0">' +
+                    'Service d estimation temporairement indisponible.' +
+                '</div>'
+        })
+        .finally(function() {
+            btn.disabled  = false
+            btn.innerHTML =
+                '<i class="bi bi-calculator me-2"></i>Estimer le prix'
+        })
+    }
+
+    // ============================================
+    // REINITIALISER
+    // ============================================
+    function reinitialiserIA() {
+        var champs = [
+            'iaVille', 'iaTypeBien', 'iaTransaction',
+            'iaChambres', 'iaBudgetMin', 'iaBudgetMax',
+            'iaSurface', 'iaZoneRef', 'iaVilleZone',
+            'iaVilleReligion', 'iaVilleLoisirs'
+        ]
+        champs.forEach(function(id) {
+            var el = document.getElementById(id)
+            if (el) el.value = ''
+        })
+
+        var meuble = document.getElementById('iaMeuble')
+        if (meuble) meuble.checked = false
+
+        religionSelectionnee = null
+        commoditesIA         = []
+
+        document.querySelectorAll('.religion-btn').forEach(
+            function(el) { el.classList.remove('actif') }
+        )
+        document.querySelectorAll('.commodite-btn').forEach(
+            function(el) { el.classList.remove('actif') }
+        )
+
+        changerSection('base')
+
+        document.getElementById('resultatsIA').classList.add('d-none')
+        document.getElementById('aucunResultatIA').classList.add('d-none')
+        document.getElementById('infoZoneRef').classList.add('d-none')
+        document.getElementById('lieuxCulteIA').classList.add('d-none')
+        document.getElementById('etatInitialIA').classList.remove('d-none')
+    }
+
+</script>
+</body>
+</html>

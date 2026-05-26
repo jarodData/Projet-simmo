@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <link rel="shortcut icon" href="../favicon.png" type="image/png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin — SIMMo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body style="background:linear-gradient(135deg,#0f172a,#1e293b);
+    min-height:100vh;display:flex;align-items:center">
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-4">
+            <div class="text-center mb-4">
+                <div class="bg-primary rounded-3 d-inline-flex p-3 mb-3">
+                    <i class="bi bi-shield-lock text-white fs-2"></i>
+                </div>
+                <h3 class="text-white fw-bold">
+                    SIMm<span class="text-primary">o</span> Admin
+                </h3>
+                <p class="text-white-50 small">
+                    Espace d'administration
+                </p>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <div class="bg-white rounded-4 p-4 shadow-lg">
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Email</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-envelope text-muted"></i>
+                            </span>
+                            <input type="email" id="email"
+                                class="form-control"
+                                placeholder="admin@simmo.cm" required>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            Mot de passe
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-lock text-muted"></i>
+                            </span>
+                            <input type="password" id="motDePasse"
+                                class="form-control"
+                                placeholder="••••••••" required>
+                        </div>
+                    </div>
+                    <button type="submit" id="btnLogin"
+                        class="btn btn-primary w-100 py-2 fw-bold">
+                        <i class="bi bi-shield-check me-2"></i>
+                        Accéder au panneau admin
+                    </button>
+                </form>
+            </div>
+
+            <p class="text-center text-white-50 small mt-3">
+                <a href="../index.html" class="text-white-50">
+                    ← Retour au site
+                </a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/config.js"></script>
+<script>
+    // Cacher la page si quelqu'un essaie d'accéder directement
+document.addEventListener('DOMContentLoaded', function() {
+    // La page est déjà accessible — c'est normal
+    // Mais on ajoute une meta pour les moteurs de recherche
+    const meta = document.createElement('meta')
+    meta.name    = 'robots'
+    meta.content = 'noindex, nofollow'
+    document.head.appendChild(meta)
+})
+    // Rediriger si déjà connecté en tant qu'admin
+    if (localStorage.getItem('simmo_admin_token')) {
+        window.location.href = 'dashboard.html'
+    }
+
+    document.getElementById('loginForm')
+        .addEventListener('submit', async function(e) {
+        e.preventDefault()
+        showSpinner('btnLogin', 'Connexion...')
+
+        try {
+            const response = await fetch(
+                `${CONFIG.API_URL}/admin/login`, {
+                method : 'POST',
+                headers: headersPublic(),
+                body   : JSON.stringify({
+                    email        : document.getElementById('email').value,
+                    mot_de_passe : document.getElementById('motDePasse').value,
+                }),
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) throw data
+
+            // Sauvegarder token admin séparément
+            localStorage.setItem('simmo_admin_token', data.token)
+            localStorage.setItem('simmo_admin',       JSON.stringify(data.admin))
+
+            window.location.href = 'dashboard.html'
+
+        } catch (err) {
+            showAlert(
+                err.message || 'Email ou mot de passe incorrect.',
+                'danger'
+            )
+            hideSpinner('btnLogin',
+                '<i class="bi bi-shield-check me-2"></i>Accéder au panneau admin')
+        }
+    })
+
+    function showAlert(msg, type) {
+        document.getElementById('alertContainer').innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show">
+                ${msg}
+                <button type="button" class="btn-close"
+                    data-bs-dismiss="alert"></button>
+            </div>`
+    }
+    function showSpinner(id, txt) {
+        const btn = document.getElementById(id)
+        btn.disabled  = true
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>${txt}`
+    }
+    function hideSpinner(id, txt) {
+        const btn = document.getElementById(id)
+        btn.disabled  = false
+        btn.innerHTML = txt
+    }
+</script>
+</body>
+</html>

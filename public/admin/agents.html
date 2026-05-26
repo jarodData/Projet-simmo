@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <link rel="shortcut icon" href="../favicon.png" type="image/png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agents — Admin SIMMo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+    <style>
+        .admin-layout { display:flex; min-height:100vh; }
+        #adminSidebar {
+            width:240px;min-width:240px;background:white;
+            border-right:1px solid #e2e8f0;display:flex;
+            flex-direction:column;position:sticky;
+            top:0;height:100vh;overflow-y:auto;
+        }
+        .admin-main { flex:1;background:#f8fafc;overflow-x:hidden; }
+    </style>
+</head>
+<body>
+<div class="admin-layout">
+    <div id="adminSidebar"></div>
+    <div class="admin-main p-4">
+
+        <div class="d-flex justify-content-between
+            align-items-center mb-4">
+            <h3 class="fw-bold mb-0">
+                <i class="bi bi-person-badge text-primary me-2"></i>
+                Gestion des Agents
+            </h3>
+        </div>
+
+        <!-- Filtres -->
+        <div class="bg-white rounded-3 border p-3 mb-4">
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <input type="text" id="searchAgent"
+                        class="form-control"
+                        placeholder="Rechercher un agent..."
+                        oninput="chargerAgents()">
+                </div>
+                <div class="col-md-3">
+                    <select id="filtreStatutAgent" class="form-select"
+                        onchange="chargerAgents()">
+                        <option value="">Tous les statuts</option>
+                        <option value="en_attente">En attente</option>
+                        <option value="actif">Actif</option>
+                        <option value="suspendu">Suspendu</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <!-- Tableau agents -->
+        <div class="bg-white rounded-3 border">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Agent</th>
+                            <th>Email</th>
+                            <th>Statut</th>
+                            <th>Plan</th>
+                            <th>CNI</th>
+                            <th>Inscription</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyAgents">
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <div class="spinner-border text-primary"></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="paginationAgents" class="p-3"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Valider CNI -->
+<div class="modal fade" id="modalCNI" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-id-card text-warning me-2"></i>
+                    Validation CNI
+                </h5>
+                <button type="button" class="btn-close"
+                    data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="contenuModalCNI">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Détail Agent -->
+<div class="modal fade" id="modalDetailAgent" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Détail Agent</h5>
+                <button type="button" class="btn-close"
+                    data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="contenuDetailAgent"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/config.js"></script>
+<script src="js/admin.js"></script>
+<script>
+    // En haut du script de chaque page admin
+document.addEventListener('DOMContentLoaded', function() {
+    if (!getAdminToken()) {
+        document.body.innerHTML = `
+            <div style="display:flex;align-items:center;
+                justify-content:center;height:100vh;
+                background:#0f172a;color:white;
+                flex-direction:column;gap:16px">
+                <i class="bi bi-shield-lock" style="font-size:4rem"></i>
+                <h3>Accès refusé</h3>
+                <p style="color:rgba(255,255,255,0.5)">
+                    Cette page est réservée aux administrateurs.
+                </p>
+                <a href="login.html"
+                    style="background:#2563eb;color:white;
+                        padding:10px 30px;border-radius:8px;
+                        text-decoration:none;font-weight:bold">
+                    Se connecter
+                </a>
+            </div>`
+        return
+    }
+    // Continuer l'initialisation normale
+    init()
+})
+    initAdminNavbar('agents.html')
+
+    const modalCNI         = new bootstrap.Modal(
+        document.getElementById('modalCNI'))
+    const modalDetailAgent = new bootstrap.Modal(
+        document.getElementById('modalDetailAgent'))
+
+    // ── Charger les agents ────────────────────
+    async function chargerAgents(page = 1) {
+        const search = document.getElementById('searchAgent').value
+        const statut = document.getElementById('filtreStatutAgent').value
+
+        let url = `/agents?page=${page}`
+        if (search) url += `&search=${search}`
+        if (statut) url += `&statut=${statut}`
+
+        try {
+            const data   = await adminRequest(url)
+            const agents = data.data || []
+
+            document.getElementById('tbodyAgents').innerHTML =
+                agents.length === 0
+                ? `<tr><td colspan="7" class="text-center py-5 text-muted">
+                    Aucun agent trouvé
+                   </td></tr>`
+                : agents.map(a => `
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="bg-success text-white rounded-circle
+                                    d-flex align-items-center justify-content-center
+                                    fw-bold flex-shrink-0"
+                                    style="width:36px;height:36px;font-size:13px">
+                                    ${a.prenom?.[0]?.toUpperCase()}
+                                </div>
+                                <div>
+                                    <p class="fw-semibold small mb-0">
+                                        ${a.prenom} ${a.nom}
+                                    </p>
+                                    <p class="text-muted"
+                                        style="font-size:11px;margin:0">
+                                        ${a.numero_agence || '—'}
+                                    </p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="small">${a.email}</td>
+                        <td>${badgeStatut(a.statut)}</td>
+                        <td class="small">
+                            ${a.plan?.nom_plan || '<span class="text-muted">Aucun</span>'}
+                        </td>
+                        <td>
+                            ${a.documents?.length > 0
+                                ? badgeStatut(a.documents[0].statut_verification)
+                                : '<span class="text-muted small">—</span>'}
+                        </td>
+                        <td class="small text-muted">
+                            ${formatDate(a.created_at)}
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-sm btn-outline-primary"
+                                    onclick="voirDetailAgent(${a.id})"
+                                    title="Voir détail">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                ${a.statut === 'en_attente' && a.documents?.length > 0
+                                    ? `<button class="btn btn-sm btn-warning fw-bold"
+                                        onclick="ouvrirModalCNI(${a.id})"
+                                        title="Valider CNI">
+                                        <i class="bi bi-id-card me-1"></i>CNI
+                                       </button>`
+                                    : ''}
+                                ${a.statut === 'actif'
+                                    ? `<button class="btn btn-sm btn-outline-danger"
+                                        onclick="suspendreAgent(${a.id})"
+                                        title="Suspendre">
+                                        <i class="bi bi-pause-circle"></i>
+                                       </button>`
+                                    : ''}
+                                ${a.statut === 'suspendu'
+                                    ? `<button class="btn btn-sm btn-outline-success"
+                                        onclick="activerAgent(${a.id})"
+                                        title="Activer">
+                                        <i class="bi bi-play-circle"></i>
+                                       </button>`
+                                    : ''}
+                                <button class="btn btn-sm btn-outline-danger"
+                                    onclick="supprimerAgent(${a.id})"
+                                    title="Supprimer">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>`).join('')
+
+            // Pagination
+            afficherPagination(data, 'paginationAgents', chargerAgents)
+
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
+    // ── Voir détail agent ─────────────────────
+    async function voirDetailAgent(id) {
+        document.getElementById('contenuDetailAgent').innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary"></div>
+            </div>`
+        modalDetailAgent.show()
+
+        try {
+            const data  = await adminRequest(`/agents/${id}`)
+            const agent = data.agent
+            const stats = data.stats_globales
+
+            document.getElementById('contenuDetailAgent').innerHTML = `
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <!-- Infos agent -->
+                        <div class="text-center mb-4">
+                            <div class="bg-success text-white rounded-circle
+                                d-inline-flex align-items-center
+                                justify-content-center fw-bold mb-3"
+                                style="width:70px;height:70px;font-size:28px">
+                                ${agent.prenom?.[0]?.toUpperCase()}
+                            </div>
+                            <h5 class="fw-bold mb-0">
+                                ${agent.prenom} ${agent.nom}
+                            </h5>
+                            <p class="text-muted small">${agent.email}</p>
+                            ${badgeStatut(agent.statut)}
+                        </div>
+                        <ul class="list-unstyled small">
+                            <li class="mb-2">
+                                <i class="bi bi-phone me-2 text-muted"></i>
+                                ${agent.telephone || '—'}
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-building me-2 text-muted"></i>
+                                ${agent.numero_agence || '—'}
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-calendar me-2 text-muted"></i>
+                                Inscrit le ${formatDate(agent.created_at)}
+                            </li>
+                            <li>
+                                <i class="bi bi-credit-card me-2 text-muted"></i>
+                                Plan : ${agent.plan?.nom_plan || 'Aucun'}
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-8">
+                        <!-- Stats -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-6">
+                                <div class="bg-light rounded-3 p-3 text-center">
+                                    <h4 class="fw-bold text-primary mb-0">
+                                        ${stats.total_annonces}
+                                    </h4>
+                                    <small class="text-muted">Annonces</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="bg-light rounded-3 p-3 text-center">
+                                    <h4 class="fw-bold text-success mb-0">
+                                        ${stats.total_contacts}
+                                    </h4>
+                                    <small class="text-muted">Contacts</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="bg-light rounded-3 p-3 text-center">
+                                    <h4 class="fw-bold text-warning mb-0">
+                                        ${stats.total_vues}
+                                    </h4>
+                                    <small class="text-muted">Vues totales</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="bg-light rounded-3 p-3 text-center">
+                                    <h4 class="fw-bold text-info mb-0">
+                                        ${stats.annonces_actives}
+                                    </h4>
+                                    <small class="text-muted">
+                                        Annonces actives
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CNI -->
+                        ${agent.documents?.length > 0 ? `
+                            <div class="mb-3">
+                                <h6 class="fw-bold">Document CNI</h6>
+                                <div class="d-flex align-items-center
+                                    gap-3 p-3 bg-light rounded-3">
+                                    <i class="bi bi-file-earmark-image
+                                        text-primary fs-3"></i>
+                                    <div>
+                                        <p class="fw-semibold small mb-0">
+                                            Document uploadé
+                                        </p>
+                                        <p class="text-muted small mb-0">
+                                            ${formatDate(agent.documents[0].created_at)}
+                                            — ${badgeStatut(agent.documents[0].statut_verification)}
+                                        </p>
+                                    </div>
+                                    <a href="http://localhost:8000/storage/${agent.documents[0].chemin_fichier}"
+                                        target="_blank"
+                                        class="btn btn-sm btn-outline-primary ms-auto">
+                                        <i class="bi bi-eye me-1"></i>Voir
+                                    </a>
+                                </div>
+                            </div>` : ''}
+
+                        <!-- Actions -->
+                        <div class="d-flex gap-2 flex-wrap">
+                            ${agent.statut === 'en_attente' ? `
+                                <button class="btn btn-warning fw-bold"
+                                    onclick="ouvrirModalCNI(${agent.id});
+                                        modalDetailAgent.hide()">
+                                    <i class="bi bi-id-card me-2"></i>
+                                    Valider CNI
+                                </button>` : ''}
+                            ${agent.statut === 'actif' ? `
+                                <button class="btn btn-danger"
+                                    onclick="suspendreAgent(${agent.id})">
+                                    <i class="bi bi-pause-circle me-2"></i>
+                                    Suspendre
+                                </button>` : ''}
+                            ${agent.statut === 'suspendu' ? `
+                                <button class="btn btn-success"
+                                    onclick="activerAgent(${agent.id})">
+                                    <i class="bi bi-play-circle me-2"></i>
+                                    Activer
+                                </button>` : ''}
+                        </div>
+                    </div>
+                </div>`
+
+        } catch (e) {
+            document.getElementById('contenuDetailAgent').innerHTML =
+                '<div class="alert alert-danger">Erreur de chargement.</div>'
+        }
+    }
+
+    // ── Modal validation CNI ──────────────────
+    async function ouvrirModalCNI(idAgent) {
+        document.getElementById('contenuModalCNI').innerHTML = `
+            <div class="text-center py-3">
+                <div class="spinner-border text-primary"></div>
+            </div>`
+        modalCNI.show()
+
+        const data  = await adminRequest(`/agents/${idAgent}`)
+        const agent = data.agent
+        const doc   = agent.documents?.[0]
+
+        document.getElementById('contenuModalCNI').innerHTML = `
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <h6 class="fw-bold mb-3">Document CNI</h6>
+                    ${doc ? `
+                        <img src="http://localhost:8000/storage/${doc.chemin_fichier}"
+                            class="img-fluid rounded-3 border mb-3"
+                            style="max-height:300px;width:100%;object-fit:contain"
+                            onerror="this.src='../img/pdf-icon.png'"
+                            alt="CNI">
+                        <a href="http://localhost:8000/storage/${doc.chemin_fichier}"
+                            target="_blank"
+                            class="btn btn-outline-primary btn-sm w-100">
+                            <i class="bi bi-download me-2"></i>
+                            Télécharger le document
+                        </a>` : '<p class="text-muted">Aucun document</p>'}
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-bold mb-3">
+                        Agent : ${agent.prenom} ${agent.nom}
+                    </h6>
+                    <p class="text-muted small">${agent.email}</p>
+                    <p class="text-muted small">${agent.telephone || '—'}</p>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            Commentaire (optionnel)
+                        </label>
+                        <textarea id="commentaireCNI" class="form-control"
+                            rows="3"
+                            placeholder="Raison du rejet ou note...">
+                        </textarea>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-success flex-grow-1 fw-bold"
+                            onclick="validerCNI(${idAgent}, 'valider')">
+                            <i class="bi bi-check-circle me-2"></i>
+                            Valider et Activer
+                        </button>
+                        <button class="btn btn-danger flex-grow-1"
+                            onclick="validerCNI(${idAgent}, 'rejeter')">
+                            <i class="bi bi-x-circle me-2"></i>
+                            Rejeter
+                        </button>
+                    </div>
+                </div>
+            </div>`
+    }
+
+    // ── Valider / Rejeter CNI ─────────────────
+    async function validerCNI(idAgent, decision) {
+        const commentaire =
+            document.getElementById('commentaireCNI')?.value
+
+        try {
+            const data = await adminRequest(
+                `/agents/${idAgent}/valider-cni`,
+                'POST',
+                { decision, commentaire }
+            )
+            showAlert(data.message, 'success')
+            modalCNI.hide()
+            chargerAgents()
+        } catch (e) {
+            showAlert(e.data?.message || 'Erreur.', 'danger')
+        }
+    }
+
+    // ── Activer / Suspendre / Supprimer ───────
+    async function activerAgent(id) {
+        if (!confirm('Activer cet agent ?')) return
+        await adminRequest(`/agents/${id}/activer`, 'PUT')
+        showAlert('Agent activé ✅', 'success')
+        chargerAgents()
+    }
+
+    async function suspendreAgent(id) {
+        if (!confirm('Suspendre cet agent ?')) return
+        await adminRequest(`/agents/${id}/suspendre`, 'PUT')
+        showAlert('Agent suspendu.', 'warning')
+        chargerAgents()
+    }
+
+    async function supprimerAgent(id) {
+        if (!confirm('Supprimer définitivement cet agent et toutes ses annonces ?')) return
+        await adminRequest(`/agents/${id}`, 'DELETE')
+        showAlert('Agent supprimé.', 'success')
+        chargerAgents()
+    }
+
+    // ── Pagination ────────────────────────────
+    function afficherPagination(data, containerId, fn) {
+        if (data.last_page <= 1) {
+            document.getElementById(containerId).innerHTML = ''
+            return
+        }
+        let html = '<ul class="pagination justify-content-center mb-0">'
+        for (let i = 1; i <= data.last_page; i++) {
+            html += `
+                <li class="page-item ${i === data.current_page ? 'active' : ''}">
+                    <button class="page-link" onclick="${fn.name}(${i})">
+                        ${i}
+                    </button>
+                </li>`
+        }
+        html += '</ul>'
+        document.getElementById(containerId).innerHTML = html
+    }
+
+    function showAlert(msg, type) {
+        document.getElementById('alertContainer').innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show">
+                ${msg}
+                <button type="button" class="btn-close"
+                    data-bs-dismiss="alert"></button>
+            </div>`
+        setTimeout(() => {
+            document.querySelector('.alert')?.remove()
+        }, 4000)
+    }
+
+    chargerAgents()
+</script>
+</body>
+</html>

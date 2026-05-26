@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>   
+     <link rel="shortcut icon" href="../favicon.png" type="image/png">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — Admin SIMMo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+    <style>
+        .admin-layout {
+            display    : flex;
+            min-height : 100vh;
+        }
+        #adminSidebar {
+            width      : 240px;
+            min-width  : 240px;
+            background : white;
+            border-right: 1px solid #e2e8f0;
+            display    : flex;
+            flex-direction: column;
+            position   : sticky;
+            top        : 0;
+            height     : 100vh;
+            overflow-y : auto;
+        }
+        .admin-main {
+            flex       : 1;
+            background : #f8fafc;
+            overflow-x : hidden;
+        }
+        .stat-card {
+            background   : white;
+            border-radius: 16px;
+            border       : 1px solid #e2e8f0;
+            padding      : 20px;
+        }
+        .stat-icon {
+            width        : 48px;
+            height       : 48px;
+            border-radius: 12px;
+            display      : flex;
+            align-items  : center;
+            justify-content: center;
+            font-size    : 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="admin-layout">
+
+    <!-- SIDEBAR -->
+    <div id="adminSidebar"></div>
+
+    <!-- CONTENU PRINCIPAL -->
+    <div class="admin-main p-4">
+
+        <!-- En-tête -->
+        <div class="d-flex justify-content-between
+            align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-0">Tableau de bord</h3>
+                <p class="text-muted small mb-0">
+                    Vue d'ensemble de la plateforme SIMMo
+                </p>
+            </div>
+            <div class="text-muted small">
+                <i class="bi bi-clock me-1"></i>
+                <span id="dateCourante"></span>
+            </div>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <!-- ── STATISTIQUES GLOBALES ───── -->
+        <div class="row g-3 mb-4" id="statsContainer">
+            <div class="col-12 text-center py-4">
+                <div class="spinner-border text-primary"></div>
+            </div>
+        </div>
+
+        <!-- ── CNI EN ATTENTE ──────────── -->
+        <div class="row g-4 mb-4">
+            <div class="col-12 col-lg-6">
+                <div class="bg-white rounded-3 border p-4">
+                    <div class="d-flex justify-content-between
+                        align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-id-card text-warning me-2"></i>
+                            CNI en attente de validation
+                        </h5>
+                        <a href="agents.html?statut=en_attente"
+                            class="text-primary small">
+                            Voir tout
+                        </a>
+                    </div>
+                    <div id="cniEnAttente">
+                        <div class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm
+                                text-primary"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── DERNIERS AGENTS ─────── -->
+            <div class="col-12 col-lg-6">
+                <div class="bg-white rounded-3 border p-4">
+                    <div class="d-flex justify-content-between
+                        align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-person-badge
+                                text-primary me-2"></i>
+                            Derniers agents inscrits
+                        </h5>
+                        <a href="agents.html" class="text-primary small">
+                            Voir tout
+                        </a>
+                    </div>
+                    <div id="derniersAgents">
+                        <div class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm
+                                text-primary"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── ÉVOLUTION MENSUELLE ─────── -->
+        <div class="bg-white rounded-3 border p-4">
+            <h5 class="fw-bold mb-4">
+                <i class="bi bi-graph-up text-primary me-2"></i>
+                Évolution des 6 derniers mois
+            </h5>
+            <div id="tableEvolution">
+                <div class="text-center py-3">
+                    <div class="spinner-border spinner-border-sm
+                        text-primary"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/config.js"></script>
+<script src="js/admin.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (!getAdminToken()) {
+        document.body.innerHTML = `
+            <div style="display:flex;align-items:center;
+                justify-content:center;height:100vh;
+                background:#0f172a;color:white;
+                flex-direction:column;gap:16px">
+                <i class="bi bi-shield-lock" style="font-size:4rem"></i>
+                <h3>Accès refusé</h3>
+                <p style="color:rgba(255,255,255,0.5)">
+                    Cette page est réservée aux administrateurs.
+                </p>
+                <a href="login.html"
+                    style="background:#2563eb;color:white;
+                        padding:10px 30px;border-radius:8px;
+                        text-decoration:none;font-weight:bold">
+                    Se connecter
+                </a>
+            </div>`
+        return
+    }
+    // Continuer l'initialisation normale
+    init()
+})
+    // ── Init ─────────────────────────────────
+    initAdminNavbar('dashboard.html')
+    document.getElementById('dateCourante').textContent =
+        new Date().toLocaleDateString('fr-FR', {
+            weekday: 'long', day: 'numeric',
+            month: 'long', year: 'numeric'
+        })
+
+    // ── Charger le dashboard ──────────────────
+    async function chargerDashboard() {
+        try {
+            const data = await adminRequest('/dashboard')
+
+            //  Statistiques
+            const stats = data.stats
+            document.getElementById('statsContainer').innerHTML = `
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-primary bg-opacity-10 mb-3">
+                            <i class="bi bi-people text-primary"></i>
+                        </div>
+                        <h3 class="fw-bold mb-0">${stats.total_utilisateurs}</h3>
+                        <p class="text-muted small mb-1">Utilisateurs</p>
+                        <small class="text-success">
+                            +${stats.nouveaux_ce_mois} ce mois
+                        </small>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-success bg-opacity-10 mb-3">
+                            <i class="bi bi-person-badge text-success"></i>
+                        </div>
+                        <h3 class="fw-bold mb-0">${stats.total_agents}</h3>
+                        <p class="text-muted small mb-1">Agents</p>
+                        <small class="text-warning">
+                            ${stats.agents_en_attente} en attente
+                        </small>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-warning bg-opacity-10 mb-3">
+                            <i class="bi bi-house text-warning"></i>
+                        </div>
+                        <h3 class="fw-bold mb-0">${stats.total_annonces}</h3>
+                        <p class="text-muted small mb-1">Annonces</p>
+                        <small class="text-success">
+                            ${stats.annonces_actives} actives
+                        </small>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-info bg-opacity-10 mb-3">
+                            <i class="bi bi-cash-stack text-info"></i>
+                        </div>
+                        <h3 class="fw-bold mb-0">
+                            ${Number(stats.revenus_ce_mois)
+                                .toLocaleString('fr-FR')} F
+                        </h3>
+                        <p class="text-muted small mb-1">Revenus ce mois</p>
+                        <small class="text-muted">
+                            Total: ${Number(stats.revenus_total)
+                                .toLocaleString('fr-FR')} F
+                        </small>
+                    </div>
+                </div>
+            `
+
+            //  CNI en attente
+            const cni = data.cni_en_attente
+            document.getElementById('cniEnAttente').innerHTML =
+                cni.length === 0
+                    ? '<p class="text-muted small text-center py-3">Aucune CNI en attente ✅</p>'
+                    : cni.map(c => `
+                        <div class="d-flex align-items-center gap-3
+                            p-2 rounded-3 mb-2 bg-warning bg-opacity-10">
+                            <i class="bi bi-id-card text-warning fs-4"></i>
+                            <div class="flex-grow-1">
+                                <p class="fw-semibold small mb-0">
+                                    ${c.agent?.prenom} ${c.agent?.nom}
+                                </p>
+                                <p class="text-muted" style="font-size:11px;margin:0">
+                                    ${formatDate(c.created_at)}
+                                </p>
+                            </div>
+                            <a href="agents.html?id=${c.id_agent}"
+                                class="btn btn-warning btn-sm fw-bold">
+                                Valider
+                            </a>
+                        </div>`).join('')
+
+            //  Derniers agents
+            const agents = data.derniers_agents
+            document.getElementById('derniersAgents').innerHTML =
+                agents.map(a => `
+                    <div class="d-flex align-items-center gap-3 p-2
+                        rounded-3 mb-2 hover-bg">
+                        <div class="bg-primary text-white rounded-circle
+                            d-flex align-items-center justify-content-center
+                            fw-bold flex-shrink-0"
+                            style="width:36px;height:36px;font-size:14px">
+                            ${a.prenom?.[0]?.toUpperCase()}
+                        </div>
+                        <div class="flex-grow-1">
+                            <p class="fw-semibold small mb-0">
+                                ${a.prenom} ${a.nom}
+                            </p>
+                            <p class="text-muted" style="font-size:11px;margin:0">
+                                ${a.email}
+                            </p>
+                        </div>
+                        ${badgeStatut(a.statut)}
+                    </div>`).join('')
+
+            //  Évolution mensuelle
+            const evo = data.evolution_mensuelle
+            document.getElementById('tableEvolution').innerHTML = `
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Mois</th>
+                                <th class="text-center">Utilisateurs</th>
+                                <th class="text-center">Agents</th>
+                                <th class="text-center">Annonces</th>
+                                <th class="text-end">Revenus</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${evo.map(e => `
+                                <tr>
+                                    <td class="fw-semibold">${e.mois}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary bg-opacity-10
+                                            text-primary">
+                                            +${e.utilisateurs}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success bg-opacity-10
+                                            text-success">
+                                            +${e.agents}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-warning bg-opacity-10
+                                            text-warning">
+                                            +${e.annonces}
+                                        </span>
+                                    </td>
+                                    <td class="text-end fw-semibold">
+                                        ${Number(e.revenus)
+                                            .toLocaleString('fr-FR')} F
+                                    </td>
+                                </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>`
+
+        } catch (e) {
+            console.error(e)
+            document.getElementById('statsContainer').innerHTML =
+                '<div class="col-12"><div class="alert alert-danger">Erreur de chargement.</div></div>'
+        }
+    }
+
+    chargerDashboard()
+</script>
+</body>
+</html>

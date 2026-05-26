@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mes Favoris — SIMMo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top border-bottom">
+    <div class="container">
+        <a class="navbar-brand fw-bold fs-4" href="index.html">
+            <i class="bi bi-buildings text-primary me-1"></i>SIMMo
+        </a>
+        <div class="d-flex gap-2" id="navAuth"></div>
+    </div>
+</nav>
+
+<div class="container py-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-0">
+                <i class="bi bi-heart-fill text-danger me-2"></i>
+                Mes Favoris
+            </h3>
+            <p class="text-muted small mb-0" id="nbFavoris"></p>
+        </div>
+        <button class="btn btn-outline-danger btn-sm"
+            onclick="viderFavoris()">
+            <i class="bi bi-trash me-2"></i>
+            Tout vider
+        </button>
+    </div>
+
+    <div id="alertContainer"></div>
+
+    <div class="row g-4" id="listeFavoris">
+        <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary"></div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!estConnecte() || estAgent()) {
+            window.location.href = 'login.html'
+            return
+        }
+        initNavbar()
+        chargerFavoris()
+    })
+
+    function initNavbar() {
+        var user    = getUser()
+        var navAuth = document.getElementById('navAuth')
+        navAuth.innerHTML =
+            '<span class="small fw-semibold me-2">' +
+                (user ? user.prenom : '') +
+            '</span>' +
+            '<button class="btn btn-outline-danger btn-sm"' +
+                ' onclick="deconnexion()">' +
+                '<i class="bi bi-box-arrow-right"></i>' +
+            '</button>'
+    }
+
+    async function chargerFavoris() {
+        try {
+            var data     = await apiRequest(
+                '/utilisateur/favoris', 'GET', null, true
+            )
+            var favoris  = data.data || []
+            var nbEl     = document.getElementById('nbFavoris')
+            var container = document.getElementById('listeFavoris')
+
+            if (nbEl) {
+                nbEl.textContent = favoris.length + ' favori(s)'
+            }
+
+            if (favoris.length === 0) {
+                container.innerHTML =
+                    '<div class="col-12 text-center py-5">' +
+                        '<i class="bi bi-heart fs-1 d-block mb-3' +
+                            ' text-muted opacity-25"></i>' +
+                        '<h5 class="text-muted">Aucun favori</h5>' +
+                        '<p class="text-muted small mb-4">' +
+                            'Ajoutez des annonces a vos favoris' +
+                            ' en cliquant sur le bouton coeur.' +
+                        '</p>' +
+                        '<a href="annonces.html"' +
+                            ' class="btn btn-primary">' +
+                            'Parcourir les annonces' +
+                        '</a>' +
+                    '</div>'
+                return
+            }
+
+            container.innerHTML = favoris.map(function(f) {
+                var a         = f.annonce
+                if (!a) return ''
+
+                var urlPhoto
+                if (a.photo_principale &&
+                    a.photo_principale.chemin_image) {
+                    urlPhoto = CONFIG.STORAGE_URL + '/' +
+                        a.photo_principale.chemin_image
+                } else {
+                    urlPhoto = 'https://placehold.co/' +
+                        '400x250/e2e8f0/64748b?text=SIMMo'
+                }
+
+                var ville = a.localisation
+                    ? a.localisation.ville : ''
+                var cat   = a.categorie
+                    ? a.categorie.libelle : ''
+
+                return '<div class="col-12 col-md-6 col-lg-4">' +
+                    '<div class="carte-annonce card border-0 shadow-sm">' +
+                        '<div class="card-img-wrapper position-relative">' +
+                            '<a href="annonce-detail.html?id=' +
+                                a.id + '">' +
+                                '<img src="' + urlPhoto + '"' +
+                                    ' class="card-img-top"' +
+                                    ' alt="' + a.titre + '"' +
+                                    ' onerror="this.onerror=null;' +
+                                    "this.src='https://placehold.co/" +
+                                    "400x250/e2e8f0/64748b?text=SIMMo'" +
+                                    '">' +
+                            '</a>' +
+                            '<button' +
+                                ' class="btn btn-danger btn-sm' +
+                                ' position-absolute top-0 end-0 m-2' +
+                                ' rounded-circle"' +
+                                ' style="width:32px;height:32px;' +
+                                    'padding:0"' +
+                                ' onclick="retirerFavori(' + a.id + ', this)"' +
+                                ' title="Retirer des favoris">' +
+                                '<i class="bi bi-heart-fill"' +
+                                    ' style="font-size:14px"></i>' +
+                            '</button>' +
+                        '</div>' +
+                        '<div class="card-body">' +
+                            '<p class="text-primary small fw-bold' +
+                                ' text-uppercase mb-1">' +
+                                cat +
+                            '</p>' +
+                            '<h5 class="card-title fw-bold text-truncate">' +
+                                a.titre +
+                            '</h5>' +
+                            '<p class="text-muted small mb-2">' +
+                                '<i class="bi bi-geo-alt text-primary"></i> ' +
+                                ville +
+                            '</p>' +
+                            '<div class="d-flex justify-content-between' +
+                                ' align-items-center">' +
+                                '<span class="prix-annonce">' +
+                                    formatPrix(a.prix) +
+                                    (a.type_transaction === 'location'
+                                        ? '<span class="text-muted' +
+                                          ' fs-6 fw-normal">/mois</span>'
+                                        : '') +
+                                '</span>' +
+                                '<a href="annonce-detail.html?id=' +
+                                    a.id + '"' +
+                                    ' class="btn btn-primary btn-sm">' +
+                                    'Voir' +
+                                '</a>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>'
+            }).join('')
+
+        } catch (e) {
+            console.error(e)
+            document.getElementById('listeFavoris').innerHTML =
+                '<div class="col-12">' +
+                    '<div class="alert alert-danger">' +
+                        'Erreur de chargement des favoris.' +
+                    '</div>' +
+                '</div>'
+        }
+    }
+
+    async function retirerFavori(idAnnonce, btn) {
+        try {
+            await apiRequest(
+                '/utilisateur/favoris/' + idAnnonce + '/toggle',
+                'POST', null, true
+            )
+            // Retirer la carte de la liste
+            var carte = btn.closest('.col-12')
+            if (carte) carte.remove()
+
+            // Recompter
+            var restants = document.querySelectorAll('.col-12.col-md-6')
+            var nbEl     = document.getElementById('nbFavoris')
+            if (nbEl) {
+                nbEl.textContent = restants.length + ' favori(s)'
+            }
+            if (restants.length === 0) {
+                chargerFavoris()
+            }
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
+    async function viderFavoris() {
+        if (!confirm('Vider tous vos favoris ?')) return
+        try {
+            await apiRequest(
+                '/utilisateur/favoris', 'DELETE', null, true
+            )
+            showAlert('Favoris vides avec succes.', 'success')
+            chargerFavoris()
+        } catch (e) {
+            showAlert('Erreur lors de la suppression.', 'danger')
+        }
+    }
+
+    function showAlert(msg, type) {
+        document.getElementById('alertContainer').innerHTML =
+            '<div class="alert alert-' + type +
+                ' alert-dismissible fade show">' +
+                msg +
+                '<button type="button" class="btn-close"' +
+                    ' data-bs-dismiss="alert"></button>' +
+            '</div>'
+        setTimeout(function() {
+            var el = document.querySelector('.alert')
+            if (el) el.remove()
+        }, 3000)
+    }
+
+</script>
+</body>
+</html>

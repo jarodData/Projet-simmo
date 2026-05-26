@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+        <link rel="shortcut icon" href="favicon.png" type="image/png">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détail annonce — SIMMo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold fs-4" href="index.html">
+            <i class="bi bi-buildings text-primary me-1"></i>SIMm<span class="text-primary">o</span>
+        </a>
+
+        <div class="d-flex gap-2" id="navAuth"></div>
+    </div>
+    
+</nav>
+
+<div class="container py-5" id="pageContent">
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary"></div>
+        <p class="text-muted mt-2">Chargement de l'annonce...</p>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="bg-dark text-white py-4">
+    <div class="container text-center">
+        <p class="mb-0">© 2026 SIMMo</p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+    let annonceActuelle = null;
+    
+   // ── Navbar ───────────────────────────────
+   function initNavbar() {
+
+    const navAuth      = document.getElementById('navAuth')
+    const navDashboard = document.getElementById('navDashboard')
+
+        if (!navAuth) return //
+    if (estConnecte()) {
+        const user = getUser()
+        if (estAgent()) 
+       if (navDashboard && estAgent()) {
+            navDashboard.style.display = 'flex'
+        }
+
+
+        navAuth.innerHTML =
+            '<div class="dropdown">' +
+                '<button class="btn btn-light dropdown-toggle' +
+                    ' d-flex align-items-center gap-2"' +
+                    ' type="button" data-bs-toggle="dropdown">' +
+                    '<div class="bg-primary text-white rounded-circle' +
+                        ' d-flex align-items-center justify-content-center' +
+                        ' fw-bold"' +
+                        ' style="width:30px;height:30px;font-size:12px">' +
+                        (user ? user.prenom[0].toUpperCase() : 'U') +
+                    '</div>' +
+                    '<span class="fw-semibold small d-none d-md-inline">' +
+                        (user ? user.prenom : '') +
+                    '</span>' +
+                '</button>' +
+
+                '<ul class="dropdown-menu dropdown-menu-end' +
+                    ' shadow border-0">' +
+
+                    //  Profil
+                    '<li>' +
+                        '<a class="dropdown-item" href="profil.html">' +
+                            '<i class="bi bi-person me-2 text-primary"></i>' +
+                            'Mon profil' +
+                        '</a>' +
+                    '</li>' +
+
+                    //  Favoris — UNIQUEMENT pour les utilisateurs
+                    (!estAgent() ?
+                        '<li>' +
+                            '<a class="dropdown-item"' +
+                                ' href="mes-favoris.html">' +
+                                '<i class="bi bi-heart-fill' +
+                                    ' text-danger me-2"></i>' +
+                                'Mes favoris' +
+                            '</a>' +
+                        '</li>'
+                    : '') +
+
+                    //  Dashboard — UNIQUEMENT pour les agents
+                    (estAgent() ?
+                        '<li>' +
+                            '<a class="dropdown-item"' +
+                                ' href="dashboard.html">' +
+                                '<i class="bi bi-grid' +
+                                    ' me-2 text-primary"></i>' +
+                                'Dashboard' +
+                            '</a>' +
+                        '</li>' +
+                        '<li>' +
+                            '<a class="dropdown-item"' +
+                                ' href="chats.html">' +
+                                '<i class="bi bi-chat-dots' +
+                                    ' me-2 text-primary"></i>' +
+                                'Mes messages' +
+                            '</a>' +
+                        '</li>'
+                    : '') +
+
+                    //  Divider
+                    '<li><hr class="dropdown-divider"></li>' +
+
+                    // Deconnexion
+                    '<li>' +
+                        '<button class="dropdown-item text-danger"' +
+                            ' onclick="deconnexion()">' +
+                            '<i class="bi bi-box-arrow-right me-2"></i>' +
+                            'Deconnexion' +
+                        '</button>' +
+                    '</li>' +
+
+                '</ul>' +
+            '</div>'
+
+    } else {
+        navAuth.innerHTML =
+            '<a href="login.html"' +
+                ' class="btn btn-outline-primary btn-sm">' +
+                'Connexion' +
+            '</a>' +
+            '<a href="register.html"' +
+                ' class="btn btn-primary btn-sm">' +
+                "S'inscrire" +
+            '</a>'
+    }
+}
+    
+
+   // ── Charger annonces similaires via IA ───────
+async function chargerSimilairesIA(annonce) {
+    try {
+        const criteresIA = buildCriteresIA({
+            type_bien       : annonce.categorie?.libelle,
+            type_transaction: annonce.type_transaction,
+            ville           : annonce.localisation?.ville,
+            budget_max      : annonce.prix * 1.5,
+            limite          : 3,
+        })
+
+        const iaData = await appelIA('/recommander', criteresIA)
+
+        if (iaData && iaData.recommandations?.length > 0) {
+            // Filtrer pour exclure l'annonce courante
+            return iaData.recommandations
+                .filter(r => r.id_annonce != annonce.id)
+                .slice(0, 3)
+                .map(r => ({
+                    id    : r.id_annonce,
+                    titre : r.titre,
+                    prix  : r.prix,
+                    type_transaction: r.type_transaction,
+                    score_ia: r.score_final,
+                    raison  : r.raison,
+                    localisation: {
+                        ville   : r.ville,
+                        quartier: r.quartier,
+                    },
+                    photo_principale: { chemin_image: r.photo },
+                }))
+        }
+        return []
+    } catch (e) {
+        return []
+    }
+}
+
+// ── Modifier chargerAnnonce() ─────────────────
+async function chargerAnnonce() {
+
+    const params = new URLSearchParams(window.location.search)
+    const id     = params.get('id')
+
+    // Vérification de l'ID
+    if (!id || isNaN(parseInt(id))) {
+        document.getElementById('pageContent').innerHTML = `
+            <div class="text-center py-5">
+                <h4 class="text-danger">ID d'annonce invalide</h4>
+                <a href="annonces.html" class="btn btn-primary mt-3">
+                    Retour aux annonces
+                </a>
+            </div>`
+        return
+    }
+
+    try {
+        // Afficher le spinner pendant le chargement
+        document.getElementById('pageContent').innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary"></div>
+                <p class="text-muted mt-2">Chargement...</p>
+            </div>`
+
+        const reponse = await fetch(
+            CONFIG.API_URL + '/annonces/' + id,
+            {
+                headers: { 'Accept': 'application/json' }
+            }
+        )
+
+        if (!reponse.ok) {
+            if (reponse.status === 404) {
+                afficherErreur('Cette annonce n\'existe pas.')
+            } else {
+                afficherErreur('Erreur serveur (' + reponse.status + ')')
+            }
+            return
+        }
+
+        const data     = await reponse.json()
+        const annonce  = data.annonce || data
+        const similaires = data.similaires || []
+
+        if (!annonce || !annonce.id) {
+            afficherErreur('Annonce introuvable.')
+            return
+        }
+
+        afficherAnnonce(annonce, similaires)
+
+    } catch (e) {
+        console.error('Erreur detail annonce:', e)
+        afficherErreur(
+            'Erreur de connexion. ' +
+            'Vérifiez que Laravel est démarré sur le port 8000.'
+        )
+    }
+}
+
+function afficherErreur(message) {
+    document.getElementById('pageContent').innerHTML = `
+        <div class="text-center py-5">
+            <div class="bg-danger bg-opacity-10 rounded-circle
+                d-inline-flex p-4 mb-4">
+                <i class="bi bi-exclamation-circle text-danger"
+                    style="font-size:3rem"></i>
+            </div>
+            <h4 class="fw-bold text-danger">${message}</h4>
+            <p class="text-muted mt-2 mb-4">
+                Serveur Laravel : http://localhost:8000
+            </p>
+            <a href="annonces.html" class="btn btn-primary px-5">
+                Retour aux annonces
+            </a>
+        </div>`
+}
+// ── Afficher l'annonce ────────────────────
+    function afficherAnnonce(a, similaires = []) {
+        annonceActuelle = a;
+        const photos  = a.photos || []
+        const photoP  = imageUrl(photos[0]?.chemin_image)
+        document.title = `${a.titre} — SIMMo`
+
+        // Caractéristiques
+        const caract = [
+            a.nb_chambres    && `
+                <div class="col-6 col-md-3">
+                    <div class="text-center p-3 bg-light rounded-3">
+                        <i class="bi bi-door-closed fs-4 text-primary d-block mb-1"></i>
+                        <strong>${a.nb_chambres}</strong>
+                        <p class="small text-muted mb-0">Chambres</p>
+                    </div>
+                </div>`,
+            a.nb_salles_bain && `
+                <div class="col-6 col-md-3">
+                    <div class="text-center p-3 bg-light rounded-3">
+                        <i class="bi bi-droplet fs-4 text-primary d-block mb-1"></i>
+                        <strong>${a.nb_salles_bain}</strong>
+                        <p class="small text-muted mb-0">Salles de bain</p>
+                    </div>
+                </div>`,
+            a.surface_m2     && `
+                <div class="col-6 col-md-3">
+                    <div class="text-center p-3 bg-light rounded-3">
+                        <i class="bi bi-aspect-ratio fs-4 text-primary d-block mb-1"></i>
+                        <strong>${a.surface_m2} m²</strong>
+                        <p class="small text-muted mb-0">Surface</p>
+                    </div>
+                </div>`,
+            a.nb_pieces      && `
+                <div class="col-6 col-md-3">
+                    <div class="text-center p-3 bg-light rounded-3">
+                        <i class="bi bi-grid fs-4 text-primary d-block mb-1"></i>
+                        <strong>${a.nb_pieces}</strong>
+                        <p class="small text-muted mb-0">Pièces</p>
+                    </div>
+                </div>`,
+        ].filter(Boolean).join('')
+
+        // Miniatures photos
+        const miniatures = photos.length > 1
+            ? photos.map((p, i) => `
+                <img src="${imageUrl(p.chemin_image)}"
+                    class="rounded-2 border-2 ${i === 0 ? 'border-primary' : ''}"
+                    style="width:60px;height:50px;object-fit:cover;
+                           cursor:pointer;border-style:solid;border-width:2px;
+                           border-color:${i === 0 ? '#0d6efd' : '#dee2e6'}"
+                    onclick="changerPhoto('${imageUrl(p.chemin_image)}', this)"
+                    alt="Photo ${i + 1}">`
+            ).join('')
+            : ''
+
+        // Annonces similaires
+        const htmlSimilaires = similaires.length > 0 ? `
+            <div class="mt-5">
+                <h4 class="fw-bold mb-4">Annonces similaires</h4>
+                <div class="row g-4">
+                    ${similaires.map(s => `
+                        <div class="col-12 col-md-4">
+                            <a href="annonce-detail.html?id=${s.id}"
+                                class="carte-annonce card border-0 shadow-sm">
+                                <div class="card-img-wrapper">
+                                    <img src="${imageUrl(s.photo_principale?.chemin_image)}"
+                                        class="card-img-top" alt="${s.titre}">
+                                    <span class="badge badge-transaction
+                                        ${s.type_transaction === 'location'
+                                            ? 'bg-primary' : 'bg-success'}">
+                                        ${s.type_transaction === 'location'
+                                            ? '🔑 Location' : '🏠 Vente'}
+                                    </span>
+                                </div>
+                                <div class="card-body">
+                                    <h6 class="fw-bold text-truncate">${s.titre}</h6>
+                                    <p class="text-muted small mb-2">
+                                        <i class="bi bi-geo-alt text-primary"></i>
+                                        ${s.localisation?.ville || ''}
+                                    </p>
+                                    <span class="prix-annonce">
+                                        ${formatPrix(s.prix)}
+                                    </span>
+                                </div>
+                            </a>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>` : ''
+            // Bouton favori
+
+
+// Ajouter dans le HTML généré après la carte partager
+
+        // Bouton contact selon connexion
+        const btnContact = estConnecte()
+            ? `<button type="submit" id="btnContact" class="btn btn-primary w-100">
+                    <i class="bi bi-send me-2"></i>Contacter l'agent
+               </button>`
+            : `<button type="button" class="btn btn-secondary w-100"
+                    onclick="verifierActionConnectee('contacter un agent')">
+                    <i class="bi bi-lock me-2"></i>Connectez-vous pour contacter
+               </button>`
+               // Message
+const btnChat = estConnecte() && !estAgent()
+    ? `<a href="chats.html?agent=${a.agent?.id}&annonce=${a.id}"
+           class="btn btn-outline-primary w-100 mt-2">
+           <i class="bi bi-chat-dots me-2"></i>
+           Ouvrir le chat
+       </a>`
+    : ''
+
+        document.getElementById('pageContent').innerHTML = `
+
+            <!-- Fil d'ariane -->
+            <nav class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="index.html">Accueil</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="annonces.html">Annonces</a>
+                    </li>
+                    <li class="breadcrumb-item active text-truncate"
+                        style="max-width:200px">${a.titre}</li>
+                </ol>
+            </nav>
+
+            <div class="row g-4">
+
+                <!-- ── Colonne principale ───── -->
+                <div class="col-12 col-lg-8">
+
+                    <!-- Galerie photos -->
+                    <div class="dashboard-card overflow-hidden mb-4">
+                        <div class="position-relative">
+                            <img id="photoActive"
+                                src="${photoP}"
+                                style="width:100%;height:420px;object-fit:cover"
+                                alt="${a.titre}"
+                                onerror="this.src='https://placehold.co/800x420?text=SIMMo'">
+
+                            <!-- Badges -->
+                            <div class="position-absolute top-0 start-0 m-3 d-flex gap-2">
+                                <span class="badge rounded-pill px-3 py-2
+                                    ${a.type_transaction === 'location'
+                                        ? 'bg-primary' : 'bg-success'}">
+                                    ${a.type_transaction === 'location'
+                                        ? '🔑 Location' : '🏠 Vente'}
+                                </span>
+                                ${a.meuble
+                                    ? '<span class="badge bg-warning text-dark rounded-pill px-3 py-2">Meublé</span>'
+                                    : ''}
+                            </div>
+
+                            <!-- Vues -->
+                            <div class="position-absolute top-0 end-0 m-3">
+                                <span class="badge bg-dark bg-opacity-50
+                                    rounded-pill px-3 py-2">
+                                    <i class="bi bi-eye me-1"></i>${a.vues} vues
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Miniatures -->
+                        ${miniatures
+                            ? `<div class="d-flex gap-2 p-3 overflow-auto">
+                                ${miniatures}
+                               </div>`
+                            : ''}
+                    </div>
+
+                    <!-- Informations -->
+                    <div class="dashboard-card p-4 mb-4">
+                        <div class="d-flex justify-content-between
+                            align-items-start gap-3 mb-3">
+                            <div>
+                                <p class="text-primary small fw-bold
+                                    text-uppercase mb-1">
+                                    ${a.categorie?.libelle || ''}
+                                </p>
+                                <h2 class="fw-bold mb-2">${a.titre}</h2>
+                                <p class="text-muted">
+                                    <i class="bi bi-geo-alt text-primary me-1"></i>
+                                    ${a.localisation?.adresse_complete
+                                        || [a.localisation?.quartier,
+                                            a.localisation?.ville]
+                                           .filter(Boolean).join(', ')
+                                        || 'Localisation non renseignée'}
+                                </p>
+                            </div>
+                            <div class="text-end flex-shrink-0">
+                                <div class="prix-annonce fs-3">
+                                    ${formatPrix(a.prix)}
+                                </div>
+                                ${a.type_transaction === 'location'
+                                    ? '<small class="text-muted">/mois</small>'
+                                    : ''}
+                            </div>
+                        </div>
+
+                        <!-- Caractéristiques -->
+                        ${caract
+                            ? `<div class="row g-3 py-3 border-top border-bottom mb-4">
+                                ${caract}
+                               </div>`
+                            : ''}
+
+                        <!-- Description -->
+                        <h5 class="fw-bold mb-3">Description</h5>
+                        <p class="text-muted lh-lg">
+                            ${a.description?.replace(/\n/g, '<br>') || ''}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- ── Colonne droite ────────── -->
+                <div class="col-12 col-lg-4">
+
+                    <!-- Agent -->
+                    <div class="dashboard-card p-4 mb-4">
+                        <h5 class="fw-bold mb-3">Agent immobilier</h5>
+                        <div class="d-flex align-items-center gap-3 mb-4">
+                            <div class="bg-primary text-white rounded-circle
+                                d-flex align-items-center justify-content-center
+                                fw-bold fs-4 flex-shrink-0"
+                                style="width:50px;height:50px">
+                                ${a.agent?.prenom?.[0]?.toUpperCase() || 'A'}
+                            </div>
+                            <div>
+                                <p class="fw-semibold mb-0">
+                                    ${a.agent?.prenom || ''} ${a.agent?.nom || ''}
+                                </p>
+                                ${a.agent?.plan
+                                    ? `<small class="text-success">
+                                        <i class="bi bi-patch-check-fill me-1"></i>
+                                        Agent vérifié — ${a.agent.plan.nom_plan}
+                                       </small>`
+                                    : ''}
+                            </div>
+                        </div>
+
+                        <!-- Formulaire contact -->
+                        <div id="alertContact"></div>
+                        <form id="contactForm">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">
+                                    Votre message *
+                                </label>
+                                <textarea id="messageContact"
+                                    class="form-control" rows="4"
+                                    placeholder="Bonjour, je suis intéressé par ce bien..."
+                                    ${!estConnecte() ? 'disabled' : ''}
+                                    required></textarea>
+                            </div>
+                          <!-- / ${btnContact} -->
+
+                    <button type="button"
+                        class="btn btn-primary w-100 mt-3"
+                        onclick="demarrerChat(${a.agent.id})">
+
+                        <i class="bi bi-chat-dots me-2"></i>
+                        Contacter l'agent
+
+                    </button>
+                                                                        
+                        </form>
+                    </div>
+
+                    <!-- Localisation -->
+                    <div class="dashboard-card p-4 mb-4">
+                        <h5 class="fw-bold mb-3">Localisation</h5>
+                        <p class="text-muted small">
+                            <i class="bi bi-geo-alt text-primary me-1"></i>
+                            ${a.localisation?.adresse_complete
+                                || a.localisation?.ville
+                                || 'Non renseignée'}
+                        </p>
+                        ${a.localisation?.latitude && a.localisation?.longitude
+                            ? `<div class="rounded-3 overflow-hidden mt-2"
+                                    style="height:160px">
+                                <iframe width="100%" height="100%"
+                                    frameborder="0" style="border:0"
+                                    src="https://maps.google.com/maps?q=${a.localisation.latitude},${a.localisation.longitude}&z=15&output=embed">
+                                </iframe>
+                               </div>`
+                            : ''}
+                    </div>
+                        
+                    <!-- Partager -->
+                    <div class="dashboard-card p-3 text-center">
+                        <button class="btn btn-outline-secondary btn-sm w-100"
+                            onclick="copierLien()">
+                            <i class="bi bi-share me-2"></i>Copier le lien
+                        </button>
+                        
+                    </div>
+                </div>
+            </div>
+
+            <!-- Annonces similaires -->
+            ${htmlSimilaires}
+            
+        `
+// Bouton favori
+
+// Ajouter dans le HTML généré après la carte partager
+        // Attacher les événements après rendu
+       
+        const form = document.getElementById('contactForm')
+        if (form && estConnecte()) {
+            form.addEventListener('submit', envoyerContact)
+        }
+    }
+
+    async function demarrerChat(agentId) {
+    const user = getUser()
+    if (!user) { window.location.href = "login.html"; return }
+
+    try {
+        const res = await apiRequest('/chat/demarrer', 'POST', {
+            id_utilisateur: user.id,
+            id_agent: agentId,
+            id_annonce: annonceActuelle.id
+        }, true)
+
+        console.log("RES COMPLET:", res)      // ← regarde ce que contient res
+        console.log("RES ID:", res.id)        // ← est-ce undefined ?
+        console.log("RES KEYS:", Object.keys(res)) // ← quelles clés existent ?
+
+                window.location.href = "chats.html?conversation=" + res.id
+
+        if (!res.id) {
+            alert("Erreur: pas d'ID retourné — " + JSON.stringify(res))
+            return
+        }
+
+
+    } catch(e) {
+        console.error("Erreur chat:", e)
+    }
+}
+
+    // Vérifier si favori au chargement
+async function verifierFavori(idAnnonce) {
+    if (!estConnecte() || estAgent()) return
+
+    try {
+        var data = await apiRequest(
+            '/utilisateur/favoris/' + idAnnonce + '/verifier',
+            'GET', null, true
+        )
+        mettreAJourBtnFavori(data.est_favori)
+    } catch (e) {
+        console.error(e)
+    }
+}
+
+// Toggle favori
+async function toggleFavori(idAnnonce) {
+    if (!verifierActionConnectee('ajouter aux favoris')) return
+
+    try {
+        var data = await apiRequest(
+            '/utilisateur/favoris/' + idAnnonce + '/toggle',
+            'POST', null, true
+        )
+        mettreAJourBtnFavori(data.est_favori)
+        showAlert(data.message, 'success', 'alertContact')
+    } catch (e) {
+        console.error(e)
+    }
+}
+
+// Mettre à jour le bouton favori
+function mettreAJourBtnFavori(estFavori) {
+    var btn = document.getElementById('btnFavori')
+    if (!btn) return
+
+    if (estFavori) {
+        btn.innerHTML =
+            '<i class="bi bi-heart-fill me-2 text-danger"></i>' +
+            'Retire des favoris'
+        btn.classList.remove('btn-outline-danger')
+        btn.classList.add('btn-danger')
+    } else {
+        btn.innerHTML =
+            '<i class="bi bi-heart me-2"></i>' +
+            'Ajouter aux favoris'
+        btn.classList.remove('btn-danger')
+        btn.classList.add('btn-outline-danger')
+    }
+}
+
+    //  Afficher dynamiquement le bon état du bouton
+function mettreAJourBoutonContact() {
+    const btn = document.getElementById('btnContact')
+    if (!btn) return
+
+    if (!estConnecte()) {
+        btn.innerHTML  = '<i class="bi bi-lock me-2"></i>Connectez-vous pour contacter'
+        btn.classList.replace('btn-primary', 'btn-secondary')
+    } else {
+        btn.innerHTML  = '<i class="bi bi-send me-2"></i>Contacter l\'agent'
+        btn.classList.replace('btn-secondary', 'btn-primary')
+    }
+}
+
+   // ── Changer la photo active ───────────────
+    function changerPhoto(url, el) {
+        document.getElementById('photoActive').src = url
+
+        // Reset bordures
+        document.querySelectorAll('[onclick^="changerPhoto"]').forEach(img => {
+            img.style.borderColor = '#dee2e6'
+        })
+        el.style.borderColor = '#0d6efd'
+    }
+
+
+    // ── Copier le lien ────────────────────────
+    function copierLien() {
+        navigator.clipboard.writeText(window.location.href)
+            .then(() => {
+                showAlert(' Lien copié dans le presse-papier !', 'success')
+            })
+            .catch(() => {
+                showAlert('Impossible de copier le lien.', 'warning')
+            })
+    }
+
+
+async function contacterAgent(){
+
+    // utilisateur connecté ?
+    if(!estConnecte()){
+
+        alert(
+            'Connectez-vous pour contacter l’agent.'
+        )
+
+        window.location.href =
+            'login.html'
+
+        return
+    }
+
+    try{
+
+        const user = getUser()
+
+        const data = await apiRequest(
+            '/chat/demarrer',
+            'POST',
+            {
+                id_utilisateur : user.id,
+                id_agent       : annonceActuelle.id_agent,
+            },
+            true
+        )
+
+        // redirection chat
+        window.location.href =
+            'chats.html?conversation=' + data.id
+
+    } catch(e){
+
+        console.error(e)
+
+        alert(
+            'Erreur ouverture chat'
+        )
+
+    }
+}
+
+    // ── Envoyer un message à l'agent ──────────
+    async function envoyerContact(e) {
+        e.preventDefault()
+
+        if (!verifierActionConnectee(
+            'contacter un agent',
+            window.location.href
+        )) return
+
+        const params = new URLSearchParams(window.location.search)
+        const id     = params.get('id')
+        const msg    = document.getElementById('messageContact').value.trim()
+
+        if (!msg) {
+            showAlert('Veuillez écrire un message.', 'warning', 'alertContact')
+            return
+        }
+
+        showSpinner('btnContact', 'Envoi...')
+
+        try {
+            await apiRequest('/utilisateur/contacter', 'POST', {
+                id_annonce : parseInt(id),
+                message    : msg,
+            }, true)
+
+            showAlert(
+                ' Message envoyé avec succès à l\'agent !',
+                'success',
+                'alertContact'
+            )
+            document.getElementById('messageContact').value = ''
+
+        } catch (err) {
+            const msg = err.data?.message || 'Erreur lors de l\'envoi.'
+            showAlert(msg, 'danger', 'alertContact')
+        } finally {
+            hideSpinner('btnContact', '<i class="bi bi-send me-2"></i>Contacter l\'agent')
+        }
+    }
+
+        // ── Afficher une erreur ───────────────────
+    function afficherErreur(message) {
+        document.getElementById('pageContent').innerHTML = `
+            <div class="text-center py-5">
+                <div class="bg-danger bg-opacity-10 rounded-circle
+                    d-inline-flex p-4 mb-4">
+                    <i class="bi bi-exclamation-circle text-danger fs-1"></i>
+                </div>
+                <h4 class="fw-bold text-danger">${message}</h4>
+                <p class="text-muted mt-2 mb-4">
+                    L'annonce que vous cherchez n'est pas disponible.
+                </p>
+                <a href="annonces.html" class="btn btn-primary px-5">
+                    <i class="bi bi-arrow-left me-2"></i>
+                    Retour aux annonces
+                </a>
+            </div>`
+    }
+
+
+    // ── Init ─────────────────────────────────
+    initNavbar()
+    chargerAnnonce()
+</script>
+</body>
+</html>

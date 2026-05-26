@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <link rel="shortcut icon" href="favicon.png" type="image/png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription Agent — SIMMo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body class="d-flex align-items-center min-vh-100" style="background:linear-gradient(135deg,#f0fdf4,#f1f5f9)">
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-7">
+
+            <div class="text-center mb-4">
+                <a href="index.html" class="text-decoration-none">
+                    <h2 class="fw-bold text-dark">
+                        <i class="bi bi-buildings text-success me-2"></i>
+                        SIMm<span class="text-primary">o</span>
+                    </h2>
+                </a>
+                <span class="badge bg-success mb-3">Espace Agent</span>
+                <h4 class="fw-bold mb-1">Créer un compte Agent</h4>
+                <p class="text-muted">Rejoignez SIMMo et publiez vos annonces</p>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <div class="auth-card">
+                <form id="registerAgentForm" enctype="multipart/form-data">
+                    <div class="row g-3">
+
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Nom *</label>
+                            <input type="text" id="nom" class="form-control"
+                                placeholder="Mbarga" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Prénom *</label>
+                            <input type="text" id="prenom" class="form-control"
+                                placeholder="Paul" required>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Email professionnel *</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="bi bi-envelope text-muted"></i>
+                                </span>
+                                <input type="email" id="email" class="form-control border-start-0"
+                                    placeholder="agent@agence.cm" required>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Téléphone</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="bi bi-phone text-muted"></i>
+                                </span>
+                                <input type="tel" id="telephone" class="form-control border-start-0"
+                                    placeholder="+237 6XX XXX XXX">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Numéro d'agence</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="bi bi-building text-muted"></i>
+                                </span>
+                                <input type="text" id="numeroAgence" class="form-control border-start-0"
+                                    placeholder="AGC-2024-001">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Mot de passe *</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="bi bi-lock text-muted"></i>
+                                </span>
+                                <input type="password" id="motDePasse" class="form-control border-start-0"
+                                    placeholder="••••••••" required minlength="6">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Confirmer mot de passe *</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="bi bi-lock text-muted"></i>
+                                </span>
+                                <input type="password" id="motDePasseConfirm" class="form-control border-start-0"
+                                    placeholder="••••••••" required>
+                            </div>
+                        </div>
+
+                        <!-- Upload CNI -->
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">
+                                Photocopie CNI *
+                                <span class="text-muted fw-normal small">(JPG, PNG ou PDF — max 5MB)</span>
+                            </label>
+                            <div class="upload-zone border-2 border-dashed rounded-3 p-4 text-center"
+                                id="uploadZone"
+                                style="border-color:#dee2e6;cursor:pointer;transition:all 0.2s"
+                                onclick="document.getElementById('documentCni').click()"
+                                ondragover="event.preventDefault();this.style.borderColor='#0d6efd'"
+                                ondragleave="this.style.borderColor='#dee2e6'"
+                                ondrop="handleDrop(event)">
+                                <i class="bi bi-cloud-upload fs-2 text-muted d-block mb-2"></i>
+                                <p class="text-muted mb-0" id="uploadTexte">
+                                    Cliquez ou glissez votre CNI ici
+                                </p>
+                                <input type="file" id="documentCni" class="d-none"
+                                    accept=".jpg,.jpeg,.png,.pdf"
+                                    onchange="afficherFichier(this)">
+                            </div>
+                        </div>
+
+                        <!-- Info essai gratuit -->
+                        <div class="col-12">
+                            <div class="alert alert-info border-0 d-flex gap-2 align-items-start">
+                                <i class="bi bi-info-circle-fill mt-1"></i>
+                                <div>
+                                    <strong>1 mois d'essai gratuit !</strong><br>
+                                    <small>Après vérification de votre CNI, vous bénéficiez d'un mois gratuit pour tester la plateforme.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <button type="submit" id="btnRegister" class="btn btn-success w-100 py-2">
+                                <i class="bi bi-person-check me-2"></i>Créer mon compte agent
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <p class="text-center text-muted small mt-4 mb-0">
+                    Déjà un compte ?
+                    <a href="login-agent.html" class="text-success fw-semibold">Se connecter</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+    function afficherFichier(input) {
+        const fichier = input.files[0]
+        if (fichier) {
+            document.getElementById('uploadTexte').innerHTML = `
+                <i class="bi bi-check-circle text-success me-1"></i>
+                <strong>${fichier.name}</strong>
+                <span class="text-muted">(${(fichier.size / 1024).toFixed(0)} KB)</span>
+            `
+            document.getElementById('uploadZone').style.borderColor = '#198754'
+        }
+    }
+
+    function handleDrop(e) {
+        e.preventDefault()
+        const fichier = e.dataTransfer.files[0]
+        if (fichier) {
+            document.getElementById('documentCni').files = e.dataTransfer.files
+            afficherFichier(document.getElementById('documentCni'))
+        }
+    }
+
+    document.getElementById('registerAgentForm').addEventListener('submit', async function(e) {
+        e.preventDefault()
+
+        const motDePasse        = document.getElementById('motDePasse').value
+        const motDePasseConfirm = document.getElementById('motDePasseConfirm').value
+        const fichierCni        = document.getElementById('documentCni').files[0]
+
+        if (motDePasse !== motDePasseConfirm) {
+            showAlert('Les mots de passe ne correspondent pas.', 'danger')
+            return
+        }
+
+        if (!fichierCni) {
+            showAlert('Veuillez uploader votre photocopie CNI.', 'danger')
+            return
+        }
+
+        showSpinner('btnRegister', 'Inscription...')
+
+        try {
+            // FormData pour l'upload de fichier
+            const formData = new FormData()
+            formData.append('nom',                       document.getElementById('nom').value)
+            formData.append('prenom',                    document.getElementById('prenom').value)
+            formData.append('email',                     document.getElementById('email').value)
+            formData.append('telephone',                 document.getElementById('telephone').value)
+            formData.append('numero_agence',             document.getElementById('numeroAgence').value)
+            formData.append('mot_de_passe',              motDePasse)
+            formData.append('mot_de_passe_confirmation', motDePasseConfirm)
+            formData.append('document_cni',              fichierCni)
+
+            await apiFormData('/auth/agent/register', formData)
+
+            showAlert(' Inscription réussie ! Vérifiez votre email. Votre CNI sera vérifiée sous 24h.', 'success')
+            setTimeout(() => window.location.href = 'login-agent.html', 3000)
+
+        } catch (err) {
+            const errors = err.data?.errors
+            if (errors) {
+                const msgs = Object.values(errors).flat().join('<br>')
+                showAlert(msgs, 'danger')
+            } else {
+                showAlert(err.data?.message || 'Erreur lors de l\'inscription.', 'danger')
+            }
+            hideSpinner('btnRegister', '<i class="bi bi-person-check me-2"></i>Créer mon compte agent')
+        }
+    })
+</script>
+</body>
+</html>

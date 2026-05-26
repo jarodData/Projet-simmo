@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <link rel="shortcut icon" href="favicon.png" type="image/png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recherche par description — SIMMo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <style>
+        .hero-search {
+            background: linear-gradient(135deg, #0f172a, #1e3a5f);
+            padding: 60px 0 40px;
+            color: white;
+        }
+        .search-box {
+            background: white;
+            border-radius: 20px;
+            padding: 8px 8px 8px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .search-box textarea {
+            border: none;
+            outline: none;
+            flex: 1;
+            font-size: 16px;
+            resize: none;
+            min-height: 60px;
+            padding: 8px 0;
+            color: #0f172a;
+        }
+        .btn-search {
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 14px 24px;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn-search:hover { background: #1d4ed8; transform: scale(1.02); }
+        .btn-search:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
+
+        .suggestion-chip {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 20px;
+            padding: 6px 16px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .suggestion-chip:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-1px);
+        }
+
+        .criteres-extraits {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 14px;
+            padding: 16px 20px;
+        }
+        .critere-tag {
+            background: #2563eb;
+            color: white;
+            border-radius: 20px;
+            padding: 4px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .carte-annonce {
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            transition: all 0.2s;
+            background: white;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .carte-annonce:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+            color: inherit;
+        }
+        .score-bar {
+            height: 4px;
+            border-radius: 2px;
+            background: #e2e8f0;
+            overflow: hidden;
+        }
+        .score-fill {
+            height: 100%;
+            border-radius: 2px;
+            background: linear-gradient(90deg, #2563eb, #0ea5e9);
+            transition: width 0.8s ease;
+        }
+        .match-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #94a3b8;
+        }
+        .typing-indicator {
+            display: inline-flex;
+            gap: 4px;
+            align-items: center;
+        }
+        .typing-indicator span {
+            width: 8px; height: 8px;
+            background: #2563eb;
+            border-radius: 50%;
+            animation: bounce 1s infinite;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-8px); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg" style="background:#0f172a">
+    <div class="container">
+        <a class="navbar-brand fw-bold text-white fs-4" href="index.html">
+            <i class="bi bi-buildings text-primary me-1"></i>
+            SIMm<span class="text-primary">o</span>
+        </a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav me-auto ms-4 gap-2">
+                <li class="nav-item">
+                    <a class="nav-link text-white-50" href="index.html">Accueil</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white-50" href="annonces.html">Annonces</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white fw-bold" href="recherche-description.html">
+                        🔍 Recherche intelligente
+                    </a>
+                </li>
+            </ul>
+            <div class="d-flex gap-2" id="navAuth"></div>
+        </div>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero-search">
+    <div class="container">
+        <div class="text-center mb-4">
+            <span class="badge px-3 py-2 mb-3 fs-6"
+                style="background:rgba(255,255,255,0.15);color:white">
+                 Recherche par description naturelle
+            </span>
+            <h1 class="fw-bold mb-2" style="font-size:2.2rem">
+                Décrivez le logement<br>
+                <span style="color:#fbbf24">que vous cherchez</span>
+            </h1>
+            <p style="color:rgba(255,255,255,0.6);max-width:500px;margin:0 auto 30px">
+                En quelques mots, notre système comprend vos besoins et trouve les annonces les plus adaptées.
+            </p>
+        </div>
+
+        <!-- BARRE DE RECHERCHE -->
+        <div class="mx-auto" style="max-width:700px">
+            <div class="search-box">
+                <textarea id="descriptionInput"
+                    placeholder="Ex: Je cherche un appartement 2 chambres meublé à Yaoundé, calme, pas trop cher, idéal pour une famille..."
+                    oninput="ajusterHauteur(this)"
+                    onkeydown="if(event.ctrlKey && event.key==='Enter') lancer()"></textarea>
+                <button class="btn-search" id="btnLancer" onclick="lancer()">
+                    <i class="bi bi-search me-2"></i>Chercher
+                </button>
+            </div>
+            <p class="text-center mt-2" style="color:rgba(255,255,255,0.4);font-size:12px">
+                Ctrl+Entrée pour rechercher
+            </p>
+        </div>
+
+        <!-- SUGGESTIONS -->
+        <div class="d-flex flex-wrap gap-2 justify-content-center mt-4">
+            <span class="suggestion-chip"
+                onclick="utiliserSuggestion(this)">
+                 Appartement 2 chambres meublé Douala pas cher
+            </span>
+            <span class="suggestion-chip"
+                onclick="utiliserSuggestion(this)">
+                 Villa avec jardin à Yaoundé pour famille
+            </span>
+            <span class="suggestion-chip"
+                onclick="utiliserSuggestion(this)">
+                 Studio proche université budget 80 000
+            </span>
+            <span class="suggestion-chip"
+                onclick="utiliserSuggestion(this)">
+                 Bureau ou local commercial à Douala centre
+            </span>
+        </div>
+    </div>
+</section>
+
+<!-- CONTENU PRINCIPAL -->
+<div class="container py-5">
+
+    <!-- ÉTAT INITIAL -->
+    <div id="etatInitial" class="empty-state">
+        <div style="font-size:4rem" class="mb-3">🔍</div>
+        <h4 class="fw-bold text-dark">Décrivez votre logement idéal</h4>
+        <p class="text-muted">Notre système analyse votre description et extrait automatiquement les critères importants</p>
+        <div class="row g-3 mt-3 justify-content-center">
+            <div class="col-6 col-md-3">
+                <div class="bg-white rounded-3 p-3 border text-center">
+                    <div style="font-size:24px">📍</div>
+                    <p class="small fw-semibold mb-0 mt-1">Ville / Quartier</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="bg-white rounded-3 p-3 border text-center">
+                    <div style="font-size:24px">💰</div>
+                    <p class="small fw-semibold mb-0 mt-1">Budget</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="bg-white rounded-3 p-3 border text-center">
+                    <div style="font-size:24px">🛏️</div>
+                    <p class="small fw-semibold mb-0 mt-1">Chambres</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="bg-white rounded-3 p-3 border text-center">
+                    <div style="font-size:24px">🏠</div>
+                    <p class="small fw-semibold mb-0 mt-1">Type de bien</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHARGEMENT -->
+    <div id="chargement" class="empty-state d-none">
+        <div class="typing-indicator mb-4">
+            <span></span><span></span><span></span>
+        </div>
+        <h5 class="fw-bold text-dark" id="etapeTexte">Analyse de votre description...</h5>
+        <p class="text-muted small" id="etapeSous">Extraction des critères en cours</p>
+    </div>
+
+    <!-- CRITÈRES EXTRAITS -->
+    <div id="criteresExtraits" class="d-none mb-4">
+        <div class="criteres-extraits">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                <span class="fw-bold text-success">Critères détectés automatiquement</span>
+            </div>
+            <div class="d-flex flex-wrap gap-2" id="listeCriteres"></div>
+        </div>
+    </div>
+
+    <!-- RÉSULTATS -->
+    <div id="resultats" class="d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="fw-bold mb-1">Résultats trouvés</h4>
+                <p class="text-muted small mb-0" id="nbResultats"></p>
+            </div>
+            <button class="btn btn-outline-primary btn-sm" onclick="lancer()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Relancer
+            </button>
+        </div>
+        <div class="row g-4" id="grilleResultats"></div>
+    </div>
+
+    <!-- AUCUN RÉSULTAT -->
+    <div id="aucunResultat" class="empty-state d-none">
+        <div style="font-size:3rem">🏚️</div>
+        <h5 class="fw-bold mt-3">Aucun logement trouvé</h5>
+        <p class="text-muted">Essayez une description plus générale ou changez la ville</p>
+        <button class="btn btn-primary mt-2" onclick="reinitialiser()">
+            Nouvelle recherche
+        </button>
+    </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer class="bg-dark text-white py-4">
+    <div class="container text-center">
+        <p class="mb-0">© 2026 SIMMo</p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+
+// ================================================
+// MOTEUR D'ANALYSE DE DESCRIPTION (100% gratuit)
+// ================================================
+
+// Dictionnaire de mots-clés → critères
+const DICTIONNAIRE = {
+
+    // ── Types de bien ────────────────────────────
+    types_bien: {
+        'appartement' : ['appartement', 'appart', 'flat'],
+        'studio'      : ['studio', 'chambre salon', 'f1'],
+        'villa'       : ['villa', 'maison', 'duplex', 'triplex'],
+        'chambre'     : ['chambre seule', 'chambre individuelle', 'piaule'],
+        'bureau'      : ['bureau', 'local commercial', 'boutique', 'magasin', 'local'],
+        'terrain'     : ['terrain', 'parcelle', 'lot'],
+    },
+
+    // ── Villes ───────────────────────────────────
+    villes: {
+        'Douala'     : ['douala', 'dla', 'littoral'],
+        'Yaoundé'    : ['yaoundé', 'yaounde', 'yaonde', 'centre', 'capitale'],
+        'Bafoussam'  : ['bafoussam', 'baf', 'ouest'],
+        'Garoua'     : ['garoua', 'nord'],
+        'Bamenda'    : ['bamenda', 'nord-ouest', 'northwest'],
+        'Kribi'      : ['kribi', 'bord de mer'],
+        'Limbe'      : ['limbe', 'limbé'],
+    },
+
+    // ── Quartiers Douala ─────────────────────────
+    quartiers: {
+        'Bonamoussadi' : ['bonamoussadi', 'bona', 'bonams'],
+        'Akwa'         : ['akwa', 'centre akwa'],
+        'Bonapriso'    : ['bonapriso'],
+        'Makepe'       : ['makepe'],
+        'Deido'        : ['deido'],
+        'Bepanda'      : ['bepanda'],
+        'Logpom'       : ['logpom'],
+        'Bastos'       : ['bastos'],
+        'Nlongkak'     : ['nlongkak'],
+        'Mvan'         : ['mvan'],
+        'Mvog-Ada'     : ['mvog-ada', 'mvogada'],
+    },
+
+    // ── Transaction ──────────────────────────────
+    transaction: {
+        'location' : ['louer', 'location', 'loue', 'à louer', 'mensuel', 'mois', 'loyer'],
+        'vente'    : ['acheter', 'achat', 'vente', 'à vendre', 'acquérir', 'acquisition'],
+    },
+
+    // ── Budget ───────────────────────────────────
+    budget: [
+        // Ex: 150 000, 150000, 150k, 1,5M
+        /(\d[\d\s]*(?:[\.,]\d+)?)\s*(?:f\s*cfa|fcfa|cfa|xaf|francs?)/i,
+        /(\d[\d\s]*)\s*(?:k|mille|000)\s*(?:f|cfa|francs?)?/i,
+        /budget\s*(?:de|:)?\s*(\d[\d\s]*)/i,
+        /moins\s*de\s*(\d[\d\s]*)/i,
+        /pas\s*(?:plus\s*de|depasser?)\s*(\d[\d\s]*)/i,
+        /(\d{2,})\s*000/,
+    ],
+
+    // ── Chambres ─────────────────────────────────
+    chambres: [
+        /(\d+)\s*(?:chambre|pièce|piece|room)/i,
+        /f(\d)\b/i,
+        /(\d)\s*ch\b/i,
+        /(\d)\s*bedroom/i,
+    ],
+
+    // ── Surface ──────────────────────────────────
+    surface: [
+        /(\d+)\s*m[²2]/i,
+        /(\d+)\s*mètres?\s*carré/i,
+        /surface\s*(?:de|:)?\s*(\d+)/i,
+    ],
+
+    // ── Caractéristiques ─────────────────────────
+    caracteristiques: {
+        meuble    : ['meublé', 'meuble', 'équipé', 'equipé', 'avec meubles'],
+        calme     : ['calme', 'tranquille', 'silencieux', 'paisible', 'résidentiel'],
+        securise  : ['sécurisé', 'gardé', 'clôturé', 'avec gardien', 'sécurité'],
+        parking   : ['parking', 'garage', 'avec voiture', 'stationnement'],
+        jardin    : ['jardin', 'cour', 'espace vert', 'terrasse', 'balcon'],
+        eau       : ['eau courante', 'avec eau', 'eau permanente'],
+        electricite: ['électricité', 'eneo', 'courant', 'groupe électrogène'],
+        internet  : ['internet', 'wifi', 'connexion', 'fibre'],
+        moderne   : ['moderne', 'neuf', 'nouvelle construction', 'rénové'],
+        etudiant  : ['étudiant', 'universitaire', 'campus', 'cité universitaire'],
+        famille   : ['famille', 'enfants', 'spacieux', 'grand', 'pour famille'],
+    },
+
+    // ── Fourchette de prix bas ───────────────────
+    prix_bas: ['pas cher', 'abordable', 'économique', 'bon marché', 'peu coûteux', 'modeste', 'raisonnable'],
+    prix_haut: ['luxe', 'luxueux', 'haut standing', 'premium', 'prestige', 'grand standing'],
+}
+
+
+// ================================================
+// FONCTION PRINCIPALE D'ANALYSE
+// ================================================
+function analyserDescription(texte) {
+    const t   = texte.toLowerCase()
+    const criteres = {}
+    const tags     = []
+
+    // ── 1. Type de bien ──────────────────────────
+    for (const [type, mots] of Object.entries(DICTIONNAIRE.types_bien)) {
+        if (mots.some(m => t.includes(m))) {
+            criteres.type_bien = type
+            tags.push({ emoji: '🏠', label: type })
+            break
+        }
+    }
+
+    // ── 2. Ville ─────────────────────────────────
+    for (const [ville, mots] of Object.entries(DICTIONNAIRE.villes)) {
+        if (mots.some(m => t.includes(m))) {
+            criteres.ville = ville
+            tags.push({ emoji: '📍', label: ville })
+            break
+        }
+    }
+
+    // ── 3. Quartier ──────────────────────────────
+    for (const [quartier, mots] of Object.entries(DICTIONNAIRE.quartiers)) {
+        if (mots.some(m => t.includes(m))) {
+            criteres.quartier = quartier
+            tags.push({ emoji: '🗺️', label: quartier })
+            break
+        }
+    }
+
+    // ── 4. Transaction ───────────────────────────
+    for (const [type, mots] of Object.entries(DICTIONNAIRE.transaction)) {
+        if (mots.some(m => t.includes(m))) {
+            criteres.type_transaction = type
+            tags.push({ emoji: type === 'location' ? '🔑' : '🏠', label: type })
+            break
+        }
+    }
+
+    // ── 5. Budget ────────────────────────────────
+    for (const regex of DICTIONNAIRE.budget) {
+        const match = t.match(regex)
+        if (match) {
+            let montant = match[1].replace(/[\s,]/g, '')
+            // Gérer les "k" (150k = 150 000)
+            if (t.match(/\d+\s*k\b/i) && parseInt(montant) < 1000) {
+                montant = parseInt(montant) * 1000
+            } else {
+                montant = parseInt(montant)
+            }
+            if (montant > 1000 && montant < 100000000) {
+                criteres.budget_max = montant
+                tags.push({ emoji: '💰', label: formatPrix(montant) + ' max' })
+                break
+            }
+        }
+    }
+
+    // ── 6. Prix bas/haut ─────────────────────────
+    if (!criteres.budget_max) {
+        if (DICTIONNAIRE.prix_bas.some(m => t.includes(m))) {
+            criteres.prix_qualite = 'bas'
+            tags.push({ emoji: '💰', label: 'Budget modeste' })
+        } else if (DICTIONNAIRE.prix_haut.some(m => t.includes(m))) {
+            criteres.prix_qualite = 'haut'
+            tags.push({ emoji: '💎', label: 'Haut standing' })
+        }
+    }
+
+    // ── 7. Chambres ──────────────────────────────
+    for (const regex of DICTIONNAIRE.chambres) {
+        const match = t.match(regex)
+        if (match) {
+            const nb = parseInt(match[1])
+            if (nb >= 1 && nb <= 10) {
+                criteres.nb_chambres = nb
+                tags.push({ emoji: '🛏️', label: `${nb} chambre(s)` })
+                break
+            }
+        }
+    }
+
+    // ── 8. Surface ───────────────────────────────
+    for (const regex of DICTIONNAIRE.surface) {
+        const match = t.match(regex)
+        if (match) {
+            const surface = parseInt(match[1])
+            if (surface > 10 && surface < 2000) {
+                criteres.surface_min = surface
+                tags.push({ emoji: '📐', label: `${surface}m² min` })
+                break
+            }
+        }
+    }
+
+    // ── 9. Caractéristiques ──────────────────────
+    const caract = []
+    for (const [cle, mots] of Object.entries(DICTIONNAIRE.caracteristiques)) {
+        if (mots.some(m => t.includes(m))) {
+            criteres[cle] = true
+            const emojis = {
+                meuble: '🛋️', calme: '🌿', securise: '🔒',
+                parking: '🚗', jardin: '🌳', eau: '💧',
+                electricite: '⚡', internet: '📶', moderne: '✨',
+                etudiant: '🎓', famille: '👨‍👩‍👧'
+            }
+            caract.push({ emoji: emojis[cle] || '✅', label: cle })
+        }
+    }
+    tags.push(...caract)
+
+    return { criteres, tags }
+}
+
+
+// ================================================
+// SCORING DES ANNONCES
+// ================================================
+function scorerAnnonces(annonces, criteres, texteOriginal) {
+    const t = texteOriginal.toLowerCase()
+
+    return annonces.map(a => {
+        let score = 0
+        let raisons = []
+
+        // ── Type de bien (30pts) ──────────────
+        if (criteres.type_bien && a.categorie) {
+            if (a.categorie.toLowerCase().includes(criteres.type_bien)) {
+                score += 30
+                raisons.push(`type de bien correspondant`)
+            }
+        } else {
+            score += 15 // bonus neutre si pas de filtre
+        }
+
+        // ── Ville (25pts) ─────────────────────
+        const villeAnnonce = (a.localisation?.ville || '').toLowerCase()
+        if (criteres.ville) {
+            if (villeAnnonce.includes(criteres.ville.toLowerCase())) {
+                score += 25
+                raisons.push(`situé à ${criteres.ville}`)
+            }
+        } else {
+            score += 12
+        }
+
+        // ── Quartier (10pts) ──────────────────
+        const quartierAnnonce = (a.localisation?.quartier || '').toLowerCase()
+        if (criteres.quartier) {
+            if (quartierAnnonce.includes(criteres.quartier.toLowerCase())) {
+                score += 10
+            }
+        }
+
+        // ── Budget (20pts) ────────────────────
+        const prix = parseFloat(a.prix)
+        if (criteres.budget_max) {
+            if (prix <= criteres.budget_max) {
+                const ratio = prix / criteres.budget_max
+                score += ratio <= 0.8 ? 20 : 10
+                raisons.push(`dans votre budget`)
+            } else {
+                score -= 20 // pénalité si dépasse le budget
+            }
+        } else if (criteres.prix_qualite === 'bas' && prix < 150000) {
+            score += 15
+            raisons.push(`prix abordable`)
+        } else if (criteres.prix_qualite === 'haut' && prix > 500000) {
+            score += 15
+            raisons.push(`haut standing`)
+        } else {
+            score += 10
+        }
+
+        // ── Chambres (10pts) ──────────────────
+        if (criteres.nb_chambres && a.nb_chambres) {
+            if (parseInt(a.nb_chambres) >= criteres.nb_chambres) {
+                score += 10
+                raisons.push(`${a.nb_chambres} chambre(s)`)
+            }
+        }
+
+        // ── Transaction (5pts) ────────────────
+        if (criteres.type_transaction) {
+            if (a.type_transaction === criteres.type_transaction) {
+                score += 5
+            } else {
+                score -= 10
+            }
+        }
+
+        // ── Meublé ────────────────────────────
+        if (criteres.meuble && a.meuble) {
+            score += 5
+            raisons.push(`meublé`)
+        }
+
+        // ── Mots-clés dans titre/description ──
+        const titreDesc = ((a.titre || '') + ' ' + (a.description || '')).toLowerCase()
+        const motsCles  = t.split(' ').filter(m => m.length > 4)
+        let matchMots   = 0
+        motsCles.forEach(mot => {
+            if (titreDesc.includes(mot)) matchMots++
+        })
+        score += Math.min(matchMots * 2, 10)
+
+        // Normaliser sur 100
+        score = Math.max(0, Math.min(100, score))
+
+        return {
+            ...a,
+            score,
+            raison: raisons.length > 0
+                ? 'Ce bien est ' + raisons.join(', ') + '.'
+                : 'Correspond à votre recherche.',
+        }
+    })
+    .filter(a => a.score > 0)
+    .sort((a, b) => b.score - a.score)
+}
+
+
+// ================================================
+// INTERFACE
+// ================================================
+const user = getUser()
+
+document.addEventListener('DOMContentLoaded', () => {
+    initNavbar()
+
+    // Pré-remplir depuis l'URL si ?q=...
+    const params = new URLSearchParams(window.location.search)
+    const q      = params.get('q')
+    if (q) {
+        document.getElementById('descriptionInput').value = q
+        lancer()
+    }
+})
+
+function ajusterHauteur(el) {
+    el.style.height = 'auto'
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px'
+}
+
+function utiliserSuggestion(el) {
+    const texte = el.textContent.trim().replace(/^[^\s]+\s/, '')
+    document.getElementById('descriptionInput').value = texte
+    document.getElementById('descriptionInput').focus()
+    ajusterHauteur(document.getElementById('descriptionInput'))
+}
+
+function reinitialiser() {
+    document.getElementById('descriptionInput').value = ''
+    afficherEtat('initial')
+}
+
+function afficherEtat(etat) {
+    ['etatInitial', 'chargement', 'criteresExtraits', 'resultats', 'aucunResultat'].forEach(id => {
+        document.getElementById(id)?.classList.add('d-none')
+    })
+    if (etat === 'initial') {
+        document.getElementById('etatInitial').classList.remove('d-none')
+    } else if (etat === 'chargement') {
+        document.getElementById('chargement').classList.remove('d-none')
+    }
+}
+
+function setEtape(texte, sous) {
+    document.getElementById('etapeTexte').textContent  = texte
+    document.getElementById('etapeSous').textContent   = sous || ''
+}
+
+// ── LANCER LA RECHERCHE ──────────────────────────
+async function lancer() {
+    const input = document.getElementById('descriptionInput')
+    const texte = input.value.trim()
+
+    if (texte.length < 5) {
+        input.focus()
+        input.style.borderBottom = '2px solid red'
+        setTimeout(() => input.style.borderBottom = '', 2000)
+        return
+    }
+
+    // Désactiver le bouton
+    const btn = document.getElementById('btnLancer')
+    btn.disabled  = true
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Analyse...'
+
+    afficherEtat('chargement')
+    setEtape('🧠 Analyse de votre description...', 'Extraction des critères')
+
+    // Petit délai pour l'animation
+    await sleep(600)
+
+    // ── 1. Analyser la description ───────────────
+    const { criteres, tags } = analyserDescription(texte)
+    console.log('Critères extraits:', criteres)
+    console.log('Tags:', tags)
+
+    // ── 2. Afficher les critères détectés ────────
+    if (tags.length > 0) {
+        document.getElementById('listeCriteres').innerHTML = tags.map(t => `
+            <span class="critere-tag">
+                ${t.emoji} ${t.label}
+            </span>
+        `).join('')
+        document.getElementById('criteresExtraits').classList.remove('d-none')
+    }
+
+    setEtape('🔍 Recherche dans les annonces...', 'Connexion à la base de données')
+    await sleep(400)
+
+    try {
+        // ── 3. Construire les paramètres API ─────
+        const params = new URLSearchParams()
+
+        if (criteres.ville)            params.set('ville', criteres.ville)
+        if (criteres.type_bien)        params.set('type_bien', criteres.type_bien)
+        if (criteres.type_transaction) params.set('type_transaction', criteres.type_transaction)
+        if (criteres.budget_max)       params.set('prix_max', criteres.budget_max)
+        if (criteres.nb_chambres)      params.set('nb_chambres', criteres.nb_chambres)
+        if (criteres.surface_min)      params.set('surface_min', criteres.surface_min)
+        if (criteres.meuble)           params.set('meuble', 1)
+
+        // ── 4. Appel API Laravel ─────────────────
+        const url      = `/annonces?${params.toString()}&limite=50`
+        const response = await apiRequest(url, 'GET', null, false)
+        let annonces   = response.data || response || []
+
+        console.log(`${annonces.length} annonces récupérées`)
+
+        setEtape('⚡ Calcul des scores de correspondance...', 'Analyse en cours')
+        await sleep(300)
+
+        // ── 5. Scorer et trier ───────────────────
+        const scorees = scorerAnnonces(annonces, criteres, texte)
+
+        afficherEtat('termine')
+
+        if (scorees.length === 0) {
+            document.getElementById('aucunResultat').classList.remove('d-none')
+        } else {
+            document.getElementById('nbResultats').textContent =
+                `${scorees.length} logement(s) trouvé(s) — trié(s) par pertinence`
+            afficherResultats(scorees)
+            document.getElementById('resultats').classList.remove('d-none')
+        }
+
+    } catch(e) {
+        console.error('Erreur:', e)
+        afficherEtat('termine')
+        document.getElementById('aucunResultat').classList.remove('d-none')
+    } finally {
+        btn.disabled  = false
+        btn.innerHTML = '<i class="bi bi-search me-2"></i>Chercher'
+    }
+}
+
+// ── AFFICHER LES RÉSULTATS ───────────────────────
+function afficherResultats(annonces) {
+    const container = document.getElementById('grilleResultats')
+
+    container.innerHTML = annonces.slice(0, 24).map((a, i) => {
+        const score   = a.score
+        const couleur = score >= 70 ? '#16a34a' : score >= 40 ? '#d97706' : '#64748b'
+        const label   = score >= 70 ? 'Excellent' : score >= 40 ? 'Bon match' : 'Suggéré'
+
+        return `
+            <div class="col-12 col-md-6 col-lg-4">
+                <a href="annonce-detail.html?id=${a.id}"
+                    class="carte-annonce">
+
+                    <!-- Image -->
+                    <div class="position-relative" style="height:190px;overflow:hidden">
+                        <img src="${imageUrl(a.photo_principale?.chemin_image)}"
+                            style="width:100%;height:100%;object-fit:cover"
+                            onerror="this.src='https://placehold.co/400x250/e2e8f0/64748b?text=SIMMo'"
+                            alt="${a.titre}">
+
+                        <!-- Rang -->
+                        <div class="position-absolute top-0 start-0 m-2">
+                            <span style="background:rgba(15,23,42,0.85);color:white;
+                                font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700">
+                                #${i+1}
+                            </span>
+                        </div>
+
+                        <!-- Score -->
+                        <div class="position-absolute top-0 end-0 m-2">
+                            <span class="match-badge"
+                                style="background:white;color:${couleur}">
+                                ${label} ${score}%
+                            </span>
+                        </div>
+
+                        <!-- Transaction -->
+                        <div class="position-absolute bottom-0 start-0 m-2">
+                            <span class="badge ${a.type_transaction === 'location' ? 'bg-primary' : 'bg-success'}">
+                                ${a.type_transaction === 'location' ? '🔑 Location' : '🏠 Vente'}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Infos -->
+                    <div class="p-3">
+                        <p class="text-primary small fw-bold text-uppercase mb-1">
+                            ${a.categorie?.libelle || ''}
+                        </p>
+                        <h6 class="fw-bold mb-1 text-truncate">${a.titre}</h6>
+                        <p class="text-muted small mb-2">
+                            <i class="bi bi-geo-alt text-primary me-1"></i>
+                            ${a.localisation?.quartier ? a.localisation.quartier + ', ' : ''}
+                            ${a.localisation?.ville || ''}
+                        </p>
+
+                        <!-- Barre de score -->
+                        <div class="score-bar mb-2">
+                            <div class="score-fill" style="width:${score}%;background:${couleur}"></div>
+                        </div>
+
+                        <!-- Caractéristiques -->
+                        <div class="d-flex gap-2 flex-wrap mb-2">
+                            ${a.nb_chambres ? `<span class="badge bg-light text-dark border">🛏️ ${a.nb_chambres} ch.</span>` : ''}
+                            ${a.surface_m2  ? `<span class="badge bg-light text-dark border">📐 ${a.surface_m2}m²</span>` : ''}
+                            ${a.meuble      ? `<span class="badge bg-light text-dark border">🛋️ Meublé</span>` : ''}
+                        </div>
+
+                        <!-- Raison IA -->
+                        <div class="bg-primary bg-opacity-10 rounded-2 p-2 mb-3">
+                            <p class="small text-primary mb-0">
+                                <i class="bi bi-cpu me-1"></i>${a.raison}
+                            </p>
+                        </div>
+
+                        <!-- Prix -->
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold text-primary fs-6">
+                                ${formatPrix(a.prix)}
+                                ${a.type_transaction === 'location' ? '<span class="text-muted fw-normal" style="font-size:12px">/mois</span>' : ''}
+                            </span>
+                            <span class="btn btn-primary btn-sm">
+                                Voir <i class="bi bi-arrow-right ms-1"></i>
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        `
+    }).join('')
+
+    // Animer les barres de score
+    setTimeout(() => {
+        document.querySelectorAll('.score-fill').forEach(bar => {
+            const w = bar.style.width
+            bar.style.width = '0'
+            requestAnimationFrame(() => { bar.style.width = w })
+        })
+    }, 100)
+}
+
+function sleep(ms) {
+    return new Promise(r => setTimeout(r, ms))
+}
+
+</script>
+</body>
+</html>

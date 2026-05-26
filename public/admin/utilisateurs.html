@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <link rel="shortcut icon" href="../favicon.png" type="image/png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Utilisateurs — Admin SIMMo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+    <style>
+        .admin-layout { display:flex; min-height:100vh; }
+        #adminSidebar {
+            width:240px;min-width:240px;background:white;
+            border-right:1px solid #e2e8f0;display:flex;
+            flex-direction:column;position:sticky;
+            top:0;height:100vh;overflow-y:auto;
+        }
+        .admin-main { flex:1;background:#f8fafc;overflow-x:hidden; }
+    </style>
+</head>
+<body>
+<div class="admin-layout">
+    <div id="adminSidebar"></div>
+    <div class="admin-main p-4">
+
+        <div class="d-flex justify-content-between
+            align-items-center mb-4">
+            <h3 class="fw-bold mb-0">
+                <i class="bi bi-people text-primary me-2"></i>
+                Gestion des Utilisateurs
+            </h3>
+        </div>
+
+        <!-- Filtres -->
+        <div class="bg-white rounded-3 border p-3 mb-4">
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <input type="text" id="searchUtilisateur"
+                        class="form-control"
+                        placeholder="Rechercher un utilisateur..."
+                        oninput="chargerUtilisateurs()">
+                </div>
+                <div class="col-md-3">
+                    <select id="filtreTypeUser" class="form-select"
+                        onchange="chargerUtilisateurs()">
+                        <option value="">Tous les types</option>
+                        <option value="etudiant">🎓 Étudiant</option>
+                        <option value="famille">👨‍👩‍👧 Famille</option>
+                        <option value="professionnel">💼 Professionnel</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select id="filtreVerifie" class="form-select"
+                        onchange="chargerUtilisateurs()">
+                        <option value="">Tous</option>
+                        <option value="1">Vérifiés</option>
+                        <option value="0">Non vérifiés</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <!-- Tableau -->
+        <div class="bg-white rounded-3 border">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Utilisateur</th>
+                            <th>Email</th>
+                            <th>Type</th>
+                            <th>Vérifié</th>
+                            <th>Inscription</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyUtilisateurs">
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <div class="spinner-border text-primary"></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="paginationUtilisateurs" class="p-3"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Détail Utilisateur -->
+<div class="modal fade" id="modalDetailUser" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Détail Utilisateur</h5>
+                <button type="button" class="btn-close"
+                    data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="contenuDetailUser"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/config.js"></script>
+<script src="js/admin.js"></script>
+<script>
+    // ✅ En haut du script de chaque page admin
+document.addEventListener('DOMContentLoaded', function() {
+    if (!getAdminToken()) {
+        document.body.innerHTML = `
+            <div style="display:flex;align-items:center;
+                justify-content:center;height:100vh;
+                background:#0f172a;color:white;
+                flex-direction:column;gap:16px">
+                <i class="bi bi-shield-lock" style="font-size:4rem"></i>
+                <h3>Accès refusé</h3>
+                <p style="color:rgba(255,255,255,0.5)">
+                    Cette page est réservée aux administrateurs.
+                </p>
+                <a href="login.html"
+                    style="background:#2563eb;color:white;
+                        padding:10px 30px;border-radius:8px;
+                        text-decoration:none;font-weight:bold">
+                    Se connecter
+                </a>
+            </div>`
+        return
+    }
+    // Continuer l'initialisation normale
+    init()
+})
+    initAdminNavbar('utilisateurs.html')
+
+    const modalDetailUser = new bootstrap.Modal(
+        document.getElementById('modalDetailUser'))
+
+    const TYPES = {
+        'etudiant'      : '🎓 Étudiant',
+        'famille'       : '👨‍👩‍👧 Famille',
+        'professionnel' : '💼 Professionnel',
+    }
+
+    async function chargerUtilisateurs(page = 1) {
+        const search = document.getElementById('searchUtilisateur').value
+        const type   = document.getElementById('filtreTypeUser').value
+        const verifie = document.getElementById('filtreVerifie').value
+
+        let url = `/utilisateurs?page=${page}`
+        if (search)  url += `&search=${search}`
+        if (type)    url += `&type_user=${type}`
+        if (verifie !== '') url += `&is_verified=${verifie}`
+
+        try {
+            const data  = await adminRequest(url)
+            const users = data.data || []
+
+            document.getElementById('tbodyUtilisateurs').innerHTML =
+                users.length === 0
+                ? `<tr><td colspan="6" class="text-center py-5 text-muted">
+                    Aucun utilisateur trouvé
+                   </td></tr>`
+                : users.map(u => `
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="bg-primary text-white rounded-circle
+                                    d-flex align-items-center justify-content-center
+                                    fw-bold"
+                                    style="width:36px;height:36px;font-size:13px;
+                                        min-width:36px">
+                                    ${u.prenom?.[0]?.toUpperCase()}
+                                </div>
+                                <div>
+                                    <p class="fw-semibold small mb-0">
+                                        ${u.prenom} ${u.nom}
+                                    </p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="small">${u.email}</td>
+                        <td class="small">
+                            ${TYPES[u.type_user] || u.type_user}
+                        </td>
+                        <td>
+                            ${u.is_verified
+                                ? '<span class="badge bg-success"> Vérifié</span>'
+                                : '<span class="badge bg-warning text-dark">⏳ En attente</span>'}
+                        </td>
+                        <td class="small text-muted">
+                            ${formatDate(u.created_at)}
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-sm btn-outline-primary"
+                                    onclick="voirDetailUser(${u.id})"
+                                    title="Voir">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                <button class="btn btn-sm
+                                    ${u.is_verified
+                                        ? 'btn-outline-warning'
+                                        : 'btn-outline-success'}"
+                                    onclick="toggleUser(${u.id})"
+                                    title="${u.is_verified
+                                        ? 'Désactiver' : 'Activer'}">
+                                    <i class="bi bi-${u.is_verified
+                                        ? 'pause-circle' : 'play-circle'}">
+                                    </i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger"
+                                    onclick="supprimerUser(${u.id})"
+                                    title="Supprimer">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>`).join('')
+
+            // Pagination
+            afficherPaginationUser(data)
+
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
+    async function voirDetailUser(id) {
+        document.getElementById('contenuDetailUser').innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary"></div>
+            </div>`
+        modalDetailUser.show()
+
+        try {
+            const data = await adminRequest(`/utilisateurs/${id}`)
+            const u    = data.utilisateur
+
+            document.getElementById('contenuDetailUser').innerHTML = `
+                <div class="row g-4">
+                    <div class="col-md-5 text-center">
+                        <div class="bg-primary text-white rounded-circle
+                            d-inline-flex align-items-center
+                            justify-content-center fw-bold mb-3"
+                            style="width:80px;height:80px;font-size:32px">
+                            ${u.prenom?.[0]?.toUpperCase()}
+                        </div>
+                        <h5 class="fw-bold">${u.prenom} ${u.nom}</h5>
+                        <p class="text-muted small">${u.email}</p>
+                        <span class="badge bg-primary bg-opacity-10
+                            text-primary px-3 py-2">
+                            ${TYPES[u.type_user] || u.type_user}
+                        </span>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="row g-3 mb-4">
+                            <div class="col-6">
+                                <div class="bg-light rounded-3 p-3 text-center">
+                                    <h4 class="fw-bold text-primary mb-0">
+                                        ${data.nb_recherches}
+                                    </h4>
+                                    <small class="text-muted">Recherches</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="bg-light rounded-3 p-3 text-center">
+                                    <h4 class="fw-bold text-success mb-0">
+                                        ${data.nb_contacts}
+                                    </h4>
+                                    <small class="text-muted">Contacts</small>
+                                </div>
+                            </div>
+                        </div>
+                        <ul class="list-unstyled small">
+                            <li class="mb-2">
+                                <i class="bi bi-phone me-2 text-muted"></i>
+                                ${u.telephone || '—'}
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-calendar me-2 text-muted"></i>
+                                Inscrit le ${formatDate(u.created_at)}
+                            </li>
+                            <li>
+                                <i class="bi bi-check-circle me-2 text-muted"></i>
+                                ${u.is_verified
+                                    ? ' Compte vérifié'
+                                    : ' Email non vérifié'}
+                            </li>
+                        </ul>
+                        <div class="d-flex gap-2 mt-3">
+                            <button class="btn btn-sm
+                                ${u.is_verified
+                                    ? 'btn-outline-warning'
+                                    : 'btn-outline-success'}"
+                                onclick="toggleUser(${u.id})">
+                                ${u.is_verified
+                                    ? '⏸ Désactiver' : '▶️ Activer'}
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger"
+                                onclick="supprimerUser(${u.id})">
+                                🗑 Supprimer
+                            </button>
+                        </div>
+                    </div>
+                </div>`
+        } catch (e) {
+            document.getElementById('contenuDetailUser').innerHTML =
+                '<div class="alert alert-danger">Erreur.</div>'
+        }
+    }
+
+    async function toggleUser(id) {
+        const data = await adminRequest(
+            `/utilisateurs/${id}/toggle`, 'PUT'
+        )
+        showAlert(data.message, 'success')
+        chargerUtilisateurs()
+        modalDetailUser.hide()
+    }
+
+    async function supprimerUser(id) {
+        if (!confirm('Supprimer cet utilisateur ?')) return
+        await adminRequest(`/utilisateurs/${id}`, 'DELETE')
+        showAlert('Utilisateur supprimé.', 'success')
+        chargerUtilisateurs()
+        modalDetailUser.hide()
+    }
+
+    function afficherPaginationUser(data) {
+        if (data.last_page <= 1) {
+            document.getElementById('paginationUtilisateurs').innerHTML = ''
+            return
+        }
+        let html = '<ul class="pagination justify-content-center mb-0">'
+        for (let i = 1; i <= data.last_page; i++) {
+            html += `
+                <li class="page-item ${i === data.current_page ? 'active' : ''}">
+                    <button class="page-link"
+                        onclick="chargerUtilisateurs(${i})">
+                        ${i}
+                    </button>
+                </li>`
+        }
+        html += '</ul>'
+        document.getElementById('paginationUtilisateurs').innerHTML = html
+    }
+
+    function showAlert(msg, type) {
+        document.getElementById('alertContainer').innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show">
+                ${msg}
+                <button type="button" class="btn-close"
+                    data-bs-dismiss="alert"></button>
+            </div>`
+        setTimeout(() => document.querySelector('.alert')?.remove(), 4000)
+    }
+
+    chargerUtilisateurs()
+</script>
+</body>
+</html>

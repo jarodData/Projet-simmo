@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+         <link rel="shortcut icon" href="../favicon.png" type="image/png">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paiements — Admin SIMMo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+    <style>
+        .admin-layout{display:flex;min-height:100vh}
+        #adminSidebar{width:240px;min-width:240px;background:white;
+            border-right:1px solid #e2e8f0;display:flex;
+            flex-direction:column;position:sticky;top:0;
+            height:100vh;overflow-y:auto}
+        .admin-main{flex:1;background:#f8fafc;overflow-x:hidden}
+    </style>
+</head>
+<body>
+<div class="admin-layout">
+    <div id="adminSidebar"></div>
+    <div class="admin-main p-4">
+
+        <h3 class="fw-bold mb-4">
+            <i class="bi bi-cash-stack text-primary me-2"></i>
+            Gestion des Paiements
+        </h3>
+
+        <!-- Stats paiements -->
+        <div class="row g-3 mb-4" id="statsPaiements">
+            <div class="col-12 text-center py-3">
+                <div class="spinner-border text-primary"></div>
+            </div>
+        </div>
+
+        <!-- Filtres -->
+        <div class="bg-white rounded-3 border p-3 mb-4">
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <select id="filtreStatutPaiement" class="form-select"
+                        onchange="chargerPaiements()">
+                        <option value="">Tous les statuts</option>
+                        <option value="succes">✅ Succès</option>
+                        <option value="en_attente">⏳ En attente</option>
+                        <option value="echec">❌ Échoué</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <select id="filtreOperateur" class="form-select"
+                        onchange="chargerPaiements()">
+                        <option value="">Tous les opérateurs</option>
+                        <option value="orange_money">🟠 Orange Money</option>
+                        <option value="mtn_momo">🟡 MTN MoMo</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <!-- Tableau -->
+        <div class="bg-white rounded-3 border">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Référence</th>
+                            <th>Agent</th>
+                            <th>Plan</th>
+                            <th>Opérateur</th>
+                            <th>Montant</th>
+                            <th>Statut</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyPaiements">
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <div class="spinner-border text-primary"></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="paginationPaiements" class="p-3"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/config.js"></script>
+<script src="js/admin.js"></script>
+<script>
+    function init() {
+        initAdminNavbar('paiements.html')
+        chargerPaiements()
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!getAdminToken()) { afficherAccesRefuse(); return }
+        init()
+    })
+
+    function afficherAccesRefuse() {
+        document.body.innerHTML = `
+            <div style="display:flex;align-items:center;
+                justify-content:center;height:100vh;
+                background:#0f172a;color:white;
+                flex-direction:column;gap:16px">
+                <i class="bi bi-shield-lock" style="font-size:4rem"></i>
+                <h3>Accès refusé</h3>
+                <a href="login.html" style="background:#2563eb;
+                    color:white;padding:10px 30px;border-radius:8px;
+                    text-decoration:none">Se connecter</a>
+            </div>`
+    }
+
+    async function chargerPaiements(page = 1) {
+        const statut    = document.getElementById('filtreStatutPaiement').value
+        const operateur = document.getElementById('filtreOperateur').value
+
+        let url = `/paiements?page=${page}`
+        if (statut)    url += `&statut=${statut}`
+        if (operateur) url += `&operateur=${operateur}`
+
+        try {
+            const data      = await adminRequest(url)
+            const paiements = data.paiements?.data || []
+            const totaux    = data.totaux || {}
+
+            // Stats
+            document.getElementById('statsPaiements').innerHTML = `
+                <div class="col-6 col-md-3">
+                    <div class="bg-white rounded-3 border p-4 text-center">
+                        <h3 class="fw-bold text-success mb-0">
+                            ${Number(totaux.total_succes || 0)
+                                .toLocaleString('fr-FR')} F
+                        </h3>
+                        <p class="text-muted small mb-0">Revenus totaux</p>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="bg-white rounded-3 border p-4 text-center">
+                        <h3 class="fw-bold text-warning mb-0">
+                            ${totaux.total_en_attente || 0}
+                        </h3>
+                        <p class="text-muted small mb-0">En attente</p>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="bg-white rounded-3 border p-4 text-center">
+                        <h3 class="fw-bold text-danger mb-0">
+                            ${totaux.total_echecs || 0}
+                        </h3>
+                        <p class="text-muted small mb-0">Échecs</p>
+                    </div>
+                </div>`
+
+            // Tableau
+            document.getElementById('tbodyPaiements').innerHTML =
+                paiements.length === 0
+                ? `<tr><td colspan="7" class="text-center py-5 text-muted">
+                    Aucun paiement trouvé
+                   </td></tr>`
+                : paiements.map(p => `
+                    <tr>
+                        <td>
+                            <code class="small">${p.reference}</code>
+                        </td>
+                        <td class="small">
+                            ${p.agent?.prenom || ''} ${p.agent?.nom || ''}
+                            <br>
+                            <span class="text-muted"
+                                style="font-size:11px">
+                                ${p.telephone}
+                            </span>
+                        </td>
+                        <td class="small">
+                            ${p.plan?.nom_plan || '—'}
+                        </td>
+                        <td>
+                            <span class="badge ${p.operateur === 'orange_money'
+                                ? 'bg-warning text-dark' : 'bg-warning text-dark'}">
+                                ${p.operateur === 'orange_money'
+                                    ? '🟠 Orange Money'
+                                    : '🟡 MTN MoMo'}
+                            </span>
+                        </td>
+                        <td class="fw-bold text-primary small">
+                            ${Number(p.montant).toLocaleString('fr-FR')} F
+                        </td>
+                        <td>${badgeStatut(p.statut)}</td>
+                        <td class="small text-muted">
+                            ${formatDate(p.created_at)}
+                        </td>
+                    </tr>`).join('')
+
+            // Pagination
+            if (data.paiements?.last_page > 1) {
+                let html = '<ul class="pagination justify-content-center mb-0">'
+                for (let i = 1; i <= data.paiements.last_page; i++) {
+                    html += `
+                        <li class="page-item ${i === data.paiements.current_page
+                            ? 'active' : ''}">
+                            <button class="page-link"
+                                onclick="chargerPaiements(${i})">
+                                ${i}
+                            </button>
+                        </li>`
+                }
+                html += '</ul>'
+                document.getElementById('paginationPaiements').innerHTML = html
+            }
+
+        } catch (e) {
+            console.error(e)
+        }
+    }
+</script>
+</body>
+</html>

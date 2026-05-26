@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+     <link rel="shortcut icon" href="favicon.png" type="image/png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription — SIMMo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body class="d-flex align-items-center min-vh-100" style="background:linear-gradient(135deg,#eff6ff,#f1f5f9)">
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-6">
+
+            <div class="text-center mb-4">
+                <a href="index.html" class="text-decoration-none">
+                    <h2 class="fw-bold text-dark">
+                        <i class="bi bi-buildings text-primary me-2"></i>
+                        SIMm<span class="text-primary">o</span>
+                    </h2>
+                </a>
+                <h4 class="fw-bold mt-3 mb-1">Créer un compte</h4>
+                <p class="text-muted">Trouvez votre logement idéal</p>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <div class="auth-card">
+                <form id="registerForm">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Nom *</label>
+                            <input type="text" id="nom" class="form-control"
+                                placeholder="Kamga" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Prénom *</label>
+                            <input type="text" id="prenom" class="form-control"
+                                placeholder="Jean" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Email *</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="bi bi-envelope text-muted"></i>
+                                </span>
+                                <input type="email" id="email" class="form-control border-start-0"
+                                    placeholder="votre@email.com" required>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Téléphone</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="bi bi-phone text-muted"></i>
+                                </span>
+                                <input type="tel" id="telephone" class="form-control border-start-0"
+                                    placeholder="+237 6XX XXX XXX">
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Je suis *</label>
+                            <select id="typeUser" class="form-select" required>
+                                <option value="etudiant">🎓 Étudiant</option>
+                                <option value="famille">👨‍👩‍👧 Famille</option>
+                                <option value="professionnel">💼 Professionnel</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Mot de passe *</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="bi bi-lock text-muted"></i>
+                                </span>
+                                <input type="password" id="motDePasse" class="form-control border-start-0"
+                                    placeholder="••••••••" required minlength="6">
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Confirmer mot de passe *</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="bi bi-lock text-muted"></i>
+                                </span>
+                                <input type="password" id="motDePasseConfirm" class="form-control border-start-0"
+                                    placeholder="••••••••" required>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" id="btnRegister" class="btn btn-primary w-100 py-2">
+                                Créer mon compte
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <p class="text-center text-muted small mt-4 mb-0">
+                    Déjà un compte ?
+                    <a href="login.html" class="text-primary fw-semibold">Se connecter</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+        e.preventDefault()
+
+        const motDePasse        = document.getElementById('motDePasse').value
+        const motDePasseConfirm = document.getElementById('motDePasseConfirm').value
+
+        if (motDePasse !== motDePasseConfirm) {
+            showAlert('Les mots de passe ne correspondent pas.', 'danger')
+            return
+        }
+
+        showSpinner('btnRegister', 'Inscription...')
+
+    
+try {
+    const response = await fetch(`${CONFIG.API_URL}/auth/utilisateur/register`, {
+        method : 'POST',
+        headers: headersPublic(),
+        body   : JSON.stringify({
+            nom                      : document.getElementById('nom').value,
+            prenom                   : document.getElementById('prenom').value,
+            email                    : document.getElementById('email').value,
+            telephone                : document.getElementById('telephone').value,
+            type_user                : document.getElementById('typeUser').value,
+            mot_de_passe             : motDePasse,
+            mot_de_passe_confirmation: motDePasseConfirm,
+        })
+    })
+
+    const data = await response.json()
+
+    if (response.ok) {
+        // ✅ Afficher le message de succès clairement
+        document.getElementById('registerForm').innerHTML = `
+            <div class="text-center py-4">
+                <div class="bg-success bg-opacity-10 rounded-circle
+                    d-inline-flex p-4 mb-4">
+                    <i class="bi bi-envelope-check text-success"
+                        style="font-size:3rem"></i>
+                </div>
+                <h4 class="fw-bold text-success mb-2">
+                    Inscription réussie ! 🎉
+                </h4>
+                <p class="text-muted mb-4">
+                    Un email de vérification a été envoyé à
+                    <strong>${document.getElementById('email').value}</strong>.
+                    <br>Cliquez sur le lien dans l'email pour activer
+                    votre compte.
+                </p>
+                <a href="login.html" class="btn btn-primary px-5">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>
+                    Aller à la connexion
+                </a>
+            </div>`
+    } else {
+        const errors = data.errors
+        if (errors) {
+            const msgs = Object.values(errors).flat().join('<br>')
+            showAlert(msgs, 'danger')
+        } else {
+            showAlert(data.message || 'Erreur lors de l\'inscription.', 'danger')
+        }
+        hideSpinner('btnRegister', 'Créer mon compte')
+    }
+} catch (e) {
+    showAlert('Erreur de connexion au serveur.', 'danger')
+    hideSpinner('btnRegister', 'Créer mon compte')
+}
+    })
+</script>
+</body>
+</html>

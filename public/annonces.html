@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+        <link rel="shortcut icon" href="favicon.png" type="image/png">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Annonces — SIMMo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+ <!-- Bandeau connexion requis -->
+<div id="bandeauConnexion"
+     class="alert alert-warning d-flex align-items-center gap-3 mb-4"
+     style="display:none !important">
+
+    <i class="bi bi-lock-fill fs-4"></i>
+
+    <div class="flex-grow-1">
+        <strong>Connectez-vous pour une expérience complète</strong><br>
+        <small>
+            Recherche avancée, contact des agents et recommandations IA disponibles après connexion.
+        </small>
+    </div>
+
+    <div class="d-flex gap-2">
+        <a href="login.html" class="btn btn-warning btn-sm fw-bold">
+            Se connecter
+        </a>
+
+        <a href="register.html" class="btn btn-outline-warning btn-sm">
+            S'inscrire
+        </a>
+    </div>
+
+</div>
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold fs-4" href="index.html">
+            <i class="bi bi-buildings text-primary me-1"></i>SIMm<span class="text-primary">o</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+</div>
+        <div class="collapse navbar-collapse" id="navMenu">
+            <ul class="navbar-nav me-auto ms-4 gap-2">
+                <li class="nav-item"><a class="nav-link" href="index.html">Accueil</a></li>
+                <li class="nav-item"><a class="nav-link active" href="annonces.html">Annonces</a></li>
+                <li class="nav-item" id="navDashboard" style="display:none">
+                    <a class="nav-link" href="dashboard.html">Dashboard</a>
+                </li>
+                <li class="nav-item">
+    <a class="nav-link" href="recommandations.html">
+         IA
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="recherche-contextuelle.html">
+         Recherche Intelligente
+    </a>
+</li>
+            </ul>
+            <div class="d-flex gap-2" id="navAuth"></div>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-5">
+    <div class="row g-4">
+
+        <!-- ── FILTRES (sidebar) ─────────────── -->
+        <div class="col-12 col-lg-3">
+            <div class="dashboard-card p-4 sticky-top" style="top:80px">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">
+                        <i class="bi bi-sliders text-primary me-2"></i>Filtres
+                    </h5>
+                    <button class="btn btn-sm btn-outline-danger" onclick="reinitialiserFiltres()">
+                        <i class="bi bi-x"></i> Reset
+                    </button>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Mot clé</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="bi bi-search text-muted"></i>
+                        </span>
+                        <input type="text" id="filtreQ" class="form-control border-start-0"
+                            placeholder="Studio, villa...">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Ville</label>
+                    <input type="text" id="filtreVille" class="form-control" placeholder="Yaoundé, Douala...">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Transaction</label>
+                    <select id="filtreTransaction" class="form-select">
+                        <option value="">Tous</option>
+                        <option value="location">Location</option>
+                        <option value="vente">Vente</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Catégorie</label>
+                    <select id="filtreCategorie" class="form-select">
+                        <option value="">Toutes</option>
+                        <option value="appartement"> Appartement</option>
+                        <option value="studio"> Studio</option>
+                        <option value="villa"> Villa</option>
+                        <option value="chambre"> Chambre</option>
+                        <option value="bureau"> Bureau</option>
+                        <option value="terrain"> Terrain</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Prix minimum (F CFA)</label>
+                    <input type="number" id="filtrePrixMin" class="form-control" placeholder="0">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Prix maximum (F CFA)</label>
+                    <input type="number" id="filtrePrixMax" class="form-control" placeholder="500 000">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Chambres minimum</label>
+                    <select id="filtreChambres" class="form-select">
+                        <option value="">Peu importe</option>
+                        <option value="1">1+</option>
+                        <option value="2">2+</option>
+                        <option value="3">3+</option>
+                        <option value="4">4+</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold small">Trier par</label>
+                    <select id="filtreTri" class="form-select">
+                        <option value="recent">Plus récent</option>
+                        <option value="prix_asc">Prix croissant</option>
+                        <option value="prix_desc">Prix décroissant</option>
+                        <option value="populaire">Plus populaire</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-primary w-100" onclick="appliquerFiltres()">
+                    <i class="bi bi-search me-2"></i>Rechercher
+                </button>
+            </div>
+        </div>
+
+        <!-- ── RÉSULTATS ─────────────────────── -->
+        <div class="col-12 col-lg-9">
+
+            <!-- En-tête résultats -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h4 class="fw-bold mb-0">Toutes les annonces</h4>
+                    <p class="text-muted small mb-0" id="nbResultats">Chargement...</p>
+                </div>
+            </div>
+<!-- Bannière IA -->
+<div class="alert border-0 mb-3 d-flex align-items-center gap-2 py-2"
+    id="banniereia"
+    style="background:linear-gradient(135deg,#eff6ff,#f0fdf4);display:none!important">
+    <i class="bi bi-cpu text-primary fs-5"></i>
+    <span class="small">
+        <strong> Résultats triés par IA</strong> —
+        Les annonces les plus pertinentes apparaissent en premier.
+    </span>
+    <a href="recommandations.html"
+        class="btn btn-primary btn-sm ms-auto">
+        Voir plus de recommandations
+    </a>
+</div>
+            <!-- Liste annonces -->
+            <div class="row g-4" id="listeAnnonces">
+                <div class="col-12 text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                    <p class="text-muted mt-2">Chargement des annonces...</p>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <nav class="mt-5" id="paginationContainer"></nav>
+        </div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="bg-dark text-white py-4 mt-5">
+    <div class="container text-center">
+        <p class="mb-0">© 2026 SIMMo — Solution Immobilière</p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+    let pageCourante = 1
+
+    // ── Init navbar ──────────────────────────
+// ── Afficher bandeau si non connecté ─────
+    function afficherBandeauSiNonConnecte() {
+        if (!estConnecte()) {
+            document.getElementById('bandeauConnexion').style.display = 'flex'
+            // Désactiver visuellement les filtres
+            document.querySelectorAll(
+                '#filtreQ, #filtreVille, #filtreTransaction, #filtreCategorie, ' +
+                '#filtrePrixMin, #filtrePrixMax, #filtreChambres, #filtreTri'
+            ).forEach(el => {
+                el.setAttribute('placeholder',
+                    el.getAttribute('placeholder') + ' (connexion requise)')
+                el.addEventListener('focus', () => {
+                    verifierActionConnectee('utiliser les filtres')
+                    el.blur()
+                })
+            })
+        }
+    }
+
+
+        // ── Lire les params URL ──────────────────
+    function lireParams() {
+        const params = new URLSearchParams(window.location.search)
+        if (params.get('q'))                document.getElementById('filtreQ').value            = params.get('q')
+        if (params.get('ville'))            document.getElementById('filtreVille').value         = params.get('ville')
+        if (params.get('type_transaction')) document.getElementById('filtreTransaction').value   = params.get('type_transaction')
+        if (params.get('type_bien'))        document.getElementById('filtreCategorie').value     = params.get('type_bien')
+        if (params.get('prix_min'))         document.getElementById('filtrePrixMin').value       = params.get('prix_min')
+        if (params.get('prix_max'))         document.getElementById('filtrePrixMax').value       = params.get('prix_max')
+        if (params.get('nb_chambres'))      document.getElementById('filtreChambres').value      = params.get('nb_chambres')
+        if (params.get('tri'))              document.getElementById('filtreTri').value           = params.get('tri')
+    }
+
+
+     // ── Construire les params ─────────────────
+    function getParams(page = 1) {
+        const params = new URLSearchParams()
+        const q      = document.getElementById('filtreQ').value
+        const ville  = document.getElementById('filtreVille').value
+        const trans  = document.getElementById('filtreTransaction').value
+        const cat    = document.getElementById('filtreCategorie').value
+        const pMin   = document.getElementById('filtrePrixMin').value
+        const pMax   = document.getElementById('filtrePrixMax').value
+        const chamb  = document.getElementById('filtreChambres').value
+        const tri    = document.getElementById('filtreTri').value
+
+        if (q)     params.set('q', q)
+        if (ville) params.set('ville', ville)
+        if (trans) params.set('type_transaction', trans)
+        if (cat)   params.set('type_bien', cat)
+        if (pMin)  params.set('prix_min', pMin)
+        if (pMax)  params.set('prix_max', pMax)
+        if (chamb) params.set('nb_chambres', chamb)
+        if (tri)   params.set('tri', tri)
+        params.set('page', page)
+        return params.toString()
+    }
+
+
+
+
+   // ── Charger annonces avec IA ──────────────────
+async function chargerAnnonces(page) {
+    page = page || 1
+  var container = document.getElementById('listeAnnonces')
+container.innerHTML = `
+${Array(6).fill(`
+    <div class="col-12 col-md-6 col-xl-4">
+
+        <div class="card shadow-sm skeleton-card pulse">
+
+            <div class="position-relative">
+
+                <div class="skeleton skeleton-img"></div>
+
+                <div class="skeleton skeleton-badge-top"></div>
+
+                <div class="skeleton skeleton-score"></div>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="skeleton skeleton-text tiny mb-2"></div>
+
+                <div class="skeleton skeleton-title mb-3"></div>
+
+                <div class="skeleton skeleton-text mb-2"></div>
+
+                <div class="skeleton skeleton-text short mb-3"></div>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+
+                    <div class="skeleton skeleton-price"></div>
+
+                    <div class="skeleton skeleton-text tiny"></div>
+
+                </div>
+
+                <!-- Faux agent -->
+                <div class="d-flex align-items-center gap-2 mb-3">
+
+                    <div class="skeleton skeleton-avatar"></div>
+
+                    <div class="flex-grow-1">
+
+                        <div class="skeleton skeleton-agent-name mb-2"></div>
+
+                        <div class="skeleton skeleton-agent-role"></div>
+
+                    </div>
+
+                </div>
+
+                <!-- Bouton -->
+                <div class="skeleton skeleton-btn"></div>
+
+            </div>
+
+        </div>
+
+    </div>
+`).join('')}
+`
+  // afficherSkeletonLoading()
+
+    try {
+        var data
+        var params = getParams(page)
+
+        if (estConnecte()) {
+            data = await apiRequest(
+                '/recherche?' + params,
+                'GET', null, true
+            )
+        } else {
+            // Non connecté — annonces publiques sans filtres
+            data = await apiRequest(
+                '/annonces?page=' + page,
+                'GET', null, false
+            )
+        }
+
+        var annonces = data.data || []
+        var total    = data.total || 0
+
+        // Afficher le nombre
+        var nbEl = document.getElementById('nbResultats')
+        if (nbEl) {
+            nbEl.innerHTML = total + ' bien(s) trouve(s)' +
+                (!estConnecte()
+                    ? ' &mdash; <a href="login.html"' +
+                      ' class="text-primary fw-semibold">' +
+                      'Connectez-vous pour filtrer</a>'
+                    : '')
+        }
+
+        if (annonces.length === 0) {
+            container.innerHTML =
+                '<div class="col-12 text-center py-5">' +
+                    '<i class="bi bi-search fs-1 d-block mb-3' +
+                        ' text-muted opacity-50"></i>' +
+                    '<h5 class="text-muted">Aucun resultat</h5>' +
+                    '<p class="text-muted small">' +
+                        'Modifiez vos criteres de recherche' +
+                    '</p>' +
+                '</div>'
+            var pag = document.getElementById('paginationContainer')
+            if (pag) pag.innerHTML = ''
+            return
+        }
+
+        // Afficher les annonces
+        container.innerHTML = annonces.map(function(a) {
+            return carteAnnonceHTML(a)
+        }).join('')
+
+        // Pagination
+        afficherPagination(data)
+
+    } catch (e) {
+        console.error('Erreur chargement annonces:', e)
+
+        // Afficher l'erreur avec détails
+        container.innerHTML =
+            '<div class="col-12 text-center py-5">' +
+                '<i class="bi bi-exclamation-circle fs-1 d-block mb-3' +
+                    ' text-danger opacity-75"></i>' +
+                '<h5 class="text-danger">Erreur serveur</h5>' +
+                '<p class="text-muted small mb-3">' +
+                    'Impossible de charger les annonces.' +
+                '</p>' +
+                '<button class="btn btn-primary btn-sm"' +
+                    ' onclick="chargerAnnonces(1)">' +
+                    '<i class="bi bi-arrow-clockwise me-2"></i>' +
+                    'Reessayer' +
+                '</button>' +
+            '</div>'
+    }
+}
+
+
+function afficherSkeletonLoading(nombre = 6) {
+
+    const container = document.getElementById('listeAnnonces')
+
+    container.innerHTML = `
+${Array(6).fill(`
+    <div class="col-12 col-md-6 col-xl-4">
+
+        <div class="card shadow-sm skeleton-card pulse">
+
+            <div class="position-relative">
+
+                <div class="skeleton skeleton-img"></div>
+
+                <div class="skeleton skeleton-badge-top"></div>
+
+                <div class="skeleton skeleton-score"></div>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="skeleton skeleton-text tiny mb-2"></div>
+
+                <div class="skeleton skeleton-title mb-3"></div>
+
+                <div class="skeleton skeleton-text mb-2"></div>
+
+                <div class="skeleton skeleton-text short mb-3"></div>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+
+                    <div class="skeleton skeleton-price"></div>
+
+                    <div class="skeleton skeleton-text tiny"></div>
+
+                </div>
+
+                <!-- Faux agent -->
+                <div class="d-flex align-items-center gap-2 mb-3">
+
+                    <div class="skeleton skeleton-avatar"></div>
+
+                    <div class="flex-grow-1">
+
+                        <div class="skeleton skeleton-agent-name mb-2"></div>
+
+                        <div class="skeleton skeleton-agent-role"></div>
+
+                    </div>
+
+                </div>
+
+                <!-- Bouton -->
+                <div class="skeleton skeleton-btn"></div>
+
+            </div>
+
+        </div>
+
+    </div>
+`).join('')}
+`
+}
+
+     // ── Pagination ───────────────────────────
+    function afficherPagination(data) {
+        if (data.last_page <= 1) {
+            document.getElementById('paginationContainer').innerHTML = ''
+            return
+        }
+        let html = '<ul class="pagination justify-content-center">'
+        for (let i = 1; i <= data.last_page; i++) {
+            html += `
+                <li class="page-item ${i === pageCourante ? 'active' : ''}">
+                    <button class="page-link" onclick="chargerAnnonces(${i})">${i}</button>
+                </li>`
+        }
+        html += '</ul>'
+        document.getElementById('paginationContainer').innerHTML = html
+    }
+
+    // ── Appliquer les filtres ─────────────────
+    //  Vérification connexion obligatoire
+    function appliquerFiltres() {
+        if (!verifierActionConnectee(
+            'utiliser les filtres de recherche avancée'
+        )) return
+        chargerAnnonces(1)
+    }
+function carteAnnonceHTML(a) {
+    // Construction URL photo sécurisée
+    var urlPhoto
+    if (a.photo_principale &&
+        a.photo_principale.chemin_image &&
+        a.photo_principale.chemin_image !== 'null' &&
+        a.photo_principale.chemin_image !== '') {
+        urlPhoto = CONFIG.STORAGE_URL + '/' +
+            a.photo_principale.chemin_image
+    } else {
+        urlPhoto =
+            'https://placehold.co/400x250/e2e8f0/64748b?text=SIMMo'
+    }
+
+    var quartier  = a.localisation && a.localisation.quartier
+        ? a.localisation.quartier + ', ' : ''
+    var ville     = a.localisation && a.localisation.ville
+        ? a.localisation.ville : ''
+    var categorie = a.categorie && a.categorie.libelle
+        ? a.categorie.libelle : ''
+    var badge     = a.type_transaction === 'location'
+        ? '<span class="badge bg-primary badge-transaction">Location</span>'
+        : '<span class="badge bg-success badge-transaction">Vente</span>'
+    var meuble    = a.meuble
+        ? '<span class="badge bg-warning text-dark"' +
+          ' style="position:absolute;top:12px;right:12px">Meuble</span>'
+        : ''
+    var prixMois  = a.type_transaction === 'location'
+        ? '<span class="text-muted fs-6 fw-normal">/mois</span>'
+        : ''
+    var nbCh      = a.nb_chambres
+        ? '<span><i class="bi bi-door-closed me-1"></i>' +
+          a.nb_chambres + ' ch.</span>'
+        : ''
+    var surf      = a.surface_m2
+        ? '<span><i class="bi bi-aspect-ratio me-1"></i>' +
+          a.surface_m2 + ' m2</span>'
+        : ''
+
+    return '<div class="col-12 col-md-6 col-xl-4">' +
+        '<a href="annonce-detail.html?id=' + a.id + '"' +
+            ' class="carte-annonce card border-0 shadow-sm' +
+            ' text-decoration-none">' +
+            '<div class="card-img-wrapper">' +
+                '<img' +
+                    ' src="' + urlPhoto + '"' +
+                    ' class="card-img-top"' +
+                    ' alt="' + a.titre + '"' +
+                    ' onerror="this.onerror=null;this.src=' +
+                    "'https://placehold.co/400x250/e2e8f0/64748b?text=SIMMo'" +
+                    '">' +
+                badge + meuble +
+            '</div>' +
+            '<div class="card-body">' +
+                '<p class="text-primary small fw-bold' +
+                    ' text-uppercase mb-1">' +
+                    categorie +
+                '</p>' +
+                '<h5 class="card-title fw-bold text-truncate">' +
+                    a.titre +
+                '</h5>' +
+                '<p class="text-muted small mb-2">' +
+                    '<i class="bi bi-geo-alt text-primary"></i> ' +
+                    quartier + ville +
+                '</p>' +
+                '<div class="d-flex gap-3 text-muted small mb-3">' +
+                    nbCh + surf +
+                '</div>' +
+                '<div class="d-flex justify-content-between' +
+                    ' align-items-center">' +
+                    '<span class="prix-annonce">' +
+                        formatPrix(a.prix) + prixMois +
+                    '</span>' +
+                    '<span class="text-muted small">' +
+                        '<i class="bi bi-eye me-1"></i>' + a.vues +
+                    '</span>' +
+                '</div>' +
+            '</div>' +
+        '</a>' +
+    '</div>'
+}
+
+    // ── Réinitialiser ────────────────────────
+    function reinitialiserFiltres() {
+        if (!verifierActionConnectee('utiliser les filtres')) return
+        document.getElementById('filtreQ').value            = ''
+        document.getElementById('filtreVille').value        = ''
+        document.getElementById('filtreTransaction').value  = ''
+        document.getElementById('filtreCategorie').value    = ''
+        document.getElementById('filtrePrixMin').value      = ''
+        document.getElementById('filtrePrixMax').value      = ''
+        document.getElementById('filtreChambres').value     = ''
+        document.getElementById('filtreTri').value          = 'recent'
+        chargerAnnonces(1)
+    }
+
+    // ── Recherche rapide avec Entrée ──────────
+    document.getElementById('filtreQ').addEventListener('keypress', e => {
+        if (e.key === 'Enter') appliquerFiltres()
+    })
+
+    // ── Init ─────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function() {
+    initNavbar()
+    lireParams()
+    afficherBandeauSiNonConnecte()
+    chargerAnnonces()  // ← appel uniquement ici
+})
+
+</script>
+</body>
+</html>

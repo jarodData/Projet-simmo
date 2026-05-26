@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <link rel="shortcut icon" href="favicon.png" type="image/png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paiement — SIMMo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <style>
+        .operateur-card {
+            border       : 2px solid #e2e8f0;
+            border-radius: 16px;
+            padding      : 20px;
+            cursor       : pointer;
+            transition   : all 0.2s;
+        }
+        .operateur-card:hover,
+        .operateur-card.actif {
+            border-color: #2563eb;
+            background  : #eff6ff;
+        }
+        .operateur-card.orange.actif {
+            border-color: #f97316;
+            background  : #fff7ed;
+        }
+        .operateur-card.mtn.actif {
+            border-color: #eab308;
+            background  : #fefce8;
+        }
+        .etape {
+            width          : 32px;
+            height         : 32px;
+            border-radius  : 50%;
+            display        : flex;
+            align-items    : center;
+            justify-content: center;
+            font-weight    : 700;
+            font-size      : 14px;
+        }
+        .etape.actif    { background:#2563eb; color:white; }
+        .etape.complete { background:#16a34a; color:white; }
+        .etape.attente  { background:#e2e8f0; color:#94a3b8; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-light bg-white sticky-top border-bottom">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="index.html">
+            <i class="bi bi-buildings text-primary me-1"></i>SIMm<span class="text-primary">o</span>
+        </a>
+        <div id="navAuth"></div>
+    </div>
+</nav>
+
+<div class="container py-5" style="max-width:700px">
+
+    <!-- En-tête -->
+    <div class="text-center mb-5">
+        <h3 class="fw-bold">Paiement sécurisé</h3>
+        <p class="text-muted">Souscrivez à votre plan via Mobile Money</p>
+    </div>
+
+    <!-- Étapes -->
+    <div class="d-flex align-items-center justify-content-center gap-3 mb-5">
+        <div class="d-flex align-items-center gap-2">
+            <div class="etape complete" id="etape1"><i class="bi bi-check"></i></div>
+            <span class="small fw-semibold">Plan choisi</span>
+        </div>
+        <div class="border-top flex-grow-1" style="max-width:60px"></div>
+        <div class="d-flex align-items-center gap-2">
+            <div class="etape actif" id="etape2">2</div>
+            <span class="small fw-semibold">Paiement</span>
+        </div>
+        <div class="border-top flex-grow-1" style="max-width:60px"></div>
+        <div class="d-flex align-items-center gap-2">
+            <div class="etape attente" id="etape3">3</div>
+            <span class="small text-muted">Confirmation</span>
+        </div>
+    </div>
+
+    <div id="alertContainer"></div>
+
+    <!-- Récapitulatif du plan -->
+    <div class="dashboard-card p-4 mb-4" id="recapPlan">
+        <div class="text-center py-3">
+            <div class="spinner-border spinner-border-sm text-primary"></div>
+        </div>
+    </div>
+
+    <!-- Formulaire de paiement -->
+    <div class="dashboard-card p-4 mb-4" id="formulairePaiement" style="display:none">
+        <h5 class="fw-bold mb-4">
+            <i class="bi bi-phone text-primary me-2"></i>
+            Choisir votre opérateur
+        </h5>
+
+        <!-- Choix opérateur -->
+        <div class="row g-3 mb-4">
+            <div class="col-6">
+                <div class="operateur-card orange text-center"
+                    id="cardOrange" onclick="selectionnerOperateur('orange_money')">
+                    <div class="fw-bold fs-2 mb-1">🟠</div>
+                    <p class="fw-bold mb-0" style="color:#f97316">Orange Money</p>
+                    <p class="text-muted small mb-0">Numéros 069x, 065x</p>
+                    <input type="radio" name="operateur" value="orange_money"
+                        class="d-none" id="radioOrange">
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="operateur-card mtn text-center"
+                    id="cardMtn" onclick="selectionnerOperateur('mtn_momo')">
+                    <div class="fw-bold fs-2 mb-1">🟡</div>
+                    <p class="fw-bold mb-0" style="color:#eab308">MTN MoMo</p>
+                    <p class="text-muted small mb-0">Numéros 067x, 068x</p>
+                    <input type="radio" name="operateur" value="mtn_momo"
+                        class="d-none" id="radioMtn">
+                </div>
+            </div>
+        </div>
+
+        <!-- Numéro de téléphone -->
+        <div class="mb-4">
+            <label class="form-label fw-semibold">
+                Numéro Mobile Money *
+            </label>
+            <div class="input-group">
+                <span class="input-group-text bg-light fw-bold">+237</span>
+                <input type="tel" id="telephone" class="form-control"
+                    placeholder="6XX XXX XXX" maxlength="9">
+            </div>
+            <small class="text-muted">
+                Le numéro doit correspondre à votre compte Mobile Money actif.
+            </small>
+        </div>
+
+        <!-- Instructions -->
+        <div id="instructionsOrange" class="alert alert-warning border-0 d-none">
+            <h6 class="fw-bold"><i class="bi bi-info-circle me-2"></i>Comment payer avec Orange Money</h6>
+            <ol class="mb-0 small">
+                <li>Cliquez sur "Payer maintenant"</li>
+                <li>Vous serez redirigé vers la page Orange Money</li>
+                <li>Entrez votre code secret Orange Money</li>
+                <li>Confirmez le paiement</li>
+            </ol>
+        </div>
+
+        <div id="instructionsMtn" class="alert alert-warning border-0 d-none">
+            <h6 class="fw-bold"><i class="bi bi-info-circle me-2"></i>Comment payer avec MTN MoMo</h6>
+            <ol class="mb-0 small">
+                <li>Cliquez sur "Payer maintenant"</li>
+                <li>Une notification MTN sera envoyée sur votre téléphone</li>
+                <li>Ouvrez la notification et entrez votre PIN MTN</li>
+                <li>Revenez sur cette page pour confirmer</li>
+            </ol>
+        </div>
+
+        <button class="btn btn-primary w-100 py-3 fw-bold fs-5"
+            id="btnPayer" onclick="initierPaiement()">
+            <i class="bi bi-shield-check me-2"></i>
+            Payer maintenant
+        </button>
+
+        <p class="text-center text-muted small mt-3 mb-0">
+            <i class="bi bi-lock-fill me-1"></i>
+            Paiement 100% sécurisé via Mobile Money
+        </p>
+    </div>
+
+    <!-- Section vérification MTN -->
+    <div class="dashboard-card p-4 mb-4 text-center" id="sectionVerificationMtn"
+        style="display:none">
+        <div class="spinner-border text-warning mb-3" style="width:3rem;height:3rem"></div>
+        <h5 class="fw-bold">En attente de confirmation MTN</h5>
+        <p class="text-muted">Vérifiez votre téléphone et confirmez le paiement MTN MoMo.</p>
+        <div class="alert alert-info border-0 text-start">
+            <strong>Référence :</strong>
+            <span id="refPaiementAffich" class="fw-bold text-primary"></span>
+        </div>
+        <button class="btn btn-success btn-lg px-5 fw-bold"
+            id="btnVerifierMtn" onclick="verifierPaiementMtn()">
+            <i class="bi bi-check2-circle me-2"></i>J'ai confirmé le paiement
+        </button>
+        <p class="text-muted small mt-3">
+            <button class="btn btn-link text-muted p-0" onclick="annulerPaiement()">
+                Annuler
+            </button>
+        </p>
+    </div>
+
+    <!-- Succès -->
+    <div class="dashboard-card p-5 text-center" id="sectionSucces" style="display:none">
+        <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex p-4 mb-4">
+            <i class="bi bi-check-circle-fill text-success" style="font-size:3rem"></i>
+        </div>
+        <h4 class="fw-bold text-success mb-2">Paiement réussi ! 🎉</h4>
+        <p class="text-muted mb-4" id="msgSucces"></p>
+        <a href="dashboard.html" class="btn btn-primary btn-lg px-5 fw-bold">
+            <i class="bi bi-grid me-2"></i>Aller au Dashboard
+        </a>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+   // requiertAgent()
+
+    const params      = new URLSearchParams(window.location.search)
+    const idPlan      = params.get('id_plan')
+    let   operateurSelectionne = null
+    let   paiementId  = null
+
+    if (!idPlan) window.location.href = 'plan.html'
+
+    // ── Navbar ───────────────────────────────
+    function initNavbar() {
+        const user = getUser()
+        document.getElementById('navAuth').innerHTML = `
+            <span class="small fw-semibold">👤 ${user?.prenom}</span>
+            <button class="btn btn-outline-danger btn-sm ms-2" onclick="deconnexion()">
+                <i class="bi bi-box-arrow-right"></i>
+            </button>`
+    }
+
+    // ── Charger le plan ──────────────────────
+    async function chargerPlan() {
+        try {
+            const plans = await apiRequest('/plans')
+            const plan  = plans.find(p => p.id == idPlan)
+
+            if (!plan) {
+                window.location.href = 'plan.html'
+                return
+            }
+
+            document.getElementById('recapPlan').innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted small mb-1">Plan sélectionné</p>
+                        <h4 class="fw-bold mb-0">${plan.nom_plan}</h4>
+                        <p class="text-muted small mb-0">
+                            ${plan.nb_annonces_max >= 999
+                                ? 'Annonces illimitées'
+                                : plan.nb_annonces_max + ' annonces max'}
+                            • 30 jours
+                        </p>
+                    </div>
+                    <div class="text-end">
+                        <p class="text-muted small mb-1">Montant à payer</p>
+                        <h3 class="fw-bold text-primary mb-0">
+                            ${formatPrix(plan.prix_mensuel)}
+                        </h3>
+                    </div>
+                </div>`
+
+            document.getElementById('formulairePaiement').style.display = 'block'
+
+        } catch (e) {
+            showAlert('Erreur lors du chargement du plan.', 'danger')
+        }
+    }
+
+    // ── Sélectionner l'opérateur ─────────────
+    function selectionnerOperateur(operateur) {
+        operateurSelectionne = operateur
+
+        // Reset visuels
+        document.getElementById('cardOrange').classList.remove('actif')
+        document.getElementById('cardMtn').classList.remove('actif')
+        document.getElementById('instructionsOrange').classList.add('d-none')
+        document.getElementById('instructionsMtn').classList.add('d-none')
+
+        // Activer le bon
+        if (operateur === 'orange_money') {
+            document.getElementById('cardOrange').classList.add('actif')
+            document.getElementById('instructionsOrange').classList.remove('d-none')
+            document.getElementById('telephone').placeholder = '069X XXX XXX'
+        } else {
+            document.getElementById('cardMtn').classList.add('actif')
+            document.getElementById('instructionsMtn').classList.remove('d-none')
+            document.getElementById('telephone').placeholder = '067X XXX XXX'
+        }
+    }
+
+    // ── Initier le paiement ──────────────────
+    async function initierPaiement() {
+        if (!operateurSelectionne) {
+            showAlert('Veuillez choisir un opérateur Mobile Money.', 'warning')
+            return
+        }
+
+        const telephone = document.getElementById('telephone').value.trim()
+        if (!telephone || telephone.length < 9) {
+            showAlert('Veuillez entrer un numéro de téléphone valide.', 'warning')
+            return
+        }
+
+        showSpinner('btnPayer', 'Traitement en cours...')
+
+        try {
+            const data = await apiRequest('/agent/paiement/initier', 'POST', {
+                id_plan   : idPlan,
+                operateur : operateurSelectionne,
+                telephone : telephone,
+            }, true)
+
+            paiementId = data.paiement_id
+
+            if (operateurSelectionne === 'orange_money' && data.payment_url) {
+                // Rediriger vers la page Orange Money
+                window.location.href = data.payment_url
+
+            } else if (operateurSelectionne === 'mtn_momo') {
+                // Afficher la section de confirmation MTN
+                document.getElementById('formulairePaiement').style.display = 'none'
+                document.getElementById('sectionVerificationMtn').style.display = 'block'
+                document.getElementById('refPaiementAffich').textContent = data.reference
+                document.getElementById('etape2').className = 'etape complete'
+                document.getElementById('etape2').innerHTML = '<i class="bi bi-check"></i>'
+                document.getElementById('etape3').className = 'etape actif'
+                document.getElementById('etape3').textContent = '3'
+            }
+
+        } catch (err) {
+            showAlert(err.data?.message || 'Erreur lors de l\'initialisation du paiement.', 'danger')
+            hideSpinner('btnPayer', '<i class="bi bi-shield-check me-2"></i>Payer maintenant')
+        }
+    }
+
+    // ── Vérifier paiement MTN ────────────────
+    async function verifierPaiementMtn() {
+        if (!paiementId) return
+
+        showSpinner('btnVerifierMtn', 'Vérification...')
+
+        try {
+            const data = await apiRequest(
+                `/agent/paiement/verifier/${paiementId}`,
+                'GET', null, true
+            )
+
+            if (data.succes) {
+                // Succès
+                document.getElementById('sectionVerificationMtn').style.display = 'none'
+                document.getElementById('sectionSucces').style.display           = 'block'
+                document.getElementById('msgSucces').textContent                 = data.message
+                document.getElementById('etape3').className = 'etape complete'
+                document.getElementById('etape3').innerHTML = '<i class="bi bi-check"></i>'
+
+            } else if (data.en_attente) {
+                showAlert(
+                    '⏳ Paiement en cours de traitement. Avez-vous bien confirmé sur votre téléphone ?',
+                    'warning'
+                )
+                hideSpinner('btnVerifierMtn',
+                    '<i class="bi bi-check2-circle me-2"></i>J\'ai confirmé le paiement')
+            } else {
+                showAlert(data.message || 'Paiement échoué.', 'danger')
+                hideSpinner('btnVerifierMtn',
+                    '<i class="bi bi-check2-circle me-2"></i>J\'ai confirmé le paiement')
+            }
+
+        } catch (e) {
+            showAlert('Erreur lors de la vérification.', 'danger')
+            hideSpinner('btnVerifierMtn',
+                '<i class="bi bi-check2-circle me-2"></i>J\'ai confirmé le paiement')
+        }
+    }
+
+    // ── Annuler le paiement ──────────────────
+    function annulerPaiement() {
+        window.location.href = 'plan.html'
+    }
+
+    // ── Init ─────────────────────────────────
+    initNavbar()
+    chargerPlan()
+</script>
+</body>
+</html>

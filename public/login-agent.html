@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <link rel="shortcut icon" href="favicon.png" type="image/png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion Agent — SIMMo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body class="d-flex align-items-center min-vh-100" style="background:linear-gradient(135deg,#f0fdf4,#f1f5f9)">
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-5">
+
+            <div class="text-center mb-4">
+                <a href="index.html" class="text-decoration-none">
+                    <h2 class="fw-bold text-dark">
+                        <i class="bi bi-buildings text-success me-2"></i>
+                        SIMm<span class="text-primary">o</span>
+                    </h2>
+                </a>
+                <span class="badge bg-success mb-3">Espace Agent</span>
+                <h4 class="fw-bold mb-1">Connexion Agent</h4>
+                <p class="text-muted">Accédez à votre espace professionnel</p>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <div class="auth-card">
+                <form id="loginAgentForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Email professionnel</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="bi bi-envelope text-muted"></i>
+                            </span>
+                            <input type="email" id="email" class="form-control border-start-0"
+                                placeholder="agent@agence.cm" required>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Mot de passe</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="bi bi-lock text-muted"></i>
+                            </span>
+                            <input type="password" id="motDePasse" class="form-control border-start-0"
+                                placeholder="••••••••" required>
+                        </div>
+                    </div>
+                    <button type="submit" id="btnLogin" class="btn btn-success w-100 py-2">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Se connecter
+                    </button>
+                </form>
+
+                <hr class="my-4">
+
+                <p class="text-center text-muted small mb-2">
+                    Pas encore de compte agent ?
+                    <a href="register-agent.html" class="text-success fw-semibold">Créer un compte</a>
+                </p>
+                <p class="text-center text-muted small">
+                    Vous êtes un utilisateur ?
+                    <a href="login.html" class="text-primary fw-semibold">Espace utilisateur</a>
+                </p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+    if (estConnecte() && estAgent()) window.location.href = 'dashboard.html'
+
+    document.getElementById('loginAgentForm').addEventListener('submit', async function(e) {
+        e.preventDefault()
+        showSpinner('btnLogin', 'Connexion...')
+
+        try {
+            const data = await apiRequest('/auth/agent/login', 'POST', {
+                email        : document.getElementById('email').value,
+                mot_de_passe : document.getElementById('motDePasse').value,
+            })
+
+            localStorage.setItem('simmo_token', data.token)
+            localStorage.setItem('simmo_user',  JSON.stringify(data.agent))
+            localStorage.setItem('simmo_role',  'agent')
+
+            showAlert(' Connexion réussie ! Redirection...', 'success')
+            setTimeout(() => window.location.href = 'dashboard.html', 1000)
+
+        } catch (err) {
+            const msg = err.data?.message || err.data?.errors?.email?.[0] || 'Erreur de connexion.'
+            showAlert(msg, 'danger')
+            hideSpinner('btnLogin', '<i class="bi bi-box-arrow-in-right me-2"></i>Se connecter')
+        }
+    })
+</script>
+</body>
+</html>

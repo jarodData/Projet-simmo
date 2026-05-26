@@ -1,0 +1,272 @@
+<?php
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\UtilisateurAuthController;
+use App\Http\Controllers\Auth\AgentAuthController;
+use App\Http\Controllers\AnnonceController;
+use App\Http\Controllers\RechercheController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DashboardAgentController;
+use App\Http\Controllers\PlanController;
+use App\Http\Controllers\PaiementController;
+use App\Http\Controllers\Admin\AdminAuthController;
+use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\ChatController;
+use App\Http\Controllers\FavoriController;
+use App\Http\Controllers\ChattController;
+
+// ============================================
+// ROUTES PUBLIQUES (sans token)
+// ============================================
+Route::get('/annonces',
+    [AnnonceController::class, 'index']);
+Route::get('/annonces/{id}',
+    [AnnonceController::class, 'show']);
+Route::get('/plans',
+    [PlanController::class, 'index']);
+
+Route::get('/test-mail', function () {
+    Mail::raw('Test SIMMo', function ($m) {
+        $m->to('tonmail@gmail.com')->subject('Test');
+    });
+});
+
+// ============================================
+// AUTH UTILISATEUR
+// ============================================
+Route::prefix('auth/utilisateur')->group(function () {
+    Route::post('/register',
+        [UtilisateurAuthController::class, 'register']);
+    Route::post('/login',
+        [UtilisateurAuthController::class, 'login']);
+    Route::get('/verify/{token}',
+        [UtilisateurAuthController::class, 'verify']);
+});
+Route::get('/auth/utilisateur/verify/{token}', 
+    [UtilisateurAuthController::class, 'verify']
+);
+
+// ============================================
+// AUTH AGENT
+// ============================================
+Route::prefix('auth/agent')->group(function () {
+    Route::post('/register',
+        [AgentAuthController::class, 'register']);
+    Route::post('/login',
+        [AgentAuthController::class, 'login']);
+    Route::get('/verify/{token}',
+        [AgentAuthController::class, 'verify']);
+});
+// Recherche (protégée)
+        Route::get('/recherche',
+            [RechercheController::class, 'rechercher']);
+
+// ============================================
+// ROUTES UTILISATEUR CONNECTÉ
+// ============================================
+Route::middleware('auth:sanctum')
+    ->prefix('utilisateur')
+    ->group(function () {
+
+        // Auth
+        Route::post('/logout',
+            [UtilisateurAuthController::class, 'logout']);
+        Route::get('/profil',
+            [UtilisateurAuthController::class, 'profil']);
+        Route::put('/profil',
+            [UtilisateurAuthController::class, 'updateProfil']);
+
+        
+        Route::get('/historique',
+            [RechercheController::class, 'historique']);
+        Route::delete('/historique',
+            [RechercheController::class, 'supprimerHistorique']);
+
+        // Contact
+        Route::post('/contacter',
+            [ContactController::class, 'contacterAgent']);
+        Route::get('/mes-contacts',
+            [ContactController::class, 'mesContactsUtilisateur']);
+    });
+
+// ============================================
+// ROUTES AGENT CONNECTÉ
+// ============================================
+Route::middleware('auth:sanctum')
+    ->prefix('agent')
+    ->group(function () {
+
+        // Auth
+        Route::post('/logout',
+            [AgentAuthController::class, 'logout']);
+        Route::get('/profil',
+            [AgentAuthController::class, 'profil']);
+
+        // Dashboard
+        Route::get('/dashboard',
+            [DashboardAgentController::class, 'index']);
+        Route::get('/dashboard/utilisateurs',
+            [DashboardAgentController::class, 'utilisateursContacts']);
+
+        // Annonces CRUD
+        Route::get('/annonces',
+            [AnnonceController::class, 'mesAnnonces']);
+        Route::post('/annonces',
+            [AnnonceController::class, 'store']);
+        Route::get('/annonces/{id}',
+            [AnnonceController::class, 'edit']);
+        Route::put('/annonces/{id}',
+            [AnnonceController::class, 'update']);
+        Route::delete('/annonces/{id}',
+            [AnnonceController::class, 'destroy']);
+
+        // Photos
+        Route::post('/annonces/{id}/photos',
+            [AnnonceController::class, 'ajouterPhotos']);
+        Route::delete('/photos/{id}',
+            [AnnonceController::class, 'supprimerPhoto']);
+
+        // Contacts
+        Route::get('/contacts',
+            [ContactController::class, 'mesContacts']);
+        Route::put('/contacts/{id}/lu',
+            [ContactController::class, 'marquerLu']);
+
+        // Plans
+        Route::get('/mon-plan',
+            [PlanController::class, 'monPlan']);
+        Route::post('/souscrire',
+            [PlanController::class, 'souscrire']);
+        Route::post('/renouveler-plan',
+            [PlanController::class, 'renouveler']);
+
+        // Paiement
+        Route::post('/paiement/initier',
+            [PaiementController::class, 'initier']);
+        Route::get('/paiement/verifier/{id}',
+            [PaiementController::class, 'verifier']);
+    });
+
+// Recherche publique accessible à tous
+// mais historique seulement si connecté
+Route::get('/recherche',
+    [RechercheController::class, 'rechercher']);
+
+// Webhooks paiement (publics)
+Route::post('/paiement/orange/webhook',
+    [PaiementController::class, 'webhookOrange']);
+Route::get('/paiement/orange/callback',
+    [PaiementController::class, 'callbackOrange']);
+
+
+
+    // ============================================
+// ROUTES ADMIN
+// ============================================
+Route::prefix('admin')->group(function () {
+
+    // Auth admin
+    Route::post('/login',  [AdminAuthController::class, 'login']);
+
+    // Routes protégées admin
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/logout', [AdminAuthController::class, 'logout']);
+        Route::get('/profil',  [AdminAuthController::class, 'profil']);
+
+        // Dashboard
+        Route::get('/dashboard', [AdminController::class, 'dashboard']);
+
+        // Utilisateurs
+        Route::get('/utilisateurs',
+            [AdminController::class, 'utilisateurs']);
+        Route::get('/utilisateurs/{id}',
+            [AdminController::class, 'detailUtilisateur']);
+        Route::put('/utilisateurs/{id}/toggle',
+            [AdminController::class, 'toggleUtilisateur']);
+        Route::delete('/utilisateurs/{id}',
+            [AdminController::class, 'supprimerUtilisateur']);
+
+        // Agents
+        Route::get('/agents',
+            [AdminController::class, 'agents']);
+        Route::get('/agents/{id}',
+            [AdminController::class, 'detailAgent']);
+        Route::post('/agents/{id}/valider-cni',
+            [AdminController::class, 'validerCNI']);
+        Route::put('/agents/{id}/activer',
+            [AdminController::class, 'activerAgent']);
+        Route::put('/agents/{id}/suspendre',
+            [AdminController::class, 'suspendreAgent']);
+        Route::delete('/agents/{id}',
+            [AdminController::class, 'supprimerAgent']);
+
+        // Annonces
+        Route::get('/annonces',
+            [AdminController::class, 'annonces']);
+        Route::put('/annonces/{id}/moderer',
+            [AdminController::class, 'modererAnnonce']);
+        Route::delete('/annonces/{id}',
+            [AdminController::class, 'supprimerAnnonce']);
+
+        // Plans
+        Route::get('/plans',
+            [AdminController::class, 'plans']);
+        Route::post('/plans',
+            [AdminController::class, 'creerPlan']);
+        Route::put('/plans/{id}',
+            [AdminController::class, 'modifierPlan']);
+
+        // Paiements
+        Route::get('/paiements',
+            [AdminController::class, 'paiements']);
+    });
+});
+
+// Routes chat utilisateur
+Route::middleware('auth:sanctum')
+    ->prefix('utilisateur')
+    ->group(function () {
+        Route::get('/chat/{idAgent}',
+            [ChatController::class, 'conversation']);
+        Route::post('/chat/envoyer',
+            [ChatController::class, 'envoyerUtilisateur']);
+    });
+
+// Routes chat agent
+Route::middleware('auth:sanctum')
+    ->prefix('agent')
+    ->group(function () {
+        Route::get('/conversations',
+            [ChatController::class, 'conversationsAgent']);
+        Route::get('/chat/{idUtilisateur}',
+            [ChatController::class, 'conversationAgent']);
+        Route::post('/chat/envoyer',
+            [ChatController::class, 'envoyerAgent']);
+        Route::get('/chat/non-lus',
+            [ChatController::class, 'nonLusAgent']);
+    });
+
+
+
+    Route::middleware('auth:sanctum')
+    ->prefix('utilisateur')
+    ->group(function () {
+        // Favoris
+        Route::get('/favoris',
+            [FavoriController::class, 'index']);
+        Route::post('/favoris/{idAnnonce}/toggle',
+            [FavoriController::class, 'toggle']);
+        Route::get('/favoris/{idAnnonce}/verifier',
+            [FavoriController::class, 'verifier']);
+        Route::delete('/favoris',
+            [FavoriController::class, 'vider']);
+    });
+
+  Route::prefix('chat')->group(function () {
+
+    Route::post('/demarrer', [ChattController::class, 'demarrerConversation']);
+    Route::post('/envoyer', [ChattController::class, 'envoyerMessage']);
+    Route::get('/messages/{id}', [ChattController::class, 'messages']);
+    Route::get('/conversations/utilisateur/{id}', [ChattController::class, 'conversationsUtilisateur']);
+    Route::get('/conversations/agent/{id}', [ChatController::class, 'conversationsAgent']);
+});
+

@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Profil — SIMMo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top border-bottom">
+    <div class="container">
+        <a class="navbar-brand fw-bold fs-4" href="index.html">
+            <i class="bi bi-buildings text-primary me-1"></i>
+            SIMMo
+        </a>
+        <div class="d-flex gap-2 align-items-center" id="navAuth"></div>
+    </div>
+</nav>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8">
+
+            <!-- Titre -->
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <a href="index.html"
+                    class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <h3 class="fw-bold mb-0">Mon Profil</h3>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <!-- Chargement -->
+            <div id="zoneChargement" class="text-center py-5">
+                <div class="spinner-border text-primary"></div>
+                <p class="text-muted mt-2">Chargement du profil...</p>
+            </div>
+
+            <!-- Contenu profil -->
+            <div id="zoneProfil" style="display:none">
+
+                <!-- Carte identite -->
+                <div class="dashboard-card p-4 mb-4">
+                    <div class="d-flex align-items-center gap-4 mb-4">
+                        <div class="bg-primary text-white rounded-circle
+                            d-flex align-items-center justify-content-center
+                            fw-bold flex-shrink-0"
+                            style="width:80px;height:80px;font-size:30px"
+                            id="avatarInitiale">
+                        </div>
+                        <div>
+                            <h4 class="fw-bold mb-1" id="nomComplet">
+                            </h4>
+                            <p class="text-muted mb-1"
+                                id="emailAffiche"></p>
+                            <span class="badge bg-primary bg-opacity-10
+                                text-primary px-3 py-2"
+                                id="badgeProfil">
+                            </span>
+                        </div>
+                    </div>
+
+                    <hr class="mb-4">
+
+                    <!-- Formulaire modification -->
+                    <form id="formProfil">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    Nom
+                                </label>
+                                <input type="text" id="champNom"
+                                    class="form-control"
+                                    placeholder="Votre nom">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    Prenom
+                                </label>
+                                <input type="text" id="champPrenom"
+                                    class="form-control"
+                                    placeholder="Votre prenom">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    Email
+                                </label>
+                                <input type="email" id="champEmail"
+                                    class="form-control bg-light"
+                                    disabled>
+                                <small class="text-muted">
+                                    L'email ne peut pas etre modifie.
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    Telephone
+                                </label>
+                                <input type="tel" id="champTelephone"
+                                    class="form-control"
+                                    placeholder="+237 6XX XXX XXX">
+                            </div>
+
+                            <!-- Uniquement pour les utilisateurs -->
+                            <div class="col-md-6"
+                                id="champTypeUserDiv">
+                                <label class="form-label fw-semibold">
+                                    Type de profil
+                                </label>
+                                <select id="champTypeUser"
+                                    class="form-select">
+                                    <option value="etudiant">
+                                        Etudiant
+                                    </option>
+                                    <option value="famille">
+                                        Famille
+                                    </option>
+                                    <option value="professionnel">
+                                        Professionnel
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Uniquement pour les agents -->
+                            <div class="col-md-6"
+                                id="champAgenceDiv"
+                                style="display:none">
+                                <label class="form-label fw-semibold">
+                                    Numero d'agence
+                                </label>
+                                <input type="text" id="champAgence"
+                                    class="form-control"
+                                    placeholder="AGC-2024-001">
+                            </div>
+
+                            <div class="col-12">
+                                <button type="submit"
+                                    id="btnSauvegarder"
+                                    class="btn btn-primary fw-bold px-5">
+                                    <i class="bi bi-check2 me-2"></i>
+                                    Sauvegarder les modifications
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Plan agent -->
+                <div id="sectPlan" class="dashboard-card p-4 mb-4"
+                    style="display:none">
+                    <h5 class="fw-bold mb-3">Mon abonnement</h5>
+                    <div id="infoPlan"></div>
+                    <a href="plan.html"
+                        class="btn btn-outline-primary mt-3">
+                        <i class="bi bi-credit-card me-2"></i>
+                        Gerer mon abonnement
+                    </a>
+                </div>
+
+                <!-- Statistiques agent -->
+                <div id="sectStatsAgent"
+                    class="dashboard-card p-4 mb-4"
+                    style="display:none">
+                    <h5 class="fw-bold mb-3">Mes statistiques</h5>
+                    <div class="row g-3" id="statsAgent"></div>
+                </div>
+
+                <!-- Historique recherches utilisateur -->
+                <div id="sectHistorique"
+                    class="dashboard-card p-4 mb-4"
+                    style="display:none">
+                    <div class="d-flex justify-content-between
+                        align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">
+                            Historique des recherches
+                        </h5>
+                        <button class="btn btn-outline-danger btn-sm"
+                            onclick="supprimerHistorique()">
+                            Tout effacer
+                        </button>
+                    </div>
+                    <div id="listeHistorique">
+                        <div class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm
+                                text-primary"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contacts utilisateur -->
+                <div id="sectContacts"
+                    class="dashboard-card p-4"
+                    style="display:none">
+                    <h5 class="fw-bold mb-3">
+                        Mes demandes de contact
+                    </h5>
+                    <div id="listeContacts">
+                        <div class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm
+                                text-primary"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Vérifier la connexion
+        if (!estConnecte()) {
+            window.location.href = 'login.html'
+            return
+        }
+
+        initNavbar()
+        chargerProfil()
+    })
+
+    // ── Navbar ────────────────────────────────
+    function initNavbar() {
+        var user    = getUser()
+        var navAuth = document.getElementById('navAuth')
+        if (!navAuth) return
+
+        navAuth.innerHTML =
+            '<span class="small fw-semibold me-2">' +
+                (user ? user.prenom : '') +
+            '</span>' +
+            '<button class="btn btn-outline-danger btn-sm"' +
+                ' onclick="deconnexion()">' +
+                '<i class="bi bi-box-arrow-right"></i>' +
+            '</button>'
+    }
+
+    // ── Charger le profil ─────────────────────
+    async function chargerProfil() {
+        try {
+            var endpoint = estAgent()
+                ? '/agent/profil'
+                : '/utilisateur/profil'
+
+            var data = await apiRequest(
+                endpoint, 'GET', null, true
+            )
+
+            // Extraire l'utilisateur selon la structure retournée
+            var user = null
+            if (data.utilisateur) {
+                user = data.utilisateur
+            } else if (data.agent) {
+                user = data.agent
+            } else if (data.id) {
+                user = data
+            }
+
+            if (!user) {
+                showAlert('Impossible de charger le profil.', 'danger')
+                return
+            }
+
+            afficherProfil(user)
+
+        } catch (e) {
+            console.error('Erreur chargement profil:', e)
+            showAlert(
+                'Erreur de connexion. ' +
+                'Verifiez que Laravel est demarre.',
+                'danger'
+            )
+        } finally {
+            document.getElementById('zoneChargement')
+                .style.display = 'none'
+            document.getElementById('zoneProfil')
+                .style.display = 'block'
+        }
+    }
+
+    // ── Afficher le profil ────────────────────
+    function afficherProfil(user) {
+        var initiale = (user.prenom || 'U')[0].toUpperCase()
+
+        document.getElementById('avatarInitiale').textContent =
+            initiale
+        document.getElementById('nomComplet').textContent =
+            (user.prenom || '') + ' ' + (user.nom || '')
+        document.getElementById('emailAffiche').textContent =
+            user.email || ''
+
+        // Remplir le formulaire
+        document.getElementById('champNom').value       =
+            user.nom || ''
+        document.getElementById('champPrenom').value    =
+            user.prenom || ''
+        document.getElementById('champEmail').value     =
+            user.email || ''
+        document.getElementById('champTelephone').value =
+            user.telephone || ''
+
+        if (estAgent()) {
+            document.getElementById('badgeProfil').textContent =
+                'Agent Immobilier'
+            document.getElementById('champTypeUserDiv')
+                .style.display = 'none'
+            document.getElementById('champAgenceDiv')
+                .style.display = 'block'
+            document.getElementById('champAgence').value =
+                user.numero_agence || ''
+
+            afficherSectionsAgent(user)
+
+        } else {
+            var type = user.type_user || 'etudiant'
+            var labels = {
+                'etudiant'      : 'Etudiant',
+                'famille'       : 'Famille',
+                'professionnel' : 'Professionnel',
+            }
+            document.getElementById('badgeProfil').textContent =
+                labels[type] || type
+            document.getElementById('champTypeUser').value = type
+
+            afficherSectionsUtilisateur()
+        }
+    }
+
+    // ── Sections Agent ────────────────────────
+    function afficherSectionsAgent(user) {
+        // Plan
+        var sectPlan = document.getElementById('sectPlan')
+        sectPlan.style.display = 'block'
+
+        var infoPlan = document.getElementById('infoPlan')
+        if (user.plan) {
+            var expire  = user.date_expiration_plan
+                ? new Date(user.date_expiration_plan) < new Date()
+                : true
+            infoPlan.innerHTML =
+                '<div class="d-flex align-items-center' +
+                    ' justify-content-between">' +
+                    '<div>' +
+                        '<h5 class="fw-bold mb-1">' +
+                            user.plan.nom_plan +
+                        '</h5>' +
+                        '<p class="text-muted small mb-0">' +
+                            (expire
+                                ? 'Plan expire'
+                                : 'Expire le ' +
+                                    new Date(user.date_expiration_plan)
+                                    .toLocaleDateString('fr-FR')) +
+                        '</p>' +
+                    '</div>' +
+                    '<span class="badge ' +
+                        (expire ? 'bg-danger' : 'bg-success') +
+                        '">' +
+                        (expire ? 'Expire' : 'Actif') +
+                    '</span>' +
+                '</div>'
+        } else {
+            infoPlan.innerHTML =
+                '<p class="text-muted">Aucun plan actif.</p>'
+        }
+
+        // Stats agent
+        var sectStats = document.getElementById('sectStatsAgent')
+        sectStats.style.display = 'block'
+
+        apiRequest('/agent/dashboard', 'GET', null, true)
+        .then(function(data) {
+            document.getElementById('statsAgent').innerHTML =
+                '<div class="col-6 col-md-3">' +
+                    '<div class="bg-light rounded-3 p-3 text-center">' +
+                        '<h4 class="fw-bold text-primary mb-0">' +
+                            (data.annonces_actives || 0) +
+                        '</h4>' +
+                        '<small class="text-muted">Annonces</small>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="col-6 col-md-3">' +
+                    '<div class="bg-light rounded-3 p-3 text-center">' +
+                        '<h4 class="fw-bold text-success mb-0">' +
+                            (data.statistiques_mois
+                                ? data.statistiques_mois.nb_contacts_recus
+                                : 0) +
+                        '</h4>' +
+                        '<small class="text-muted">Contacts</small>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="col-6 col-md-3">' +
+                    '<div class="bg-light rounded-3 p-3 text-center">' +
+                        '<h4 class="fw-bold text-warning mb-0">' +
+                            (data.statistiques_mois
+                                ? data.statistiques_mois.nb_vues_total
+                                : 0) +
+                        '</h4>' +
+                        '<small class="text-muted">Vues</small>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="col-6 col-md-3">' +
+                    '<a href="dashboard.html"' +
+                        ' class="btn btn-outline-primary w-100 h-100' +
+                        ' d-flex align-items-center' +
+                        ' justify-content-center fw-semibold">' +
+                        'Dashboard' +
+                    '</a>' +
+                '</div>'
+        })
+        .catch(function(e) { console.error(e) })
+    }
+
+    // ── Sections Utilisateur ──────────────────
+    function afficherSectionsUtilisateur() {
+        document.getElementById('sectHistorique').style.display = 'block'
+        document.getElementById('sectContacts').style.display   = 'block'
+
+        chargerHistorique()
+        chargerContacts()
+    }
+
+    // ── Sauvegarder le profil ─────────────────
+    document.getElementById('formProfil')
+        .addEventListener('submit', async function(e) {
+        e.preventDefault()
+
+        var btn = document.getElementById('btnSauvegarder')
+        btn.disabled  = true
+        btn.innerHTML = '<span class="spinner-border' +
+            ' spinner-border-sm me-2"></span>Sauvegarde...'
+
+        try {
+            var body = {
+                nom      : document.getElementById('champNom').value,
+                prenom   : document.getElementById('champPrenom').value,
+                telephone: document.getElementById('champTelephone').value,
+            }
+
+            if (estAgent()) {
+                body.numero_agence =
+                    document.getElementById('champAgence').value
+            } else {
+                body.type_user =
+                    document.getElementById('champTypeUser').value
+            }
+
+            var endpoint = estAgent()
+                ? '/agent/profil'
+                : '/utilisateur/profil'
+
+            await apiRequest(endpoint, 'PUT', body, true)
+
+            // Mettre a jour localStorage
+            var user     = getUser()
+            user.nom     = body.nom
+            user.prenom  = body.prenom
+            if (body.telephone)
+                user.telephone = body.telephone
+            localStorage.setItem('simmo_user', JSON.stringify(user))
+
+            showAlert('Profil mis a jour avec succes.', 'success')
+
+            // Rafraichir l'affichage
+            document.getElementById('nomComplet').textContent =
+                body.prenom + ' ' + body.nom
+            document.getElementById('avatarInitiale').textContent =
+                body.prenom[0].toUpperCase()
+
+        } catch (e) {
+            console.error('Erreur mise a jour profil:', e)
+            showAlert(
+                e.data ? e.data.message : 'Erreur lors de la mise a jour.',
+                'danger'
+            )
+        } finally {
+            btn.disabled  = false
+            btn.innerHTML =
+                '<i class="bi bi-check2 me-2"></i>' +
+                'Sauvegarder les modifications'
+        }
+    })
+
+    // ── Historique ────────────────────────────
+    async function chargerHistorique() {
+        try {
+            var data = await apiRequest(
+                '/utilisateur/historique', 'GET', null, true
+            )
+            var historiques = data.data || []
+            var container   = document.getElementById('listeHistorique')
+
+            if (historiques.length === 0) {
+                container.innerHTML =
+                    '<p class="text-muted small text-center py-3">' +
+                        'Aucune recherche effectuee.' +
+                    '</p>'
+                return
+            }
+
+            container.innerHTML = historiques.map(function(h) {
+                return '<div class="d-flex align-items-center' +
+                    ' gap-3 p-2 border-bottom">' +
+                    '<i class="bi bi-search text-muted"></i>' +
+                    '<div class="flex-grow-1">' +
+                        '<p class="small fw-semibold mb-0">' +
+                            (h.terme_recherche || 'Recherche avancee') +
+                        '</p>' +
+                        '<p class="text-muted mb-0"' +
+                            ' style="font-size:11px">' +
+                            new Date(h.created_at)
+                                .toLocaleDateString('fr-FR') +
+                            ' - ' + h.nb_resultats + ' resultats' +
+                        '</p>' +
+                    '</div>' +
+                '</div>'
+            }).join('')
+
+        } catch (e) {
+            console.error('Erreur historique:', e)
+            document.getElementById('listeHistorique').innerHTML =
+                '<p class="text-muted small text-center py-3">' +
+                    'Impossible de charger l\'historique.' +
+                '</p>'
+        }
+    }
+
+    async function supprimerHistorique() {
+        if (!confirm('Effacer tout l\'historique ?')) return
+        try {
+            await apiRequest(
+                '/utilisateur/historique', 'DELETE', null, true
+            )
+            showAlert('Historique efface.', 'success')
+            chargerHistorique()
+        } catch (e) {
+            showAlert('Erreur lors de la suppression.', 'danger')
+        }
+    }
+
+    // ── Contacts ──────────────────────────────
+    async function chargerContacts() {
+        try {
+            var data     = await apiRequest(
+                '/utilisateur/mes-contacts', 'GET', null, true
+            )
+            var contacts  = data.data || []
+            var container = document.getElementById('listeContacts')
+
+            if (contacts.length === 0) {
+                container.innerHTML =
+                    '<p class="text-muted small text-center py-3">' +
+                        'Aucune demande de contact.' +
+                    '</p>'
+                return
+            }
+
+            container.innerHTML = contacts.map(function(c) {
+                var nomAgent = c.agent
+                    ? c.agent.prenom + ' ' + c.agent.nom
+                    : 'Agent'
+                var initiale = (c.agent
+                    ? c.agent.prenom[0]
+                    : 'A').toUpperCase()
+
+                return '<div class="d-flex aligan-items-center' +
+                    ' gap-3 p-3 rounded-3 border mb-2">' +
+                    '<div class="bg-primary text-white rounded-circle' +
+                        ' d-flex align-items-center' +
+                        ' justify-content-center fw-bold flex-shrink-0"' +
+                        ' style="width:40px;height:40px;font-size:14px">' +
+                        initiale +
+                    '</div>' +
+                    '<div class="flex-grow-1">' +
+                        '<p class="fw-semibold small mb-0">' +
+                            nomAgent +
+                        '</p>' +
+                        '<p class="text-muted small mb-0 text-truncate">' +
+                            (c.message || '') +
+                        '</p>' +
+                    '</div>' +
+                    '<a href="chats.html?agent=' + c.id_agent + '"' +
+                        ' class="btn btn-primary btn-sm flex-shrink-0">' +
+                        '<i class="bi bi-chat me-1"></i>Chat' +
+                    '</a>' +
+                '</div>'
+            }).join('')
+
+        } catch (e) {
+            console.error('Erreur contacts:', e)
+            document.getElementById('listeContacts').innerHTML =
+                '<p class="text-muted small text-center py-3">' +
+                    'Impossible de charger les contacts.' +
+                '</p>'
+        }
+    }
+
+    // ── Alert ─────────────────────────────────
+    function showAlert(msg, type) {
+        var container = document.getElementById('alertContainer')
+        container.innerHTML =
+            '<div class="alert alert-' + type +
+                ' alert-dismissible fade show">' +
+                msg +
+                '<button type="button" class="btn-close"' +
+                    ' data-bs-dismiss="alert"></button>' +
+            '</div>'
+        setTimeout(function() {
+            var alert = container.querySelector('.alert')
+            if (alert) alert.remove()
+        }, 4000)
+    }
+
+</script>
+</body>
+</html>

@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <link rel="shortcut icon" href="favicon.png" type="image/png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIMMo — Solution Immobilière</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- ── NAVBAR ───────────────────────────────── -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold fs-4" href="index.html">
+            <i class="bi bi-buildings text-primary me-1"></i>
+            SIMm<span>o</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navMenu">
+            <ul class="navbar-nav me-auto ms-4 gap-2">
+                <li class="nav-item">
+                    <a class="nav-link active" href="index.html"><i class="bi bi-house me-1"></i>Accueil</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="annonces.html"><i class="bi bi-search me-1"></i>Annonces</a>
+                </li>
+                <li class="nav-item" id="navDashboard" style="display:none">
+                    <a class="nav-link" href="dashboard.html"><i class="bi bi-grid me-1"></i>Dashboard</a>
+                </li>
+                <li class="nav-item">
+    <a class="nav-link" href="recommandations.html">
+         IA
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="recherche-contextuelle.html">
+         Recherche Intelligente
+    </a>
+</li>
+            </ul>
+            <div class="d-flex gap-2 align-items-center" id="navAuth">
+                <!-- Rempli par JS -->
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ── HERO ─────────────────────────────────── -->
+<section class="hero">
+    <div class="container text-center">
+        <h1 class="display-5 fw-bold mb-3">
+            Trouvez votre logement<br>
+            <span class="text-warning">idéal au Cameroun</span>
+        </h1>
+        <p class="lead text-white-50 mb-5">
+            SIMMo connecte étudiants, familles et professionnels avec les meilleurs agents immobiliers.
+        </p>
+
+        <!-- Barre de recherche -->
+        <div class="search-box d-flex flex-wrap gap-2 mx-auto" style="max-width:700px">
+            <div class="flex-grow-1 d-flex align-items-center px-2">
+                <i class="bi bi-search text-muted me-2"></i>
+                <input type="text" id="heroRecherche" class="form-control border-0"
+                    placeholder="Studio, villa, appartement...">
+            </div>
+            <div class="d-flex align-items-center px-2 border-start">
+                <i class="bi bi-geo-alt text-muted me-2"></i>
+                <input type="text" id="heroVille" class="form-control border-0"
+                    placeholder="Ville...">
+            </div>
+            <select id="heroType" class="form-select border-0" style="width:130px">
+                <option value="">Tout</option>
+                <option value="location">Location</option>
+                <option value="vente">Vente</option>
+            </select>
+            <button class="btn btn-primary px-4" onclick="lancerRecherche()">
+                Rechercher
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- ── STATS ─────────────────────────────────── -->
+<section class="bg-white border-bottom py-5">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon">🏠</div>
+                    <h3 class="fw-bold mb-0">2 400+</h3>
+                    <p class="text-muted small mb-0">Annonces actives</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon">👤</div>
+                    <h3 class="fw-bold mb-0">180+</h3>
+                    <p class="text-muted small mb-0">Agents vérifiés</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon">📍</div>
+                    <h3 class="fw-bold mb-0">12</h3>
+                    <p class="text-muted small mb-0">Villes couvertes</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon">⭐</div>
+                    <h3 class="fw-bold mb-0">98%</h3>
+                    <p class="text-muted small mb-0">Avis positifs</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── CATÉGORIES ────────────────────────────── -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="fw-bold mb-1">Parcourir par catégorie</h2>
+        <p class="text-muted mb-4">Trouvez le type de bien qui vous correspond</p>
+        <div class="row g-3">
+           <!-- Remplacez onclick="window.location='annonces.html?type_bien=...'" par onclick="allerCategorie('...')" -->
+
+<div class="col-4 col-md-2" onclick="allerCategorie('appartement')">
+    <div class="text-center p-3 bg-white rounded-3 border" style="cursor:pointer">
+        <div class="fs-2 mb-2">🏢</div>
+        <p class="small fw-semibold mb-0">Appartement</p>
+    </div>
+</div>
+<div class="col-4 col-md-2" onclick="allerCategorie('studio')">
+    <div class="text-center p-3 bg-white rounded-3 border" style="cursor:pointer">
+        <div class="fs-2 mb-2">🛏️</div>
+        <p class="small fw-semibold mb-0">Studio</p>
+    </div>
+</div>
+<div class="col-4 col-md-2" onclick="allerCategorie('villa')">
+    <div class="text-center p-3 bg-white rounded-3 border" style="cursor:pointer">
+        <div class="fs-2 mb-2">🏡</div>
+        <p class="small fw-semibold mb-0">Villa</p>
+    </div>
+</div>
+<div class="col-4 col-md-2" onclick="allerCategorie('chambre')">
+    <div class="text-center p-3 bg-white rounded-3 border" style="cursor:pointer">
+        <div class="fs-2 mb-2">🚪</div>
+        <p class="small fw-semibold mb-0">Chambre</p>
+    </div>
+</div>
+<div class="col-4 col-md-2" onclick="allerCategorie('bureau')">
+    <div class="text-center p-3 bg-white rounded-3 border" style="cursor:pointer">
+        <div class="fs-2 mb-2">💼</div>
+        <p class="small fw-semibold mb-0">Bureau</p>
+    </div>
+</div>
+<div class="col-4 col-md-2" onclick="allerCategorie('terrain')">
+    <div class="text-center p-3 bg-white rounded-3 border" style="cursor:pointer">
+        <div class="fs-2 mb-2">🌿</div>
+        <p class="small fw-semibold mb-0">Terrain</p>
+    </div>
+</div>
+</div>
+    </div>
+</section>
+
+<!-- ── ANNONCES RÉCENTES ─────────────────────── -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold mb-1">Annonces récentes</h2>
+                <p class="text-muted mb-0">Les derniers biens disponibles</p>
+            </div>
+            <a href="annonces.html" class="btn btn-outline-primary">
+                Voir tout <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+        <div class="row g-4" id="annoncesRecentes">
+            <!-- Rempli par JS -->
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ── CTA AGENT ─────────────────────────────── -->
+<section class="py-5" style="background: linear-gradient(135deg, #1d4ed8, #0ea5e9)">
+    <div class="container text-center text-white">
+        <h2 class="fw-bold mb-3">Vous êtes agent immobilier ?</h2>
+        <p class="lead text-white-50 mb-4">Rejoignez SIMMo et publiez vos annonces. 1 mois gratuit !</p>
+        <a href="register-agent.html" class="btn btn-warning btn-lg fw-bold px-5">
+            Créer mon compte agent <i class="bi bi-arrow-right ms-2"></i>
+        </a>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SECTION TEMOIGNAGES
+═══════════════════════════════════════════ -->
+<section class="py-5 bg-white">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold">Ce que disent nos utilisateurs</h2>
+            <p class="text-muted">
+                Des milliers de personnes ont trouve leur logement via SIMMo
+            </p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="p-4 bg-light rounded-3 h-100">
+                    <div class="d-flex gap-1 text-warning mb-3">
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                    </div>
+                    <p class="text-muted fst-italic mb-3">
+                        "Grace a la recherche par ma mosquee, j'ai trouve
+                        un appartement a 500m de mon lieu de culte. Service
+                        excellent et agents serieux."
+                    </p>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="bg-primary text-white rounded-circle
+                            d-flex align-items-center justify-content-center
+                            fw-bold"
+                            style="width:40px;height:40px">
+                            A
+                        </div>
+                        <div>
+                            <p class="fw-bold mb-0 small">Abdoulaye K.</p>
+                            <p class="text-muted mb-0"
+                                style="font-size:11px">
+                                Etudiant, Yaounde
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-4 bg-light rounded-3 h-100">
+                    <div class="d-flex gap-1 text-warning mb-3">
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                    </div>
+                    <p class="text-muted fst-italic mb-3">
+                        "L'IA a trouve une villa proche de l'ecole de mes
+                        enfants et du marche. Je recommande SIMMo a toute
+                        ma famille !"
+                    </p>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="bg-success text-white rounded-circle
+                            d-flex align-items-center justify-content-center
+                            fw-bold"
+                            style="width:40px;height:40px">
+                            M
+                        </div>
+                        <div>
+                            <p class="fw-bold mb-0 small">Marie N.</p>
+                            <p class="text-muted mb-0"
+                                style="font-size:11px">
+                                Famille, Douala
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-4 bg-light rounded-3 h-100">
+                    <div class="d-flex gap-1 text-warning mb-3">
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-half"></i>
+                    </div>
+                    <p class="text-muted fst-italic mb-3">
+                        "En tant qu'agent, SIMMo m'a permis de tripler
+                        mon nombre de clients. La plateforme est simple
+                        et tres professionnelle."
+                    </p>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="bg-warning text-white rounded-circle
+                            d-flex align-items-center justify-content-center
+                            fw-bold"
+                            style="width:40px;height:40px">
+                            P
+                        </div>
+                        <div>
+                            <p class="fw-bold mb-0 small">Paul M.</p>
+                            <p class="text-muted mb-0"
+                                style="font-size:11px">
+                                Agent Immobilier, Douala
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SECTION CHIFFRES CLES
+═══════════════════════════════════════════ -->
+<section class="py-5"
+    style="background:linear-gradient(135deg,#1e293b,#0f172a)">
+    <div class="container text-white text-center">
+        <h2 class="fw-bold mb-5">SIMMo en chiffres</h2>
+        <div class="row g-4">
+            <div class="col-6 col-md-3">
+                <h2 class="fw-bold mb-1"
+                    style="font-size:3rem;color:#60a5fa">
+                    2400+
+                </h2>
+                <p class="text-white-50">Annonces publiees</p>
+            </div>
+            <div class="col-6 col-md-3">
+                <h2 class="fw-bold mb-1"
+                    style="font-size:3rem;color:#34d399">
+                    180+
+                </h2>
+                <p class="text-white-50">Agents certifies</p>
+            </div>
+            <div class="col-6 col-md-3">
+                <h2 class="fw-bold mb-1"
+                    style="font-size:3rem;color:#fbbf24">
+                    5000+
+                </h2>
+                <p class="text-white-50">Utilisateurs satisfaits</p>
+            </div>
+            <div class="col-6 col-md-3">
+                <h2 class="fw-bold mb-1"
+                    style="font-size:3rem;color:#f472b6">
+                    12
+                </h2>
+                <p class="text-white-50">Villes couvertes</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SECTION NEWSLETTER
+═══════════════════════════════════════════ -->
+<section class="py-5 bg-white">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-6 text-center">
+                <h4 class="fw-bold mb-2">
+                    Restez informe des nouvelles annonces
+                </h4>
+                <p class="text-muted mb-4">
+                    Recevez les meilleures offres directement
+                    dans votre boite mail.
+                </p>
+                <div class="d-flex gap-2">
+                    <input type="email" id="emailNewsletter"
+                        class="form-control form-control-lg"
+                        placeholder="votre@email.com">
+                    <button class="btn btn-primary px-4 fw-bold"
+                        onclick="sInscrireNewsletter()">
+                        <i class="bi bi-send me-2"></i>
+                        S'inscrire
+                    </button>
+                </div>
+                <p class="text-muted small mt-2 mb-0">
+                    Pas de spam. Desabonnement en 1 clic.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- ── COMMENT ÇA MARCHE ─────────────────── -->
+<section class="py-5 bg-white">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold">Comment fonctionne SIMMo ?</h2>
+            <p class="text-muted">Trouver votre logement n'a jamais été aussi simple</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4 text-center">
+                <div class="bg-primary bg-opacity-10 rounded-circle
+                    d-inline-flex p-4 mb-3">
+                    <i class="bi bi-person-plus text-primary fs-2"></i>
+                </div>
+                <h5 class="fw-bold">1. Créez votre compte</h5>
+                <p class="text-muted">Inscrivez-vous gratuitement en tant
+                    qu'étudiant, famille ou professionnel.</p>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="bg-success bg-opacity-10 rounded-circle
+                    d-inline-flex p-4 mb-3">
+                    <i class="bi bi-search text-success fs-2"></i>
+                </div>
+                <h5 class="fw-bold">2. Recherchez intelligemment</h5>
+                <p class="text-muted">Utilisez notre IA pour trouver un
+                    logement proche de votre travail, école ou lieu de culte.</p>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="bg-warning bg-opacity-10 rounded-circle
+                    d-inline-flex p-4 mb-3">
+                    <i class="bi bi-chat-dots text-warning fs-2"></i>
+                </div>
+                <h5 class="fw-bold">3. Contactez l'agent</h5>
+                <p class="text-muted">Entrez directement en contact avec
+                    l'agent immobilier et planifiez une visite.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── TYPES DE LOGEMENTS ────────────────── -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold">Logements pour tous les profils</h2>
+            <p class="text-muted">SIMMo s'adapte à vos besoins</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="bg-white rounded-3 border p-4 h-100">
+                    <div class="fs-2 mb-3">🎓</div>
+                    <h5 class="fw-bold">Pour les étudiants</h5>
+                    <p class="text-muted small mb-3">
+                        Trouvez une chambre ou un studio proche de
+                        votre université. Budget adapté, logements
+                        meublés disponibles.
+                    </p>
+                    <ul class="list-unstyled small text-muted">
+                        <li><i class="bi bi-check text-success me-2"></i>Proche des universités</li>
+                        <li><i class="bi bi-check text-success me-2"></i>Petits budgets</li>
+                        <li><i class="bi bi-check text-success me-2"></i>Meublés disponibles</li>
+                    </ul>
+                    <a href="annonces.html?type_bien=chambre"
+                        class="btn btn-outline-primary btn-sm mt-2">
+                        Voir les chambres →
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="bg-white rounded-3 border p-4 h-100
+                    border-primary">
+                    <div class="fs-2 mb-3">👨‍👩‍👧</div>
+                    <h5 class="fw-bold">Pour les familles</h5>
+                    <p class="text-muted small mb-3">
+                        Des villas et appartements spacieux dans des
+                        quartiers calmes et sécurisés, proches des
+                        écoles et commerces.
+                    </p>
+                    <ul class="list-unstyled small text-muted">
+                        <li><i class="bi bi-check text-success me-2"></i>Quartiers familiaux</li>
+                        <li><i class="bi bi-check text-success me-2"></i>Proches des écoles</li>
+                        <li><i class="bi bi-check text-success me-2"></i>Espaces verts</li>
+                    </ul>
+                    <a href="annonces.html?type_bien=villa"
+                        class="btn btn-primary btn-sm mt-2">
+                        Voir les villas →
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="bg-white rounded-3 border p-4 h-100">
+                    <div class="fs-2 mb-3">💼</div>
+                    <h5 class="fw-bold">Pour les professionnels</h5>
+                    <p class="text-muted small mb-3">
+                        Des appartements modernes et des bureaux bien
+                        situés, proches des zones d'affaires et
+                        des commodités.
+                    </p>
+                    <ul class="list-unstyled small text-muted">
+                        <li><i class="bi bi-check text-success me-2"></i>Zones d'affaires</li>
+                        <li><i class="bi bi-check text-success me-2"></i>Haut standing</li>
+                        <li><i class="bi bi-check text-success me-2"></i>Bureaux disponibles</li>
+                    </ul>
+                    <a href="annonces.html?type_bien=appartement"
+                        class="btn btn-outline-primary btn-sm mt-2">
+                        Voir les apparts →
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── POURQUOI SIMMO ─────────────────────── -->
+<section class="py-5 bg-white">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-md-6">
+                <h2 class="fw-bold mb-4">
+                    Pourquoi choisir SIMMo ?
+                </h2>
+                <div class="d-flex flex-column gap-3">
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="bg-primary bg-opacity-10 rounded-2
+                            p-2 flex-shrink-0">
+                            <i class="bi bi-cpu text-primary fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-1">
+                                Intelligence Artificielle
+                            </h6>
+                            <p class="text-muted small mb-0">
+                                Notre IA analyse vos critères et vous
+                                propose les logements les plus pertinents
+                                avec un score de correspondance.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="bg-success bg-opacity-10 rounded-2
+                            p-2 flex-shrink-0">
+                            <i class="bi bi-geo-alt text-success fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-1">
+                                Recherche géolocalisée
+                            </h6>
+                            <p class="text-muted small mb-0">
+                                Trouvez un logement proche de votre lieu
+                                de travail, école, mosquée ou église.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="bg-warning bg-opacity-10 rounded-2
+                            p-2 flex-shrink-0">
+                            <i class="bi bi-patch-check text-warning fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-1">
+                                Agents vérifiés
+                            </h6>
+                            <p class="text-muted small mb-0">
+                                Tous nos agents sont vérifiés par notre
+                                équipe. CNI validée et compte certifié.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="bg-info bg-opacity-10 rounded-2
+                            p-2 flex-shrink-0">
+                            <i class="bi bi-shield-check text-info fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-1">
+                                100% sécurisé
+                            </h6>
+                            <p class="text-muted small mb-0">
+                                Vos données sont protégées. Paiements
+                                sécurisés via Orange Money et MTN MoMo.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="bg-light rounded-3 p-4">
+                    <h5 class="fw-bold mb-4 text-center">
+                         Recherche Intelligente IA
+                    </h5>
+                    <div class="d-flex flex-column gap-3">
+                        <div class="bg-white rounded-3 p-3 d-flex
+                            align-items-center gap-3">
+                            <span class="fs-3">💼</span>
+                            <div>
+                                <p class="fw-semibold small mb-0">
+                                    Par lieu de travail
+                                </p>
+                                <p class="text-muted"
+                                    style="font-size:11px;margin:0">
+                                    "Je travaille à Total Cameroun Douala"
+                                </p>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-3 p-3 d-flex
+                            align-items-center gap-3">
+                            <span class="fs-3">🕌</span>
+                            <div>
+                                <p class="fw-semibold small mb-0">
+                                    Par religion
+                                </p>
+                                <p class="text-muted"
+                                    style="font-size:11px;margin:0">
+                                    "Je suis musulman, proche d'une mosquée"
+                                </p>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-3 p-3 d-flex
+                            align-items-center gap-3">
+                            <span class="fs-3">🎓</span>
+                            <div>
+                                <p class="fw-semibold small mb-0">
+                                    Par école / université
+                                </p>
+                                <p class="text-muted"
+                                    style="font-size:11px;margin:0">
+                                    "Étudiant à l'Université de Douala"
+                                </p>
+                            </div>
+                        </div>
+                        <a href="recherche-contextuelle.html"
+                            class="btn btn-primary w-100 fw-bold">
+                            <i class="bi bi-cpu me-2"></i>
+                            Essayer la recherche IA
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── VILLES DISPONIBLES ─────────────────── -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold">Disponible dans vos villes</h2>
+            <p class="text-muted">SIMMo couvre les principales villes du Cameroun</p>
+        </div>
+        <div class="row g-3 justify-content-center">
+            <div class="col-6 col-md-2">
+                <a href="annonces.html?ville=Yaoundé"
+                    class="d-block text-center p-3 bg-white rounded-3
+                        border text-decoration-none hover-shadow">
+                    <div class="fs-3 mb-2">🏛️</div>
+                    <p class="fw-bold small mb-0">Yaoundé</p>
+                    <p class="text-muted" style="font-size:11px;margin:0">
+                        Capitale
+                    </p>
+                </a>
+            </div>
+            <div class="col-6 col-md-2">
+                <a href="annonces.html?ville=Douala"
+                    class="d-block text-center p-3 bg-white rounded-3
+                        border text-decoration-none">
+                    <div class="fs-3 mb-2">🏙️</div>
+                    <p class="fw-bold small mb-0">Douala</p>
+                    <p class="text-muted" style="font-size:11px;margin:0">
+                        Métropole
+                    </p>
+                </a>
+            </div>
+            <div class="col-6 col-md-2">
+                <a href="annonces.html?ville=Bafoussam"
+                    class="d-block text-center p-3 bg-white rounded-3
+                        border text-decoration-none">
+                    <div class="fs-3 mb-2">🌄</div>
+                    <p class="fw-bold small mb-0">Bafoussam</p>
+                    <p class="text-muted" style="font-size:11px;margin:0">
+                        Ouest
+                    </p>
+                </a>
+            </div>
+            <div class="col-6 col-md-2">
+                <a href="annonces.html?ville=Garoua"
+                    class="d-block text-center p-3 bg-white rounded-3
+                        border text-decoration-none">
+                    <div class="fs-3 mb-2">🌅</div>
+                    <p class="fw-bold small mb-0">Garoua</p>
+                    <p class="text-muted" style="font-size:11px;margin:0">
+                        Nord
+                    </p>
+                </a>
+            </div>
+            <div class="col-6 col-md-2">
+                <a href="annonces.html?ville=Bamenda"
+                    class="d-block text-center p-3 bg-white rounded-3
+                        border text-decoration-none">
+                    <div class="fs-3 mb-2">🏔️</div>
+                    <p class="fw-bold small mb-0">Bamenda</p>
+                    <p class="text-muted" style="font-size:11px;margin:0">
+                        Nord-Ouest
+                    </p>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── FAQ ───────────────────────────────── -->
+<section class="py-5 bg-white">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold">Questions fréquentes</h2>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-8">
+                <div class="accordion" id="faqAccordion">
+                    <div class="accordion-item border-0 mb-3 rounded-3
+                        overflow-hidden shadow-sm">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button fw-semibold"
+                                type="button" data-bs-toggle="collapse"
+                                data-bs-target="#faq1">
+                                SIMMo est-il gratuit ?
+                            </button>
+                        </h2>
+                        <div id="faq1" class="accordion-collapse collapse show"
+                            data-bs-parent="#faqAccordion">
+                            <div class="accordion-body text-muted">
+                                Oui, SIMMo est totalement gratuit pour les
+                                utilisateurs (étudiants, familles,
+                                professionnels). Seuls les agents immobiliers
+                                paient un abonnement après 1 mois d'essai gratuit.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item border-0 mb-3 rounded-3
+                        overflow-hidden shadow-sm">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-semibold"
+                                type="button" data-bs-toggle="collapse"
+                                data-bs-target="#faq2">
+                                Comment fonctionne la recherche par religion ?
+                            </button>
+                        </h2>
+                        <div id="faq2" class="accordion-collapse collapse"
+                            data-bs-parent="#faqAccordion">
+                            <div class="accordion-body text-muted">
+                                Notre IA localise automatiquement les mosquées,
+                                églises catholiques et protestantes proches
+                                des annonces. Elle calcule la distance et
+                                donne la priorité aux logements les plus proches
+                                de votre lieu de culte.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item border-0 mb-3 rounded-3
+                        overflow-hidden shadow-sm">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-semibold"
+                                type="button" data-bs-toggle="collapse"
+                                data-bs-target="#faq3">
+                                Les annonces sont-elles vérifiées ?
+                            </button>
+                        </h2>
+                        <div id="faq3" class="accordion-collapse collapse"
+                            data-bs-parent="#faqAccordion">
+                            <div class="accordion-body text-muted">
+                                Tous les agents sont vérifiés par notre équipe
+                                (validation de la CNI). Cela garantit que vous
+                                contactez de vrais professionnels de l'immobilier.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item border-0 rounded-3
+                        overflow-hidden shadow-sm">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-semibold"
+                                type="button" data-bs-toggle="collapse"
+                                data-bs-target="#faq4">
+                                Comment payer mon abonnement agent ?
+                            </button>
+                        </h2>
+                        <div id="faq4" class="accordion-collapse collapse"
+                            data-bs-parent="#faqAccordion">
+                            <div class="accordion-body text-muted">
+                                Le paiement se fait via <strong>Orange Money</strong>
+                                ou <strong>MTN MoMo</strong>. C'est rapide,
+                                sécurisé et disponible 24h/24.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="bg-dark text-white py-4">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4">
+                <h5 class="fw-bold mb-3">
+                    <i class="bi bi-buildings text-primary me-1"></i>
+                    SIMm<span class="text-primary">o</span>
+                </h5>
+                <p class="text-white-50 small">
+                    Solution Immobilière Intelligente au Cameroun.
+                    Trouvez votre logement idéal grâce à l'IA.
+                </p>
+            </div>
+            <div class="col-md-4">
+                <h6 class="fw-semibold mb-3">Navigation</h6>
+                <ul class="list-unstyled small">
+                    <li class="mb-1">
+                        <a href="index.html"
+                            class="text-white-50 text-decoration-none">
+                            Accueil
+                        </a>
+                    </li>
+                    <li class="mb-1">
+                        <a href="annonces.html"
+                            class="text-white-50 text-decoration-none">
+                            Annonces
+                        </a>
+                    </li>
+                    <li class="mb-1">
+                        <a href="recommandations.html"
+                            class="text-white-50 text-decoration-none">
+                             IA Recommandations
+                        </a>
+                    </li>
+                    <li class="mb-1">
+                        <a href="recherche-contextuelle.html"
+                            class="text-white-50 text-decoration-none">
+                             Recherche Intelligente
+                        </a>
+                    </li>
+                    <li>
+                    <a  href="recherche-description.html" 
+                    class="text-white-50 text-decoration-none"> Recherche description
+                        </a>
+
+                    </li>
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <h6 class="fw-semibold mb-3">Agents</h6>
+                <ul class="list-unstyled small">
+                    <li class="mb-1">
+                        <a href="register-agent.html"
+                            class="text-white-50 text-decoration-none">
+                            Devenir agent
+                        </a>
+                    </li>
+                    <li class="mb-1">
+                        <a href="login-agent.html"
+                            class="text-white-50 text-decoration-none">
+                            Espace agent
+                        </a>
+                    </li>
+                    <li class="mb-1">
+                        <a href="plan.html"
+                            class="text-white-50 text-decoration-none">
+                            Nos plans tarifaires
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <hr class="border-secondary my-3">
+
+        <div class="d-flex justify-content-between align-items-center">
+            <p class="text-white-50 small mb-0">
+                © 2026 SIMMo — Solution Immobilière. Tous droits réservés.
+            </p>
+            <!--  Lien admin discret -->
+            <a href="admin/login.html"
+                class="text-white-50 text-decoration-none"
+                style="font-size:11px;opacity:0.3">
+                Administration
+            </a>
+        </div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+    // ── Navbar dynamique ────────────────────
+
+function sInscrireNewsletter() {
+    var email = document.getElementById('emailNewsletter').value
+    if (!email) return
+    // Simple confirmation visuelle
+    document.querySelector('.d-flex.gap-2').innerHTML =
+        '<div class="alert alert-success w-100 mb-0">' +
+            '<i class="bi bi-check-circle me-2"></i>' +
+            'Merci ! Vous recevrez nos meilleures offres.' +
+        '</div>'
+}
+ // ── Lancer recherche depuis le Hero ──────────
+async function lancerRecherche() {
+    if (!verifierActionConnectee(
+        'effectuer une recherche'
+    )) return
+
+    const q     = document.getElementById('heroRecherche').value.trim()
+    const ville = document.getElementById('heroVille').value.trim()
+    const type  = document.getElementById('heroType').value
+
+    // Rediriger vers annonces.html avec les paramètres
+    let url = 'annonces.html?'
+    if (q)     url += `q=${encodeURIComponent(q)}&`
+    if (ville) url += `ville=${encodeURIComponent(ville)}&`
+    if (type)  url += `type_transaction=${type}&`
+    url += 'source=ia'  // ← indique d'utiliser l'IA
+
+    window.location.href = url
+}
+
+// ── Charger annonces récentes avec IA ────────
+async function chargerAnnonces() {
+    var container = document.getElementById('annoncesRecentes')
+    container.innerHTML =
+        '<div class="col-12 text-center py-4">' +
+            '<div class="spinner-border text-primary"></div>' +
+        '</div>'
+
+    try {
+        // Essayer l'IA
+        var iaData = await appelIA('/recommander', { limite: 6 })
+
+        if (iaData &&
+            iaData.recommandations &&
+            iaData.recommandations.length > 0) {
+
+            //  Vérification photo IA
+            console.log('Photo IA exemple:',
+                iaData.recommandations[0].photo)
+
+            container.innerHTML =
+                iaData.recommandations
+                .map(function(r) {
+                    return carteAnnonceIA(r)
+                }).join('')
+            return
+        }
+
+        // Fallback Laravel classique
+        var response = await fetch(
+            CONFIG.API_URL + '/annonces?limit=6',
+            { headers: { 'Accept': 'application/json' } }
+        )
+        var data     = await response.json()
+        var annonces = data.data || []
+
+        if (annonces.length === 0) {
+            container.innerHTML =
+                '<div class="col-12 text-center py-5 text-muted">' +
+                    '<p>Aucune annonce disponible.</p>' +
+                '</div>'
+            return
+        }
+
+        container.innerHTML = annonces.map(function(a) {
+            return carteAnnonceClassique(a)
+        }).join('')
+
+    } catch (e) {
+        console.error('Erreur:', e)
+        container.innerHTML =
+            '<div class="col-12 text-center text-muted py-5">' +
+                '<p>Erreur de chargement.</p>' +
+            '</div>'
+    }
+}
+
+//  Carte pour annonce venant de l'IA
+function carteAnnonceIA(r) {
+
+    var idAnnonce = r.id_annonce || r.id
+
+    // Image par défaut
+    if (r.photo) {
+    urlPhoto = CONFIG.STORAGE_URL + r.photo
+} else {
+    urlPhoto = 'https://placehold.co/400x250/e2e8f0/64748b?text=SIMMo'
+}
+    console.log(urlPhoto)
+    console.log('Annonce IA:', r)
+    console.log('Photo:', r.photo)
+    console.log('URL finale:', urlPhoto)
+
+    var quartier = r.quartier
+        ? r.quartier + ', '
+        : ''
+
+    var badge = r.type_transaction === 'location'
+        ? '<span class="badge bg-primary badge-transaction">Location</span>'
+        : '<span class="badge bg-success badge-transaction">Vente</span>'
+
+    return `
+        <div class="col-12 col-md-6 col-lg-4">
+
+            <a href="annonce-detail.html?id=${idAnnonce}"
+               class="carte-annonce card border-0 shadow-sm text-decoration-none">
+
+                <div class="card-img-wrapper">
+
+                    <img
+                        src="${urlPhoto}"
+                        class="card-img-top"
+                        alt="${r.titre}"
+
+                        onerror="
+                            this.onerror=null;
+                            this.src='https://placehold.co/400x250/e2e8f0/64748b?text=SIMMo';
+                        "
+                    >
+
+                    ${badge}
+
+                    <span class="position-absolute bottom-0 end-0
+                        m-2 badge bg-dark bg-opacity-75 small">
+
+                        IA ${Math.round((r.score_final || 0.5) * 100)}%
+
+                    </span>
+
+                </div>
+
+                <div class="card-body">
+
+                    <p class="text-primary small fw-bold
+                        text-uppercase mb-1">
+
+                        ${r.categorie || ''}
+
+                    </p>
+
+                    <h5 class="card-title fw-bold text-truncate">
+
+                        ${r.titre}
+
+                    </h5>
+
+                    <p class="text-muted small mb-2">
+
+                        <i class="bi bi-geo-alt text-primary"></i>
+
+                        ${quartier}${r.ville || ''}
+
+                    </p>
+
+                    <div class="d-flex justify-content-between
+                        align-items-center">
+
+                        <span class="prix-annonce">
+
+                            ${formatPrix(r.prix)}
+
+                        </span>
+
+                        ${
+                            r.prix_estime
+                            ? `
+                                <span class="badge bg-success
+                                    bg-opacity-10 text-success small">
+
+                                    ~${formatPrix(r.prix_estime)}
+
+                                </span>
+                            `
+                            : ''
+                        }
+
+                    </div>
+
+                </div>
+
+            </a>
+
+        </div>
+    `
+}
+// Carte pour annonce classique Laravel
+function carteAnnonceClassique(a) {
+    // Construction URL photo
+    var urlPhoto
+    if (a.photo_principale &&
+        a.photo_principale.chemin_image) {
+        urlPhoto = CONFIG.STORAGE_URL + '/' +
+            a.photo_principale.chemin_image
+    } else {
+        urlPhoto =
+            'https://placehold.co/400x250/e2e8f0/64748b?text=SIMMo'
+    }
+
+    var quartier  = a.localisation && a.localisation.quartier
+        ? a.localisation.quartier + ', ' : ''
+    var ville     = a.localisation && a.localisation.ville
+        ? a.localisation.ville : ''
+    var categorie = a.categorie && a.categorie.libelle
+        ? a.categorie.libelle : ''
+    var badge     = a.type_transaction === 'location'
+        ? '<span class="badge bg-primary badge-transaction">Location</span>'
+        : '<span class="badge bg-success badge-transaction">Vente</span>'
+    var meuble    = a.meuble
+        ? '<span class="badge bg-warning text-dark"' +
+          ' style="position:absolute;top:12px;right:12px">Meuble</span>'
+        : ''
+    var prixMois  = a.type_transaction === 'location'
+        ? '<span class="text-muted fs-6 fw-normal">/mois</span>'
+        : ''
+
+    return '<div class="col-12 col-md-6 col-lg-4">' +
+        '<a href="annonce-detail.html?id=' + a.id + '"' +
+            ' class="carte-annonce card border-0 shadow-sm' +
+            ' text-decoration-none">' +
+            '<div class="card-img-wrapper">' +
+                '<img' +
+                    ' src="' + urlPhoto + '"' +
+                    ' class="card-img-top"' +
+                    ' alt="' + a.titre + '"' +
+                    ' onerror="this.onerror=null;this.src=' +
+                        "'https://placehold.co/400x250/e2e8f0/64748b?text=SIMMo'" +
+                    '">' +
+                badge + meuble +
+            '</div>' +
+            '<div class="card-body">' +
+                '<p class="text-primary small fw-bold' +
+                    ' text-uppercase mb-1">' +
+                    categorie +
+                '</p>' +
+                '<h5 class="card-title fw-bold text-truncate">' +
+                    a.titre +
+                '</h5>' +
+                '<p class="text-muted small mb-2">' +
+                    '<i class="bi bi-geo-alt text-primary"></i> ' +
+                    quartier + ville +
+                '</p>' +
+                '<div class="d-flex justify-content-between' +
+                    ' align-items-center">' +
+                    '<span class="prix-annonce">' +
+                        formatPrix(a.prix) + prixMois +
+                    '</span>' +
+                    '<span class="text-muted small">' +
+                        '<i class="bi bi-eye me-1"></i>' + a.vues +
+                    '</span>' +
+                '</div>' +
+            '</div>' +
+        '</a>' +
+    '</div>'
+}
+                  
+// ── Afficher annonces recommandées par IA ────
+function afficherAnnoncesIA(recommandations, container) {
+    container.innerHTML = recommandations.map(function(r) {
+
+        // L'IA retourne r.photo (chemin direct de la BD)
+        var urlPhoto = r.photo
+            ? 'http://localhost:8000/storage'+r.photo
+            : 'https://placehold.co/400x250/e2e8f0/64748b?text=SIMMo'
+
+        var quartier = r.quartier ? r.quartier + ', ' : ''
+
+        return '<div class="col-12 col-md-6 col-lg-4">' +
+            '<a href="annonce-detail.html?id=' + r.id_annonce + '"' +
+                ' class="carte-annonce card border-0 shadow-sm' +
+                ' text-decoration-none">' +
+                '<div class="card-img-wrapper position-relative">' +
+                    '<img src="' + urlPhoto + '"' +
+                        ' class="card-img-top"' +
+                        ' alt="' + r.titre + '"' +
+                       
+                        '">' +
+                    '<span class="badge badge-transaction ' +
+                        (r.type_transaction === 'location'
+                            ? 'bg-primary' : 'bg-success') + '">' +
+                        (r.type_transaction === 'Location'
+                            ? 'Vente' : 'Location') +
+                    '</span>' +
+                    '<span class="position-absolute bottom-0 end-0' +
+                        ' m-2 badge bg-dark bg-opacity-75 small">' +
+                        'IA ' +
+                        Math.round((r.score_final || 0) * 100) + '%' +
+                    '</span>' +
+                '</div>' +
+                '<div class="card-body">' +
+                    '<p class="text-primary small fw-bold' +
+                        ' text-uppercase mb-1">' +
+                        (r.categorie || '') +
+                    '</p>' +
+                    '<h5 class="card-title fw-bold text-truncate">' +
+                        r.titre +
+                    '</h5>' +
+                    '<p class="text-muted small mb-2">' +
+                        '<i class="bi bi-geo-alt text-primary"></i> ' +
+                        quartier + (r.ville || '') +
+                    '</p>' +
+                    '<p class="small text-muted fst-italic mb-2' +
+                        ' text-truncate">' +
+                        (r.raison || '') +
+                    '</p>' +
+                    '<div class="d-flex justify-content-between' +
+                        ' align-items-center">' +
+                        '<span class="prix-annonce">' +
+                            formatPrix(r.prix) +
+                        '</span>' +
+                        (r.prix_estime
+                            ? '<span class="badge bg-success' +
+                              ' bg-opacity-10 text-success small">~' +
+                              formatPrix(r.prix_estime) + '</span>'
+                            : '') +
+                    '</div>' +
+                '</div>' +
+            '</a>' +
+        '</div>'
+    }).join('')
+}
+
+
+    // ── Catégories — redirige avec vérification
+    function allerCategorie(typeBien) {
+        if (!verifierActionConnectee('parcourir par catégorie')) return
+        window.location.href = `annonces.html?type_bien=${typeBien}`
+    }
+
+    // ── Init ─────────────────────────────────
+    
+    // Recherche avec touche Entrée
+    document.getElementById('heroRecherche')
+        .addEventListener('keypress', e => {
+            if (e.key === 'Enter') lancerRecherche()
+        })
+    document.getElementById('heroVille')
+        .addEventListener('keypress', e => {
+            if (e.key === 'Enter') lancerRecherche()
+        })
+        document.addEventListener('DOMContentLoaded', function() {
+    
+    initNavbar()
+    chargerAnnonces()
+})
+</script>
+</body>
+</html>

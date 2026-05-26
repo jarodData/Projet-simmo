@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <link rel="shortcut icon" href="../favicon.png" type="image/png">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plans — Admin SIMMo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+    <style>
+        .admin-layout{display:flex;min-height:100vh}
+        #adminSidebar{width:240px;min-width:240px;background:white;
+            border-right:1px solid #e2e8f0;display:flex;
+            flex-direction:column;position:sticky;top:0;
+            height:100vh;overflow-y:auto}
+        .admin-main{flex:1;background:#f8fafc;overflow-x:hidden}
+        .plan-card{background:white;border-radius:16px;
+            border:2px solid #e2e8f0;padding:24px;
+            transition:all 0.2s}
+        .plan-card:hover{border-color:#2563eb;
+            box-shadow:0 8px 24px rgba(37,99,235,0.1)}
+    </style>
+</head>
+<body>
+<div class="admin-layout">
+    <div id="adminSidebar"></div>
+    <div class="admin-main p-4">
+
+        <div class="d-flex justify-content-between
+            align-items-center mb-4">
+            <h3 class="fw-bold mb-0">
+                <i class="bi bi-credit-card text-primary me-2"></i>
+                Gestion des Plans
+            </h3>
+            <button class="btn btn-primary fw-bold"
+                onclick="ouvrirModalPlan()">
+                <i class="bi bi-plus-lg me-2"></i>
+                Nouveau plan
+            </button>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <!-- Grille des plans -->
+        <div class="row g-4" id="grillePlans">
+            <div class="col-12 text-center py-5">
+                <div class="spinner-border text-primary"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Créer/Modifier Plan -->
+<div class="modal fade" id="modalPlan" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold" id="titrePlan">
+                    Nouveau plan
+                </h5>
+                <button type="button" class="btn-close"
+                    data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <input type="hidden" id="planId">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">
+                            Nom du plan *
+                        </label>
+                        <input type="text" id="planNom"
+                            class="form-control"
+                            placeholder="Ex: Professional">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">
+                            Prix mensuel (F CFA) *
+                        </label>
+                        <input type="number" id="planPrix"
+                            class="form-control" placeholder="0">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">
+                            Nb. annonces max *
+                        </label>
+                        <input type="number" id="planAnnonces"
+                            class="form-control" placeholder="10">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">
+                            Jours d'essai gratuit
+                        </label>
+                        <input type="number" id="planEssai"
+                            class="form-control" placeholder="0">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">
+                            Fonctionnalités
+                        </label>
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input"
+                                        type="checkbox"
+                                        id="fonctBadge">
+                                    <label class="form-check-label"
+                                        for="fonctBadge">
+                                        Badge vérifié
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input"
+                                        type="checkbox"
+                                        id="fonctMiseEnAvant">
+                                    <label class="form-check-label"
+                                        for="fonctMiseEnAvant">
+                                        Mise en avant
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input"
+                                        type="checkbox"
+                                        id="fonctStats">
+                                    <label class="form-check-label"
+                                        for="fonctStats">
+                                        Statistiques
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input"
+                                        type="checkbox"
+                                        id="fonctSupport">
+                                    <label class="form-check-label"
+                                        for="fonctSupport">
+                                        Support prioritaire
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input"
+                                type="checkbox" id="planActif"
+                                checked>
+                            <label class="form-check-label fw-semibold"
+                                for="planActif">
+                                Plan actif (visible aux agents)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-secondary"
+                    data-bs-dismiss="modal">
+                    Annuler
+                </button>
+                <button type="button" class="btn btn-primary fw-bold"
+                    id="btnSauvegarderPlan"
+                    onclick="sauvegarderPlan()">
+                    <i class="bi bi-check2 me-2"></i>
+                    Sauvegarder
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/config.js"></script>
+<script src="js/admin.js"></script>
+<script>
+    const modalPlan = new bootstrap.Modal(
+        document.getElementById('modalPlan'))
+
+    function init() {
+        initAdminNavbar('plans.html')
+        chargerPlans()
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!getAdminToken()) { afficherAccesRefuse(); return }
+        init()
+    })
+
+    function afficherAccesRefuse() {
+        document.body.innerHTML = `
+            <div style="display:flex;align-items:center;
+                justify-content:center;height:100vh;
+                background:#0f172a;color:white;
+                flex-direction:column;gap:16px">
+                <i class="bi bi-shield-lock" style="font-size:4rem"></i>
+                <h3>Accès refusé</h3>
+                <a href="login.html" style="background:#2563eb;
+                    color:white;padding:10px 30px;border-radius:8px;
+                    text-decoration:none">Se connecter</a>
+            </div>`
+    }
+
+    async function chargerPlans() {
+        try {
+            const plans = await adminRequest('/plans')
+            const icones = ['bi-lightning', 'bi-star',
+                            'bi-star-fill', 'bi-crown']
+
+            document.getElementById('grillePlans').innerHTML =
+                plans.map((p, i) => {
+                    const fonct = p.fonctionnalites || {}
+                    return `
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <div class="plan-card">
+                                <div class="d-flex justify-content-between
+                                    align-items-start mb-3">
+                                    <i class="bi ${icones[i] || 'bi-star'}
+                                        text-primary fs-3"></i>
+                                    <div class="d-flex gap-1">
+                                        <span class="badge ${p.is_active
+                                            ? 'bg-success' : 'bg-secondary'}">
+                                            ${p.is_active ? 'Actif' : 'Inactif'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <h4 class="fw-bold mb-1">${p.nom_plan}</h4>
+                                <p class="fs-4 fw-bold text-primary mb-3">
+                                    ${p.prix_mensuel == 0
+                                        ? 'Gratuit'
+                                        : Number(p.prix_mensuel).toLocaleString('fr-FR') + ' F/mois'}
+                                </p>
+                                <ul class="list-unstyled small text-muted mb-4">
+                                    <li class="mb-1">
+                                        <i class="bi bi-check text-success me-1"></i>
+                                        ${p.nb_annonces_max >= 999
+                                            ? 'Illimité'
+                                            : p.nb_annonces_max + ' annonces'}
+                                    </li>
+                                    ${p.duree_essai_jours > 0 ? `
+                                        <li class="mb-1">
+                                            <i class="bi bi-check text-success me-1"></i>
+                                            ${p.duree_essai_jours}j essai gratuit
+                                        </li>` : ''}
+                                    ${fonct.badge_verifie ? `
+                                        <li class="mb-1">
+                                            <i class="bi bi-check text-success me-1"></i>
+                                            Badge vérifié
+                                        </li>` : ''}
+                                    ${fonct.mise_en_avant ? `
+                                        <li class="mb-1">
+                                            <i class="bi bi-check text-success me-1"></i>
+                                            Mise en avant
+                                        </li>` : ''}
+                                </ul>
+                                <div class="d-flex gap-2">
+                                    <p class="text-muted small mb-0">
+                                        <i class="bi bi-people me-1"></i>
+                                        ${p.agents_count || 0} agents
+                                    </p>
+                                    <button class="btn btn-sm
+                                        btn-outline-primary ms-auto"
+                                        onclick="modifierPlan(${p.id})">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm
+                                        btn-outline-${p.is_active ? 'warning' : 'success'}"
+                                        onclick="togglePlan(${p.id}, ${!p.is_active})">
+                                        <i class="bi bi-${p.is_active ? 'pause' : 'play'}"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>`
+                }).join('')
+
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
+    function ouvrirModalPlan(plan = null) {
+        document.getElementById('planId').value    = plan?.id || ''
+        document.getElementById('planNom').value   = plan?.nom_plan || ''
+        document.getElementById('planPrix').value  = plan?.prix_mensuel || ''
+        document.getElementById('planAnnonces').value = plan?.nb_annonces_max || ''
+        document.getElementById('planEssai').value = plan?.duree_essai_jours || 0
+        document.getElementById('planActif').checked = plan?.is_active ?? true
+
+        const fonct = plan?.fonctionnalites || {}
+        document.getElementById('fonctBadge').checked      = fonct.badge_verifie || false
+        document.getElementById('fonctMiseEnAvant').checked = fonct.mise_en_avant || false
+        document.getElementById('fonctStats').checked      = fonct.statistiques || false
+        document.getElementById('fonctSupport').checked    = fonct.support_prioritaire || false
+
+        document.getElementById('titrePlan').textContent =
+            plan ? `Modifier — ${plan.nom_plan}` : 'Nouveau plan'
+
+        modalPlan.show()
+    }
+
+    async function modifierPlan(id) {
+        const plans = await adminRequest('/plans')
+        const plan  = plans.find(p => p.id === id)
+        if (plan) ouvrirModalPlan(plan)
+    }
+
+    async function sauvegarderPlan() {
+        const id = document.getElementById('planId').value
+
+        const body = {
+            nom_plan          : document.getElementById('planNom').value,
+            prix_mensuel      : document.getElementById('planPrix').value,
+            nb_annonces_max   : document.getElementById('planAnnonces').value,
+            duree_essai_jours : document.getElementById('planEssai').value,
+            is_active         : document.getElementById('planActif').checked,
+            fonctionnalites   : {
+                badge_verifie     : document.getElementById('fonctBadge').checked,
+                mise_en_avant     : document.getElementById('fonctMiseEnAvant').checked,
+                statistiques      : document.getElementById('fonctStats').checked,
+                support_prioritaire: document.getElementById('fonctSupport').checked,
+            }
+        }
+
+        try {
+            if (id) {
+                await adminRequest(`/plans/${id}`, 'PUT', body)
+                showAlert('Plan modifié ✅', 'success')
+            } else {
+                await adminRequest('/plans', 'POST', body)
+                showAlert('Plan créé ✅', 'success')
+            }
+            modalPlan.hide()
+            chargerPlans()
+        } catch (e) {
+            showAlert('Erreur lors de la sauvegarde.', 'danger')
+        }
+    }
+
+    async function togglePlan(id, actif) {
+        await adminRequest(`/plans/${id}`, 'PUT', { is_active: actif })
+        showAlert(actif ? 'Plan activé ✅' : 'Plan désactivé.', 'success')
+        chargerPlans()
+    }
+
+    function showAlert(msg, type) {
+        document.getElementById('alertContainer').innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show">
+                ${msg}
+                <button type="button" class="btn-close"
+                    data-bs-dismiss="alert"></button>
+            </div>`
+        setTimeout(() => document.querySelector('.alert')?.remove(), 4000)
+    }
+</script>
+</body>
+</html>

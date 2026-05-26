@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <link rel="shortcut icon" href="favicon.png" type="image/png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mes Contacts — SIMMo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar navbar-light bg-white sticky-top border-bottom">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="index.html">
+            <i class="bi bi-buildings text-primary me-1"></i>SIMm<span class="text-primary">o</span>
+        </a>
+        <div id="navAuth"></div>
+    </div>
+</nav>
+
+<div class="container py-5">
+    <div class="row g-4">
+
+        <!-- SIDEBAR -->
+        <div class="col-12 col-lg-3">
+            <div class="sidebar">
+                <p class="small fw-bold text-muted text-uppercase px-2 mb-2">Espace Agent</p>
+                <nav class="nav flex-column gap-1">
+                    <a class="nav-link" href="dashboard.html"><i class="bi bi-grid me-2"></i>Dashboard</a>
+                    <a class="nav-link" href="mes-annonces.html"><i class="bi bi-house me-2"></i>Mes annonces</a>
+                    <a class="nav-link active" href="mes-contacts.html"><i class="bi bi-chat-dots me-2"></i>Mes contacts</a>
+                    <a class="nav-link" href="plan.html"><i class="bi bi-credit-card me-2"></i>Mon plan</a>
+                    <hr>
+                    <button class="nav-link text-danger border-0 bg-transparent text-start w-100" onclick="deconnexion()">
+                        <i class="bi bi-box-arrow-right me-2"></i>Déconnexion
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- CONTENU -->
+        <div class="col-12 col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-0">Mes contacts</h3>
+                    <p class="text-muted small mb-0" id="nbContacts"></p>
+                </div>
+            </div>
+
+            <div id="alertContainer"></div>
+            <div id="listeContacts">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+   // requiertAgent()
+
+    function initNavbar() {
+        const user = getUser()
+        document.getElementById('navAuth').innerHTML = `
+            <div class="d-flex align-items-center gap-2">
+                <span class="small fw-semibold">👤 ${user?.prenom}</span>
+                <button class="btn btn-outline-danger btn-sm" onclick="deconnexion()">
+                    <i class="bi bi-box-arrow-right"></i>
+                </button>
+            </div>`
+    }
+
+    async function chargerContacts(page = 1) {
+        try {
+            const data     = await apiRequest(`/agent/contacts?page=${page}`, 'GET', null, true)
+            const contacts = data.data || []
+
+            document.getElementById('nbContacts').textContent =
+                `${data.total || 0} contact(s)`
+
+            if (contacts.length === 0) {
+                document.getElementById('listeContacts').innerHTML = `
+                    <div class="text-center py-5 dashboard-card p-5">
+                        <i class="bi bi-chat-dots fs-1 text-muted opacity-25 d-block mb-3"></i>
+                        <h5 class="text-muted">Aucun contact reçu</h5>
+                        <p class="text-muted small">Les messages des utilisateurs apparaîtront ici</p>
+                    </div>`
+                return
+            }
+
+            document.getElementById('listeContacts').innerHTML = `
+                <div class="d-flex flex-column gap-3">
+                    ${contacts.map(c => `
+                        <div class="dashboard-card p-4 ${c.statut === 'non_lu' ? 'border-primary border-2' : ''}"
+                            id="contact_${c.id}">
+                            <div class="d-flex align-items-start gap-3">
+                                <!-- Avatar -->
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center
+                                    justify-content-center fw-bold flex-shrink-0 fs-5"
+                                    style="width:45px;height:45px">
+                                    ${c.utilisateur?.prenom?.[0]?.toUpperCase() || 'U'}
+                                </div>
+
+                                <!-- Contenu -->
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <span class="fw-bold">
+                                                ${c.utilisateur?.prenom || ''} ${c.utilisateur?.nom || ''}
+                                            </span>
+                                            ${c.statut === 'non_lu'
+                                                ? '<span class="badge bg-primary ms-2">Nouveau</span>'
+                                                : ''}
+                                            <p class="text-muted small mb-0">
+                                                ${c.utilisateur?.email || ''} •
+                                                ${new Date(c.created_at).toLocaleDateString('fr-FR', {
+                                                    day:'2-digit', month:'short', year:'numeric',
+                                                    hour:'2-digit', minute:'2-digit'
+                                                })}
+                                            </p>
+                                        </div>
+
+                                        ${c.statut === 'non_lu' ? `
+                                            <button class="btn btn-sm btn-outline-success"
+                                                onclick="marquerLu(${c.id})">
+                                                <i class="bi bi-check2-all me-1"></i>Marquer lu
+                                            </button>` : `
+                                            <span class="text-success small">
+                                                <i class="bi bi-check2-all me-1"></i>Lu
+                                            </span>`}
+                                    </div>
+
+                                    <!-- Message -->
+                                    <div class="bg-light rounded-3 p-3 mt-3">
+                                        <p class="mb-0 lh-lg">${c.message || ''}</p>
+                                    </div>
+
+                                    <!-- Annonce concernée -->
+                                    ${c.annonce ? `
+                                        <div class="mt-2">
+                                            <a href="annonce-detail.html?id=${c.annonce.id}"
+                                                class="text-primary small text-decoration-none">
+                                                <i class="bi bi-house me-1"></i>
+                                                ${c.annonce.titre}
+                                            </a>
+                                        </div>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                ${data.last_page > 1 ? `
+                    <nav class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            ${Array.from({length: data.last_page}, (_, i) => i + 1).map(p => `
+                                <li class="page-item ${p === data.current_page ? 'active' : ''}">
+                                    <button class="page-link" onclick="chargerContacts(${p})">${p}</button>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </nav>` : ''}
+            `
+
+        } catch (e) {
+            document.getElementById('listeContacts').innerHTML =
+                `<div class="alert alert-danger">Erreur lors du chargement.</div>`
+        }
+    }
+
+    async function marquerLu(id) {
+        try {
+            await apiRequest(`/agent/contacts/${id}/lu`, 'PUT', null, true)
+            const el = document.getElementById(`contact_${id}`)
+            if (el) {
+                el.classList.remove('border-primary', 'border-2')
+                el.querySelector(`button[onclick="marquerLu(${id})"]`)?.remove()
+            }
+            showAlert('Contact marqué comme lu.', 'success')
+        } catch (e) {
+            showAlert('Erreur lors de la mise à jour.', 'danger')
+        }
+    }
+
+    initNavbar()
+    chargerContacts()
+</script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+     <link rel="shortcut icon" href="../favicon.png" type="image/png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Annonces — Admin SIMMo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+    <style>
+        .admin-layout{display:flex;min-height:100vh}
+        #adminSidebar{width:240px;min-width:240px;background:white;
+            border-right:1px solid #e2e8f0;display:flex;
+            flex-direction:column;position:sticky;top:0;
+            height:100vh;overflow-y:auto}
+        .admin-main{flex:1;background:#f8fafc;overflow-x:hidden}
+    </style>
+</head>
+<body>
+<div class="admin-layout">
+    <div id="adminSidebar"></div>
+    <div class="admin-main p-4">
+
+        <h3 class="fw-bold mb-4">
+            <i class="bi bi-house text-primary me-2"></i>
+            Gestion des Annonces
+        </h3>
+
+        <!-- Filtres -->
+        <div class="bg-white rounded-3 border p-3 mb-4">
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <input type="text" id="searchAnnonce"
+                        class="form-control"
+                        placeholder="Rechercher une annonce..."
+                        oninput="chargerAnnonces()">
+                </div>
+                <div class="col-md-3">
+                    <select id="filtreStatutAnnonce" class="form-select"
+                        onchange="chargerAnnonces()">
+                        <option value="">Tous les statuts</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="vendu">Vendu/Loué</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" id="filtreVilleAnnonce"
+                        class="form-control"
+                        placeholder="Filtrer par ville..."
+                        oninput="chargerAnnonces()">
+                </div>
+            </div>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <!-- Tableau -->
+        <div class="bg-white rounded-3 border">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Annonce</th>
+                            <th>Agent</th>
+                            <th>Prix</th>
+                            <th>Ville</th>
+                            <th>Statut</th>
+                            <th>Vues</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyAnnonces">
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <div class="spinner-border text-primary"></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="paginationAnnonces" class="p-3"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Modérer -->
+<div class="modal fade" id="modalModerer" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Modérer l'annonce</h5>
+                <button type="button" class="btn-close"
+                    data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="contenuModerer"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/config.js"></script>
+<script src="js/admin.js"></script>
+<script>
+    const modalModerer = new bootstrap.Modal(
+        document.getElementById('modalModerer'))
+
+    function init() {
+        initAdminNavbar('annonces.html')
+        chargerAnnonces()
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!getAdminToken()) {
+            afficherAccesRefuse()
+            return
+        }
+        init()
+    })
+
+    function afficherAccesRefuse() {
+        document.body.innerHTML = `
+            <div style="display:flex;align-items:center;
+                justify-content:center;height:100vh;
+                background:#0f172a;color:white;
+                flex-direction:column;gap:16px">
+                <i class="bi bi-shield-lock" style="font-size:4rem"></i>
+                <h3>Accès refusé</h3>
+                <a href="login.html"
+                    style="background:#2563eb;color:white;
+                        padding:10px 30px;border-radius:8px;
+                        text-decoration:none">
+                    Se connecter
+                </a>
+            </div>`
+    }
+
+    async function chargerAnnonces(page = 1) {
+        const search = document.getElementById('searchAnnonce').value
+        const statut = document.getElementById('filtreStatutAnnonce').value
+        const ville  = document.getElementById('filtreVilleAnnonce').value
+
+        let url = `/annonces?page=${page}`
+        if (search) url += `&search=${search}`
+        if (statut) url += `&statut=${statut}`
+        if (ville)  url += `&ville=${ville}`
+
+        try {
+            const data     = await adminRequest(url)
+            const annonces = data.data || []
+
+            document.getElementById('tbodyAnnonces').innerHTML =
+                annonces.length === 0
+                ? `<tr><td colspan="8" class="text-center py-5 text-muted">
+                    Aucune annonce trouvée
+                   </td></tr>`
+                : annonces.map(a => `
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <img src="${imageUrl(a.photo_principale?.chemin_image)}"
+                                    class="rounded-2 flex-shrink-0"
+                                    style="width:48px;height:40px;object-fit:cover"
+                                    onerror="this.src='https://placehold.co/48x40?text=?'">
+                                <div>
+                                    <p class="fw-semibold small mb-0 text-truncate"
+                                        style="max-width:200px">
+                                        ${a.titre}
+                                    </p>
+                                    <p class="text-muted"
+                                        style="font-size:11px;margin:0">
+                                        ${a.categorie?.libelle || ''}
+                                        — ${a.type_transaction}
+                                    </p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="small">
+                            ${a.agent?.prenom || ''} ${a.agent?.nom || ''}
+                        </td>
+                        <td class="small fw-bold text-primary">
+                            ${Number(a.prix).toLocaleString('fr-FR')} F
+                        </td>
+                        <td class="small">
+                            ${a.localisation?.ville || '—'}
+                        </td>
+                        <td>${badgeStatut(a.statut)}</td>
+                        <td class="small">
+                            <i class="bi bi-eye me-1"></i>${a.vues}
+                        </td>
+                        <td class="small text-muted">
+                            ${formatDate(a.created_at)}
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a href="../annonce-detail.html?id=${a.id}"
+                                    target="_blank"
+                                    class="btn btn-sm btn-outline-primary"
+                                    title="Voir">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <button class="btn btn-sm btn-outline-warning"
+                                    onclick="ouvrirModeration(${a.id}, '${a.statut}', '${a.titre.replace(/'/g,'\\\'')}')"
+                                    title="Modérer">
+                                    <i class="bi bi-shield"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger"
+                                    onclick="supprimerAnnonce(${a.id})"
+                                    title="Supprimer">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>`).join('')
+
+            afficherPagination(data, 'paginationAnnonces', chargerAnnonces)
+
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
+    function ouvrirModeration(id, statutActuel, titre) {
+        document.getElementById('contenuModerer').innerHTML = `
+            <p class="text-muted small mb-3">
+                Annonce : <strong>${titre}</strong>
+            </p>
+            <p class="fw-semibold small mb-2">Choisir le nouveau statut :</p>
+            <div class="d-flex flex-column gap-2 mb-4">
+                <button class="btn ${statutActuel === 'active' ? 'btn-success' : 'btn-outline-success'} fw-bold"
+                    onclick="modererAnnonce(${id}, 'active')">
+                    ✅ Active — Visible par tous
+                </button>
+                <button class="btn ${statutActuel === 'inactive' ? 'btn-secondary' : 'btn-outline-secondary'} fw-bold"
+                    onclick="modererAnnonce(${id}, 'inactive')">
+                    ⏸ Inactive — Masquée
+                </button>
+                <button class="btn ${statutActuel === 'vendu' ? 'btn-primary' : 'btn-outline-primary'} fw-bold"
+                    onclick="modererAnnonce(${id}, 'vendu')">
+                    🏠 Vendu/Loué
+                </button>
+            </div>`
+        modalModerer.show()
+    }
+
+    async function modererAnnonce(id, statut) {
+        try {
+            await adminRequest(
+                `/annonces/${id}/moderer`, 'PUT', { statut }
+            )
+            showAlert('Statut mis à jour ✅', 'success')
+            modalModerer.hide()
+            chargerAnnonces()
+        } catch (e) {
+            showAlert('Erreur.', 'danger')
+        }
+    }
+
+    async function supprimerAnnonce(id) {
+        if (!confirm('Supprimer cette annonce définitivement ?')) return
+        await adminRequest(`/annonces/${id}`, 'DELETE')
+        showAlert('Annonce supprimée.', 'success')
+        chargerAnnonces()
+    }
+
+    function afficherPagination(data, containerId, fn) {
+        if (data.last_page <= 1) {
+            document.getElementById(containerId).innerHTML = ''
+            return
+        }
+        let html = '<ul class="pagination justify-content-center mb-0">'
+        for (let i = 1; i <= data.last_page; i++) {
+            html += `
+                <li class="page-item ${i === data.current_page ? 'active' : ''}">
+                    <button class="page-link" onclick="${fn.name}(${i})">
+                        ${i}
+                    </button>
+                </li>`
+        }
+        html += '</ul>'
+        document.getElementById(containerId).innerHTML = html
+    }
+
+    function showAlert(msg, type) {
+        document.getElementById('alertContainer').innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show">
+                ${msg}
+                <button type="button" class="btn-close"
+                    data-bs-dismiss="alert"></button>
+            </div>`
+        setTimeout(() => document.querySelector('.alert')?.remove(), 4000)
+    }
+</script>
+</body>
+</html>
