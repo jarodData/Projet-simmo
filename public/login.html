@@ -7,7 +7,7 @@
     <title>Connexion — SIMMo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
 </head>
 <body class="d-flex align-items-center min-vh-100" style="background:linear-gradient(135deg,#eff6ff,#f1f5f9)">
 <div class="container py-5">
@@ -28,7 +28,16 @@
 
             <!-- Alertes -->
             <div id="alertContainer"></div>
-
+<!-- Lien admin invisible -->
+<p class="text-center mt-3">
+    <a href="admin/login.html"
+        style="font-size:10px;opacity:0;transition:opacity 0.3s;
+               color:rgba(0,0,0,0.2);text-decoration:none"
+        onmouseover="this.style.opacity='0.4'"
+        onmouseout="this.style.opacity='0'">
+        ·admin
+    </a>
+</p>
             <!-- Formulaire -->
             <div class="auth-card">
                 <form id="loginForm">
@@ -78,32 +87,89 @@
 <script src="js/auth.js"></script>
 <script>
     // Rediriger si déjà connecté
-    if (estConnecte()) window.location.href = 'index.html'
+    localStorage.removeItem('redirect_after_login')
+if (estConnecte() && !estAgent()) window.location.href = 'index.html'
 
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
-        e.preventDefault()
-        showSpinner('btnLogin', 'Connexion...')
+    e.preventDefault()
+    showSpinner('btnLogin', 'Connexion...')
 
-        try {
-            const data = await apiRequest('/auth/utilisateur/login', 'POST', {
-                email        : document.getElementById('email').value,
-                mot_de_passe : document.getElementById('motDePasse').value,
-            })
-
-            // Sauvegarder token et user
-            localStorage.setItem('simmo_token', data.token)
-            localStorage.setItem('simmo_user',  JSON.stringify(data.utilisateur))
-            localStorage.setItem('simmo_role',  'utilisateur')
-
-            showAlert('Connexion réussie ! Redirection...', 'success')
-            setTimeout(() => window.location.href = 'index.html', 1000)
-
-        } catch (err) {
-            const msg = err.data?.message || err.data?.errors?.email?.[0] || 'Erreur de connexion.'
-            showAlert(msg, 'danger')
-            hideSpinner('btnLogin', 'Se connecter')
-        }
+    const res  = await fetch(CONFIG.API_URL + '/auth/utilisateur/login', {
+        method : 'POST',
+        headers: headersPublic(),
+        body   : JSON.stringify({
+            email       : document.getElementById('email').value,
+            mot_de_passe: document.getElementById('motDePasse').value,
+        })
     })
+    const data = await res.json()
+console.log('Réponse login:', data)
+    if (!res.ok) {
+        showAlert(data.message || 'Identifiants incorrects.', 'danger')
+        hideSpinner('btnLogin', 'Se connecter')
+        return
+    }
+    const user = data.utilisateur
+    //Après — force la redirection vers index
+sauvegarderSession(data.token, user)
+localStorage.removeItem('redirect_after_login') // vide tout redirect
+window.location.href = 'index.html'
+
+//const data = await res.json()
+console.log('DATA COMPLÈTE:', data)
+console.log('user.role:', data.utilisateur?.role)
+console.log('user.type:', data.utilisateur?.type)// redirige directement
+})
+
+document.addEventListener('DOMContentLoaded', function () {
+    const params   = new URLSearchParams(location.search)
+    const verified = params.get('verified')
+    const token    = params.get('token')
+    const userJson = params.get('user')
+
+    if (verified === 'success' && token && userJson) {
+        try {
+            const user = JSON.parse(userJson)
+
+            // Stocker exactement comme un login normal
+            localStorage.setItem('token', token)
+            localStorage.setItem('user',  JSON.stringify(user))
+
+            // Nettoyer l'URL
+            history.replaceState({}, '', 'login.html')
+
+            // Message de bienvenue
+            afficherAlerte('success',
+                'Compte vérifié ! Bienvenue, ' + user.prenom + ' !')
+                    window.location.href = 'index.html'
+
+        } catch (e) {
+            console.error('Erreur auto-login:', e)
+        }
+
+    } else if (verified === 'error') {
+        history.replaceState({}, '', 'login.html')
+        afficherAlerte('danger',
+            '❌ Lien de vérification invalide ou expiré. Reconnectez-vous pour en recevoir un nouveau.')
+    }
+})
+
+function afficherAlerte(type, message) {
+    // Cherche une zone d'alerte existante ou en crée une
+    let zone = document.getElementById('alerteVerification')
+    if (!zone) {
+        zone = document.createElement('div')
+        zone.id = 'alerteVerification'
+        // Insérer en haut du formulaire
+        const form = document.querySelector('form') || document.querySelector('.auth-card')
+        if (form) form.prepend(zone)
+        else document.body.prepend(zone)
+    }
+    zone.innerHTML = `
+        <div class="alert alert-${type} d-flex align-items-center gap-2 mb-3">
+            ${message}
+        </div>`
+}
 </script>
 </body>
 </html>

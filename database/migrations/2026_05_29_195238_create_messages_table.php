@@ -11,16 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-    Schema::create('photos_annonces', function (Blueprint $table) {
+       Schema::create('messages', function (Blueprint $table) {
     $table->id();
-    $table->foreignId('id_annonce')->constrained('annonces')->onDelete('cascade');
-    $table->string('chemin_image');
-    $table->boolean('est_principale')->default(false);
-    $table->unsignedInteger('ordre')->default(1); // ← pas de ->after() ici
+    $table->foreignId('conversation_id')->constrained('conversations')->onDelete('cascade');
+    $table->foreignId('expediteur_id')->constrained('utilisateurs')->onDelete('cascade');
+    $table->text('contenu');
+    $table->boolean('lu')->default(false);
     $table->timestamps();
 });
 
-        
     }
 
     /**
@@ -28,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('photos_annonces');
+        Schema::dropIfExists('messages');
     }
 };

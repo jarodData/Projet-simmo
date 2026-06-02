@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- ✅ Colle ce bloc dans le <head> de TOUTES tes pages HTML -->
+    
 
 <!-- PWA Simmo -->
 <link rel="manifest" href="/manifest.json">
@@ -13,39 +13,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Simmo">
 <link rel="apple-touch-icon" href="/images/icon-192.png">
-
-<script>
-    // Enregistrement du Service Worker
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/service-worker.js')
-                .then(reg => console.log('✅ Simmo SW enregistré:', reg.scope))
-                .catch(err => console.error('❌ SW erreur:', err));
-        });
-    }
-
-    // Bouton d'installation PWA (optionnel)
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-
-        // Si tu as un bouton "Installer l'app" dans ton HTML
-        const installBtn = document.getElementById('install-btn');
-        if (installBtn) {
-            installBtn.style.display = 'block';
-            installBtn.addEventListener('click', () => {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then(choice => {
-                    if (choice.outcome === 'accepted') {
-                        console.log('✅ App installée');
-                    }
-                    deferredPrompt = null;
-                });
-            });
-        }
-    });
-</script>
 
     <title>Recommandations IA — SIMMo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -946,34 +913,6 @@ const LIEUX_LOCAUX = {
     })
 
     // ============================================
-    // NAVBAR
-    // ============================================
-    function initNavbar() {
-        var navAuth = document.getElementById('navAuth')
-        if (estConnecte()) {
-            var user = getUser()
-            navAuth.innerHTML =
-                '<span class="small fw-semibold me-2">' +
-                    (user ? user.prenom : '') +
-                '</span>' +
-                '<button class="btn btn-outline-danger btn-sm"' +
-                    ' onclick="deconnexion()">' +
-                    '<i class="bi bi-box-arrow-right"></i>' +
-                '</button>'
-        } else {
-            navAuth.innerHTML =
-                '<a href="login.html"' +
-                    ' class="btn btn-outline-primary btn-sm">' +
-                    'Connexion' +
-                '</a>' +
-                '<a href="register.html"' +
-                    ' class="btn btn-primary btn-sm">' +
-                    "S'inscrire" +
-                '</a>'
-        }
-    }
-
-    // ============================================
     // CRITERES COMMUNS
     // ============================================
     function remplirCriteresCommuns() {
@@ -1268,17 +1207,22 @@ const LIEUX_LOCAUX = {
             requete.commodites) {
             endpoint = '/recherche-contextuelle'
         }
-        console.log("IA_URL =", IA_URL)
-        console.log("URL appelée =", IA_URL + endpoint)
-        // Appel API IA
-        fetch(IA_URL + endpoint, {
-            method  : 'POST',
-            headers : {
-                'Content-Type' : 'application/json',
-                'x-api-key'    : IA_KEY,
-            },
-            body : JSON.stringify(requete),
-        })
+       // console.log("IA_URL =", IA_URL)
+       // console.log("URL appelée =", IA_URL + endpoint)
+        
+    
+fetch(CONFIG.IA_URL + '/api/ia/' + (
+    requete.lieu_reference || requete.religion || requete.commodites
+        ? 'recherche-contextuelle'
+        : 'recommander'
+), {
+    method : 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key'   : CONFIG.IA_KEY,   // ← majuscule + CONFIG
+    },
+    body: JSON.stringify(requete),
+})
         .then(function(response) {
             if (!response.ok) {
                 throw new Error('Erreur HTTP ' + response.status)
@@ -1415,12 +1359,9 @@ console.log("urlPhoto finale:", urlPhoto)
                     '<div class="position-relative"' +
                         ' style="height:200px;overflow:hidden">' +
                         '<img src="' + urlPhoto + '"' +
-                            ' style="width:100%;height:100%;' +
-                            'object-fit:cover"' +
-                            ' onerror="this.src=' +
-                            '\'https://placehold.co/400x250?text=SIMMo\'"' +
-                            ' alt="' + r.titre + '">' +
-
+                        ' alt="' + r.titre + '"' +
+                        ' style="width:100%;height:100%;object-fit:cover"' +
+                        ' onerror="this.onerror=null;this.src=genererPlaceholder(this.alt)">'
                         '<div class="position-absolute' +
                             ' top-0 start-0 m-2">' +
                             '<span class="ia-badge">#' +
@@ -1612,12 +1553,14 @@ console.log("urlPhoto finale:", urlPhoto)
         btn.innerHTML = '<span class="spinner-border' +
             ' spinner-border-sm me-2"></span>Calcul...'
 
-        fetch(IA_URL + '/predire-prix', {
-            method  : 'POST',
-            headers : {
-                'Content-Type' : 'application/json',
-                'x-api-key'    : IA_KEY,
-            },
+        fetch(CONFIG.IA_URL + '/api/ia/predire-prix', {
+    method : 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key'   : CONFIG.IA_KEY,
+    },
+    
+
             body: JSON.stringify({
                 ville            : ville,
                 categorie        : document.getElementById('estCategorie').value,

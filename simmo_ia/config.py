@@ -12,7 +12,7 @@ class Settings:
     DB_PASSWORD : str = os.getenv("DB_PASSWORD", "")
 
     # API
-    API_KEY     : str = os.getenv("IA_API_KEY", "simmo_ia_secret_key")
+    API_KEY     : str = os.getenv("IA_API_KEY", "simmo-secret-key-2026")
     VERSION     : str = "1.0.0"
 
 settings = Settings()

@@ -8,7 +8,7 @@
     <title>Détail annonce — SIMMo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
     <!-- ✅ Colle ce bloc dans le <head> de TOUTES tes pages HTML -->
 
 <!-- PWA Simmo -->
@@ -19,40 +19,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Simmo">
 <link rel="apple-touch-icon" href="/images/icon-192.png">
-
-<script>
-    // Enregistrement du Service Worker
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/service-worker.js')
-                .then(reg => console.log('✅ Simmo SW enregistré:', reg.scope))
-                .catch(err => console.error('❌ SW erreur:', err));
-        });
-    }
-
-    // Bouton d'installation PWA (optionnel)
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-
-        // Si tu as un bouton "Installer l'app" dans ton HTML
-        const installBtn = document.getElementById('install-btn');
-        if (installBtn) {
-            installBtn.style.display = 'block';
-            installBtn.addEventListener('click', () => {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then(choice => {
-                    if (choice.outcome === 'accepted') {
-                        console.log('✅ App installée');
-                    }
-                    deferredPrompt = null;
-                });
-            });
-        }
-    });
-</script>
-
 </head>
 <body>
 
@@ -87,110 +53,9 @@
 <script src="js/auth.js"></script>
 <script>
     let annonceActuelle = null;
-    
+    let idsFavoris = new Set()
    // ── Navbar ───────────────────────────────
-   function initNavbar() {
-
-    const navAuth      = document.getElementById('navAuth')
-    const navDashboard = document.getElementById('navDashboard')
-
-        if (!navAuth) return //
-    if (estConnecte()) {
-        const user = getUser()
-        if (estAgent()) 
-       if (navDashboard && estAgent()) {
-            navDashboard.style.display = 'flex'
-        }
-
-
-        navAuth.innerHTML =
-            '<div class="dropdown">' +
-                '<button class="btn btn-light dropdown-toggle' +
-                    ' d-flex align-items-center gap-2"' +
-                    ' type="button" data-bs-toggle="dropdown">' +
-                    '<div class="bg-primary text-white rounded-circle' +
-                        ' d-flex align-items-center justify-content-center' +
-                        ' fw-bold"' +
-                        ' style="width:30px;height:30px;font-size:12px">' +
-                        (user ? user.prenom[0].toUpperCase() : 'U') +
-                    '</div>' +
-                    '<span class="fw-semibold small d-none d-md-inline">' +
-                        (user ? user.prenom : '') +
-                    '</span>' +
-                '</button>' +
-
-                '<ul class="dropdown-menu dropdown-menu-end' +
-                    ' shadow border-0">' +
-
-                    //  Profil
-                    '<li>' +
-                        '<a class="dropdown-item" href="profil.html">' +
-                            '<i class="bi bi-person me-2 text-primary"></i>' +
-                            'Mon profil' +
-                        '</a>' +
-                    '</li>' +
-
-                    //  Favoris — UNIQUEMENT pour les utilisateurs
-                    (!estAgent() ?
-                        '<li>' +
-                            '<a class="dropdown-item"' +
-                                ' href="mes-favoris.html">' +
-                                '<i class="bi bi-heart-fill' +
-                                    ' text-danger me-2"></i>' +
-                                'Mes favoris' +
-                            '</a>' +
-                        '</li>'
-                    : '') +
-
-                    //  Dashboard — UNIQUEMENT pour les agents
-                    (estAgent() ?
-                        '<li>' +
-                            '<a class="dropdown-item"' +
-                                ' href="dashboard.html">' +
-                                '<i class="bi bi-grid' +
-                                    ' me-2 text-primary"></i>' +
-                                'Dashboard' +
-                            '</a>' +
-                        '</li>' +
-                        '<li>' +
-                            '<a class="dropdown-item"' +
-                                ' href="chats.html">' +
-                                '<i class="bi bi-chat-dots' +
-                                    ' me-2 text-primary"></i>' +
-                                'Mes messages' +
-                            '</a>' +
-                        '</li>'
-                    : '') +
-
-                    //  Divider
-                    '<li><hr class="dropdown-divider"></li>' +
-
-                    // Deconnexion
-                    '<li>' +
-                        '<button class="dropdown-item text-danger"' +
-                            ' onclick="deconnexion()">' +
-                            '<i class="bi bi-box-arrow-right me-2"></i>' +
-                            'Deconnexion' +
-                        '</button>' +
-                    '</li>' +
-
-                '</ul>' +
-            '</div>'
-
-    } else {
-        navAuth.innerHTML =
-            '<a href="login.html"' +
-                ' class="btn btn-outline-primary btn-sm">' +
-                'Connexion' +
-            '</a>' +
-            '<a href="register.html"' +
-                ' class="btn btn-primary btn-sm">' +
-                "S'inscrire" +
-            '</a>'
-    }
-}
-    
-
+   
    // ── Charger annonces similaires via IA ───────
 async function chargerSimilairesIA(annonce) {
     try {
@@ -308,6 +173,7 @@ function afficherErreur(message) {
             </a>
         </div>`
 }
+
 // ── Afficher l'annonce ────────────────────
     function afficherAnnonce(a, similaires = []) {
         annonceActuelle = a;
@@ -398,10 +264,7 @@ function afficherErreur(message) {
                     `).join('')}
                 </div>
             </div>` : ''
-            // Bouton favori
-
-
-// Ajouter dans le HTML généré après la carte partager
+            
 
         // Bouton contact selon connexion
         const btnContact = estConnecte()
@@ -413,14 +276,33 @@ function afficherErreur(message) {
                     <i class="bi bi-lock me-2"></i>Connectez-vous pour contacter
                </button>`
                // Message
-const btnChat = estConnecte() && !estAgent()
-    ? `<a href="chats.html?agent=${a.agent?.id}&annonce=${a.id}"
-           class="btn btn-outline-primary w-100 mt-2">
-           <i class="bi bi-chat-dots me-2"></i>
-           Ouvrir le chat
-       </a>`
-    : ''
+  // ✅ Plus clair — vérifie le role directement
+const estUtilisateurNormal = estConnecte() && localStorage.getItem('role') === 'utilisateur'
 
+const btnContacter = estUtilisateurNormal
+    ? `<button type="button"
+           class="btn btn-primary btn-lg w-100 mb-2"
+           onclick="contacterAgent(this)"
+           data-annonce-id="${a.id}"
+           id="btnContacter">
+           <i class="bi bi-chat-dots me-2"></i>
+           Démarrer une conversation
+       </button>`
+    : `<button type="button" 
+           class="btn btn-secondary btn-lg w-100 mb-2"
+           onclick="verifierActionConnectee('contacter un agent')">
+           <i class="bi bi-lock me-2"></i>Connectez-vous
+       </button>`
+
+     const btnEnvoyer =!estAgent()
+    ? `<button type="submit" id="btnContact"
+           class="btn btn-outline-primary w-100">
+           <i class="bi bi-send me-2"></i>Envoyer un message
+       </button>`
+    : ''  
+   console.log('role stocké:', localStorage.getItem('role'))
+console.log('estAgent:', estAgent())
+console.log('estConnecte:', estConnecte())
         document.getElementById('pageContent').innerHTML = `
 
             <!-- Fil d'ariane -->
@@ -449,7 +331,7 @@ const btnChat = estConnecte() && !estAgent()
                                 src="${photoP}"
                                 style="width:100%;height:420px;object-fit:cover"
                                 alt="${a.titre}"
-                                onerror="this.src='https://placehold.co/800x420?text=SIMMo'">
+                                onerror="this.onerror=null;this.src=genererPlaceholder(this.alt)">
 
                             <!-- Badges -->
                             <div class="position-absolute top-0 start-0 m-3 d-flex gap-2">
@@ -541,7 +423,13 @@ const btnChat = estConnecte() && !estAgent()
                             <div>
                                 <p class="fw-semibold mb-0">
                                     ${a.agent?.prenom || ''} ${a.agent?.nom || ''}
+                                    
                                 </p>
+                        ${a.agent?.telephone
+                                    ? `<small class="text-muted d-block">
+        <i class="bi bi-telephone me-1"></i>${a.agent.telephone}
+       </small>`
+    : ''}
                                 ${a.agent?.plan
                                     ? `<small class="text-success">
                                         <i class="bi bi-patch-check-fill me-1"></i>
@@ -563,18 +451,12 @@ const btnChat = estConnecte() && !estAgent()
                                     placeholder="Bonjour, je suis intéressé par ce bien..."
                                     ${!estConnecte() ? 'disabled' : ''}
                                     required></textarea>
-                            </div>
-                          <!-- / ${btnContact} -->
+                            </div>    
 
-                    <button type="button"
-                        class="btn btn-primary w-100 mt-3"
-                        onclick="demarrerChat(${a.agent.id})">
-
-                        <i class="bi bi-chat-dots me-2"></i>
-                        Contacter l'agent
-
-                    </button>
-                                                                        
+                        ${btnContacter}
+                        ${btnEnvoyer}
+                            
+                                                                                                
                         </form>
                     </div>
 
@@ -613,73 +495,80 @@ const btnChat = estConnecte() && !estAgent()
             ${htmlSimilaires}
             
         `
-// Bouton favori
+        
+// ✅ Après
+const form = document.getElementById('contactForm')
+if (form) {
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault()
 
-// Ajouter dans le HTML généré après la carte partager
-        // Attacher les événements après rendu
-       
-        const form = document.getElementById('contactForm')
-        if (form && estConnecte()) {
-            form.addEventListener('submit', envoyerContact)
-        }
-    }
-
-    async function demarrerChat(agentId) {
-    const user = getUser()
-    if (!user) { window.location.href = "login.html"; return }
-
-    try {
-        const res = await apiRequest('/chat/demarrer', 'POST', {
-            id_utilisateur: user.id,
-            id_agent: agentId,
-            id_annonce: annonceActuelle.id
-        }, true)
-
-        console.log("RES COMPLET:", res)      // ← regarde ce que contient res
-        console.log("RES ID:", res.id)        // ← est-ce undefined ?
-        console.log("RES KEYS:", Object.keys(res)) // ← quelles clés existent ?
-
-                window.location.href = "chats.html?conversation=" + res.id
-
-        if (!res.id) {
-            alert("Erreur: pas d'ID retourné — " + JSON.stringify(res))
+        if (!estConnecte()) {
+            verifierActionConnectee('contacter un agent')
             return
         }
 
+        if (estAgent()) {
+            showAlert('Action non disponible pour les agents.', 'warning', 'alertContact')
+            return
+        }
 
-    } catch(e) {
-        console.error("Erreur chat:", e)
-    }
+        await envoyerContact(e)
+    })
 }
 
+    }
+
+    
     // Vérifier si favori au chargement
 async function verifierFavori(idAnnonce) {
     if (!estConnecte() || estAgent()) return
 
     try {
-        var data = await apiRequest(
-            '/utilisateur/favoris/' + idAnnonce + '/verifier',
-            'GET', null, true
-        )
-        mettreAJourBtnFavori(data.est_favori)
+        const ids = await apiRequest('/favoris/ids', 'GET', null, true)
+        
+        const estFavori = (ids?.ids || []).includes(parseInt(idAnnonce))
+        mettreAJourBtnFavori(estFavori)
     } catch (e) {
         console.error(e)
     }
 }
 
 // Toggle favori
-async function toggleFavori(idAnnonce) {
-    if (!verifierActionConnectee('ajouter aux favoris')) return
+async function toggleFavori(event, annonceId) {
+    event.preventDefault()
+    event.stopPropagation()
+
+    if (!getToken()) {
+        window.location.href = 'login.html'
+        return
+    }
 
     try {
-        var data = await apiRequest(
-            '/utilisateur/favoris/' + idAnnonce + '/toggle',
-            'POST', null, true
-        )
-        mettreAJourBtnFavori(data.est_favori)
-        showAlert(data.message, 'success', 'alertContact')
+        const res  = await fetch(CONFIG.API_URL + '/favoris/toggle', {
+            method : 'POST',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Authorization': 'Bearer ' + getToken(),  // ← getToken()
+                'Accept'       : 'application/json',
+            },
+            body: JSON.stringify({ annonce_id: annonceId })
+        })
+
+        if (!res.ok) return
+
+        const data = await res.json()
+
+        const btn = event.currentTarget
+        if (data.favori) {
+            idsFavoris.add(annonceId)
+            btn.innerHTML = '<i class="bi bi-heart-fill text-danger"></i>'
+        } else {
+            idsFavoris.delete(annonceId)
+            btn.innerHTML = '<i class="bi bi-heart text-white"></i>'
+        }
+
     } catch (e) {
-        console.error(e)
+        console.error('Erreur favori:', e.message)
     }
 }
 
@@ -722,7 +611,7 @@ function mettreAJourBoutonContact() {
         document.getElementById('photoActive').src = url
 
         // Reset bordures
-        document.querySelectorAll('[onclick^="changerPhoto"]').forEach(img => {
+        document.querySelectorAll('[onclick="changerPhoto"]').forEach(img => {
             img.style.borderColor = '#dee2e6'
         })
         el.style.borderColor = '#0d6efd'
@@ -741,50 +630,39 @@ function mettreAJourBoutonContact() {
     }
 
 
-async function contacterAgent(){
+// Dans annonce-detail.html — au chargement
 
-    // utilisateur connecté ?
-    if(!estConnecte()){
 
-        alert(
-            'Connectez-vous pour contacter l’agent.'
-        )
-
-        window.location.href =
-            'login.html'
-
+// Fonction contact
+async function contacterAgent(btn) {
+    const annonceId = btn.getAttribute('data-annonce-id')
+        console.log('annonceId:', annonceId)
+    if (!annonceId || annonceId === '0') {
+        console.error('ID annonce manquant')
         return
     }
 
-    try{
+    if (!getToken()) {
+        localStorage.setItem('redirect_after_login', location.href)
+        window.location.href = 'login.html'
+        return
+    }
 
-        const user = getUser()
+    const res  = await fetch(CONFIG.API_URL + '/conversations', {
+        method : 'POST',
+        headers: {
+            'Content-Type' : 'application/json',
+            'Authorization': 'Bearer ' + getToken(),
+            'Accept'       : 'application/json',
+        },
+        body: JSON.stringify({ annonce_id: parseInt(annonceId) })
+    })
 
-        const data = await apiRequest(
-            '/chat/demarrer',
-            'POST',
-            {
-                id_utilisateur : user.id,
-                id_agent       : annonceActuelle.id_agent,
-            },
-            true
-        )
-
-        // redirection chat
-        window.location.href =
-            'chats.html?conversation=' + data.id
-
-    } catch(e){
-
-        console.error(e)
-
-        alert(
-            'Erreur ouverture chat'
-        )
-
+    const data = await res.json()
+    if (data.conversation_id) {
+        window.location.href = 'chats.html?conversation_id=' + data.conversation_id
     }
 }
-
     // ── Envoyer un message à l'agent ──────────
     async function envoyerContact(e) {
         e.preventDefault()
@@ -826,24 +704,7 @@ async function contacterAgent(){
         }
     }
 
-        // ── Afficher une erreur ───────────────────
-    function afficherErreur(message) {
-        document.getElementById('pageContent').innerHTML = `
-            <div class="text-center py-5">
-                <div class="bg-danger bg-opacity-10 rounded-circle
-                    d-inline-flex p-4 mb-4">
-                    <i class="bi bi-exclamation-circle text-danger fs-1"></i>
-                </div>
-                <h4 class="fw-bold text-danger">${message}</h4>
-                <p class="text-muted mt-2 mb-4">
-                    L'annonce que vous cherchez n'est pas disponible.
-                </p>
-                <a href="annonces.html" class="btn btn-primary px-5">
-                    <i class="bi bi-arrow-left me-2"></i>
-                    Retour aux annonces
-                </a>
-            </div>`
-    }
+      
 
 
     // ── Init ─────────────────────────────────

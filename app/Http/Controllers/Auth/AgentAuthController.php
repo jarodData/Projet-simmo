@@ -122,4 +122,11 @@ class AgentAuthController extends Controller
     {
         return response()->json($request->user()->load('plan', 'annonces'));
     }
+
+    
+
+public function getAuthPassword()
+{
+    return $this->mot_de_passe_hash;
+}
 }

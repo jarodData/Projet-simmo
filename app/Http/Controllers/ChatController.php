@@ -1,277 +1,154 @@
 <?php
-
 namespace App\Http\Controllers;
 
+use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\Annonce;
 use Illuminate\Http\Request;
 
 class ChatController extends Controller
 {
-    // ============================================
-    // Conversation utilisateur <-> agent
-    // ============================================
- public function demarrer(Request $request)
-    {
-        $request->validate([
-            'id_agent' => 'required|exists:agents,id',
+    // ── Retourne l'ID du user connecté (agent ou utilisateur) ──
+   
+
+    public function creerOuRecuperer(Request $request)
+{
+    try {
+        $request->validate(['annonce_id' => 'required|exists:annonces,id']);
+
+        $annonce  = Annonce::findOrFail($request->annonce_id);
+        $clientId = $this->authId();
+        $agentId  = $annonce->id_agent;
+
+        \Log::info('Chat debug', [
+            'annonce_id' => $request->annonce_id,
+            'client_id'  => $clientId,
+            'agent_id'   => $agentId,
         ]);
 
-        $user = auth()->user();
-
-        // Vérifie si la conversation existe déjà
-        $conversation = Conversation::where('id_utilisateur', $user->id)
-            ->where('id_agent', $request->id_agent)
-            ->first();
-
-        // Sinon créer la conversation
-        if (!$conversation) {
-
-            $conversation = Conversation::create([
-                'id_utilisateur' => $user->id,
-                'id_agent'       => $request->id_agent,
-            ]);
+        if (!$clientId) {
+            return response()->json(['error' => 'Non authentifié.'], 401);
         }
+        if (!$agentId) {
+            return response()->json(['error' => 'Agent introuvable.'], 422);
+        }
+        if ($clientId === $agentId) {
+            return response()->json(['error' => 'Action impossible.'], 403);
+        }
+
+        $conversation = Conversation::firstOrCreate(
+            ['annonce_id' => $request->annonce_id, 'client_id' => $clientId],
+            ['agent_id'   => $agentId]
+        );
 
         return response()->json([
-            'success' => true,
-            'conversation' => $conversation
+            'conversation_id' => $conversation->id,
+            'est_nouvelle'    => $conversation->wasRecentlyCreated,
         ]);
+
+    } catch (\Exception $e) {
+        \Log::error('Chat erreur: ' . $e->getMessage());
+        return response()->json(['error' => $e->getMessage()], 500);
     }
-    public function conversation(Request $request, int $idAgent)
+}
+
+    public function mesConversations()
     {
-        // Vérifier utilisateur connecté
-        $utilisateur = auth('utilisateur')->user();
+        $userId = $this->authId();
 
-        if (!$utilisateur) {
-            return response()->json([
-                'message' => 'Utilisateur non authentifié'
-            ], 401);
-        }
-
-        $messages = Message::with([
-                'utilisateur',
-                'agent'
+        $conversations = Conversation::with([
+                'annonce:id,titre,prix',
+                'dernierMessage',
             ])
-            ->where('id_agent', $idAgent)
-            ->where('id_utilisateur', $utilisateur->id)
-            ->orderBy('created_at', 'asc')
+            ->where('client_id', $userId)
+            ->orWhere('agent_id', $userId)
+            ->orderByDesc('updated_at')
+            ->get()
+            ->map(function ($c) use ($userId) {
+                // Charger manuellement car 2 guards différents
+                $inter = $c->client_id === $userId
+                    ? $c->agent
+                    : $c->client;
+
+                return [
+                    'id'                => $c->id,
+                    'annonce'           => $c->annonce,
+                    'interlocuteur'     => $inter ? [
+                        'id'    => $inter->id,
+                        'prenom'=> $inter->prenom,
+                        'nom'   => $inter->nom,
+                    ] : null,
+                    'dernier_message'   => $c->dernierMessage?->contenu,
+                    'dernier_message_at'=> $c->updated_at,
+                    'non_lus'           => $c->messages()
+                        ->where('expediteur_id', '!=', $userId)
+                        ->where('lu', 0)->count(),
+                ];
+            });
+
+        return response()->json($conversations);
+    }
+
+    public function lireMessages($id)
+    {
+        $userId       = $this->authId();
+        $conversation = Conversation::where('id', $id)
+            ->where(fn($q) => $q->where('client_id', $userId)
+                                ->orWhere('agent_id', $userId))
+            ->firstOrFail();
+
+        $messages = Message::where('conversation_id', $id)
+            ->orderBy('created_at')
             ->get();
 
-        // Marquer les messages agent comme lus
-        Message::where('id_agent', $idAgent)
-            ->where('id_utilisateur', $utilisateur->id)
-            ->where('expediteur', 'agent')
-            ->where('lu', false)
-            ->update([
-                'lu' => true
-            ]);
+        Message::where('conversation_id', $id)
+            ->where('expediteur_id', '!=', $userId)
+            ->where('lu', 0)
+            ->update(['lu' => 1]);
 
         return response()->json($messages);
     }
 
-
-    // ============================================
-    // Envoyer message utilisateur -> agent
-    // ============================================
-
-    public function envoyerUtilisateur(Request $request)
+    public function envoyerMessage(Request $request, $id)
     {
-        // Vérifier utilisateur connecté
-        $utilisateur = auth('utilisateur')->user();
-
-        if (!$utilisateur) {
-            return response()->json([
-                'message' => 'Utilisateur non authentifié'
-            ], 401);
-        }
-
-        // Validation
-        $request->validate([
-            'id_agent'   => 'required|exists:agents_immobiliers,id',
-            'contenu'    => 'required|string|max:1000',
-            'id_annonce' => 'nullable|exists:annonces,id',
-        ]);
+        $request->validate(['contenu' => 'required|string|max:2000']);
+        $userId       = $this->authId();
+        $conversation = Conversation::where('id', $id)
+            ->where(fn($q) => $q->where('client_id', $userId)
+                                ->orWhere('agent_id', $userId))
+            ->firstOrFail();
 
         $message = Message::create([
-            'id_utilisateur' => $utilisateur->id,
-            'id_agent'       => $request->id_agent,
-            'id_annonce'     => $request->id_annonce,
-            'expediteur'     => 'utilisateur',
-            'contenu'        => $request->contenu,
-            'lu'             => false,
+            'conversation_id' => $conversation->id,
+            'expediteur_id'   => $userId,
+            'contenu'         => $request->contenu,
         ]);
 
+        $conversation->touch();
+
         return response()->json([
-            'message' => 'Message envoyé avec succès',
-            'data'    => $message->load([
-                'utilisateur',
-                'agent'
-            ])
+            'id'            => $message->id,
+            'contenu'       => $message->contenu,
+            'expediteur_id' => $message->expediteur_id,
+            'created_at'    => $message->created_at,
         ], 201);
     }
 
-
-    // ============================================
-    // Envoyer message agent -> utilisateur
-    // ============================================
-
-    public function envoyerAgent(Request $request)
+    public function compteurNonLus()
     {
-        // Vérifier agent connecté
-        $agent = auth('agent')->user();
-
-        if (!$agent) {
-            return response()->json([
-                'message' => 'Agent non authentifié'
-            ], 401);
-        }
-
-        // Validation
-        $request->validate([
-            'id_utilisateur' => 'required|exists:utilisateurs,id',
-            'contenu'        => 'required|string|max:1000',
-            'id_annonce'     => 'nullable|exists:annonces,id',
-        ]);
-
-        $message = Message::create([
-            'id_utilisateur' => $request->id_utilisateur,
-            'id_agent'       => $agent->id,
-            'id_annonce'     => $request->id_annonce,
-            'expediteur'     => 'agent',
-            'contenu'        => $request->contenu,
-            'lu'             => false,
-        ]);
-
-        return response()->json([
-            'message' => 'Message envoyé avec succès',
-            'data'    => $message->load([
-                'utilisateur',
-                'agent'
-            ])
-        ], 201);
-    }
-
-
-    // ============================================
-    // Liste conversations agent
-    // ============================================
-
-    public function conversationsAgent(Request $request)
-    {
-        // Vérifier agent connecté
-        $agent = auth('agent')->user();
-
-        if (!$agent) {
-            return response()->json([
-                'message' => 'Agent non authentifié'
-            ], 401);
-        }
-
-        $idAgent = $agent->id;
-
-        try {
-
-            $conversations = Message::with([
-                    'utilisateur',
-                    'annonce'
-                ])
-                ->where('id_agent', $idAgent)
-                ->orderBy('created_at', 'desc')
-                ->get()
-                ->groupBy('id_utilisateur')
-                ->map(function ($messages) {
-
-                    $dernier = $messages->first();
-
-                    $nonLus = $messages
-                        ->where('expediteur', 'utilisateur')
-                        ->where('lu', false)
-                        ->count();
-
-                    return [
-                        'utilisateur'      => $dernier->utilisateur,
-                        'dernier_message'  => $dernier->contenu,
-                        'date'             => $dernier->created_at,
-                        'non_lus'          => $nonLus,
-                        'annonce'          => $dernier->annonce,
-                    ];
-                })
-                ->values();
-
-            return response()->json($conversations);
-
-        } catch (\Exception $e) {
-
-            return response()->json([
-                'message' => 'Erreur chargement conversations',
-                'error'   => $e->getMessage()
-            ], 500);
-        }
-    }
-
-
-    // ============================================
-    // Conversation agent avec utilisateur
-    // ============================================
-
-    public function conversationAgent(
-        Request $request,
-        int $idUtilisateur
-    ) {
-
-        // Vérifier agent connecté
-        $agent = auth('agent')->user();
-
-        if (!$agent) {
-            return response()->json([
-                'message' => 'Agent non authentifié'
-            ], 401);
-        }
-
-        $messages = Message::with([
-                'utilisateur',
-                'agent'
-            ])
-            ->where('id_agent', $agent->id)
-            ->where('id_utilisateur', $idUtilisateur)
-            ->orderBy('created_at', 'asc')
-            ->get();
-
-        // Marquer comme lus
-        Message::where('id_agent', $agent->id)
-            ->where('id_utilisateur', $idUtilisateur)
-            ->where('expediteur', 'utilisateur')
-            ->where('lu', false)
-            ->update([
-                'lu' => true
-            ]);
-
-        return response()->json($messages);
-    }
-
-
-    // ============================================
-    // Nombre messages non lus agent
-    // ============================================
-
-    public function nonLusAgent(Request $request)
-    {
-        // Vérifier agent connecté
-        $agent = auth('agent')->user();
-
-        if (!$agent) {
-            return response()->json([
-                'message' => 'Agent non authentifié'
-            ], 401);
-        }
-
-        $count = Message::where('id_agent', $agent->id)
-            ->where('expediteur', 'utilisateur')
-            ->where('lu', false)
+        $userId = $this->authId();
+        $count  = Message::whereHas('conversation', fn($q) =>
+                $q->where('client_id', $userId)->orWhere('agent_id', $userId)
+            )
+            ->where('expediteur_id', '!=', $userId)
+            ->where('lu', 0)
             ->count();
 
-        return response()->json([
-            'non_lus' => $count
-        ]);
+        return response()->json(['count' => $count]);
     }
+   private function authId()
+{
+    return auth('utilisateur')->id()
+        ?? auth('agent')->id();  
+}
 }

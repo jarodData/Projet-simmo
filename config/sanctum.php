@@ -34,7 +34,11 @@ return [
     */
 
     'guard' => ['web'],
-
+    // Ajouter cette clé pour les modèles multiples
+    'models' => [
+    \App\Models\Utilisateur::class,
+    \App\Models\AgentImmobilier::class,
+    ],
     /*
     |--------------------------------------------------------------------------
     | Expiration Minutes

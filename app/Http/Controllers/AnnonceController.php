@@ -98,6 +98,7 @@ public function index(Request $request)
             'photos.*'         => 'image|mimes:jpg,jpeg,png,webp|max:5120',
         ]);
 
+
         $agent = auth('agent')->user();
 
         // Vérifier la limite du plan
@@ -166,6 +167,8 @@ public function index(Request $request)
             $agent->id,
             'nb_annonces_publiees'
         );
+            $this->notifierIA();
+
 
         return response()->json([
             'message' => 'Annonce créée avec succès !',
@@ -173,7 +176,20 @@ public function index(Request $request)
                 'localisation', 'categorie', 'photos'
             ),
         ], 201);
+
     }
+
+    private function notifierIA()
+{
+    try {
+        $client = new \GuzzleHttp\Client(['timeout' => 2]);
+        $client->post('http://localhost:8001/api/ia/recharger', [
+            'headers' => ['X-API-Key' => config('services.ia.key')],
+        ]);
+    } catch (\Exception $e) {
+        // Silencieux — l'IA se rechargera dans 6h de toute façon
+    }
+}
 
     //  Liste des annonces de l'agent
     public function mesAnnonces(Request $request)

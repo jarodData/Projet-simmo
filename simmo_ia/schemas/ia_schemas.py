@@ -30,6 +30,8 @@ class AnnonceRecommandee(BaseModel):
     score_popularite    : float
     prix_estime         : Optional[float]
     raison              : str
+    photo               : Optional[str] = None
+    
 
 class ReponseRecommandation(BaseModel):
     total               : int
@@ -92,6 +94,7 @@ class AnnonceContextuelle(BaseModel):
     analyse_quartier   : Optional[dict]   # Services du quartier
     prix_estime        : Optional[float]
     raison             : str
+    photo               : Optional[str] = None
 
 class ReponseContextuelle(BaseModel):
     total              : int

@@ -1,75 +1,62 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Favori;
 
 class FavoriController extends Controller
 {
-    // Liste des favoris de l'utilisateur
-    public function index(Request $request)
+    private function userId()
+    {
+        return auth('utilisateur')->id()
+            ?? auth('agent')->id();
+    }
+
+    public function mesIds()
+    {
+        $ids = Favori::where('user_id', $this->userId()) // ✅
+            ->pluck('annonce_id');
+        return response()->json(['ids' => $ids]);
+    }
+
+    public function index()
     {
         $favoris = Favori::with([
                 'annonce.localisation',
                 'annonce.categorie',
                 'annonce.photoPrincipale',
-                'annonce.agent',
             ])
-            ->where('id_utilisateur', auth('utilisateur')->id())
-            ->orderBy('created_at', 'desc')
-            ->paginate(12);
-
+            ->where('user_id', $this->userId()) // ✅
+            ->orderByDesc('created_at')
+            ->get();
         return response()->json($favoris);
     }
 
-    // Ajouter ou retirer un favori (toggle)
-    public function toggle(Request $request, int $idAnnonce)
+    public function toggle(Request $request)
     {
-        $idUtilisateur = auth('utilisateur')->id();
+        $request->validate(['annonce_id' => 'required|integer']);
+        $userId    = $this->userId();
+        $annonceId = $request->annonce_id;
 
-        $favori = Favori::where('id_utilisateur', $idUtilisateur)
-            ->where('id_annonce', $idAnnonce)
+        $favori = Favori::where('user_id', $userId)  // ✅
+            ->where('annonce_id', $annonceId)
             ->first();
 
         if ($favori) {
             $favori->delete();
-            return response()->json([
-                'message'   => 'Annonce retiree des favoris.',
-                'est_favori'=> false,
-            ]);
+            return response()->json(['favori' => false]);
         }
 
         Favori::create([
-            'id_utilisateur' => $idUtilisateur,
-            'id_annonce'     => $idAnnonce,
+            'user_id'    => $userId,  
+            'annonce_id' => $annonceId,
         ]);
-
-        return response()->json([
-            'message'    => 'Annonce ajoutee aux favoris.',
-            'est_favori' => true,
-        ]);
+        return response()->json(['favori' => true]);
     }
 
-    // Vérifier si une annonce est en favori
-    public function verifier(Request $request, int $idAnnonce)
+    public function viderTout()
     {
-        $estFavori = Favori::where(
-                'id_utilisateur', auth('utilisateur')->id()
-            )
-            ->where('id_annonce', $idAnnonce)
-            ->exists();
-
-        return response()->json(['est_favori' => $estFavori]);
-    }
-
-    //  Supprimer tous les favoris
-    public function vider(Request $request)
-    {
-        Favori::where('id_utilisateur', auth('utilisateur')->id())
-            ->delete();
-
-        return response()->json([
-            'message' => 'Favoris vides avec succes.',
-        ]);
+        Favori::where('user_id', $this->userId())->delete(); // ✅
+        return response()->json(['message' => 'Favoris supprimés.']);
     }
 }

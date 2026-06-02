@@ -7,8 +7,7 @@
     <title>SIMMo — Solution Immobilière</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
-    <!-- ✅ Colle ce bloc dans le <head> de TOUTES tes pages HTML -->
+    <link href="css/styles.css" rel="stylesheet">
 
 <!-- PWA Simmo -->
 <link rel="manifest" href="/manifest.json">
@@ -18,39 +17,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Simmo">
 <link rel="apple-touch-icon" href="/images/icon-192.png">
-
-<script>
-    // Enregistrement du Service Worker
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/service-worker.js')
-                .then(reg => console.log('✅ Simmo SW enregistré:', reg.scope))
-                .catch(err => console.error('❌ SW erreur:', err));
-        });
-    }
-
-    // Bouton d'installation PWA (optionnel)
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-
-        // Si tu as un bouton "Installer l'app" dans ton HTML
-        const installBtn = document.getElementById('install-btn');
-        if (installBtn) {
-            installBtn.style.display = 'block';
-            installBtn.addEventListener('click', () => {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then(choice => {
-                    if (choice.outcome === 'accepted') {
-                        console.log('✅ App installée');
-                    }
-                    deferredPrompt = null;
-                });
-            });
-        }
-    });
-</script>
 
 </head>
 <body>
@@ -918,6 +884,39 @@
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
 <script>
+
+
+// ── Placeholder local sans réseau ───────────────────────────
+function genererPlaceholder(texte) {
+    var canvas    = document.createElement('canvas')
+    canvas.width  = 400
+    canvas.height = 250
+    var ctx       = canvas.getContext('2d')
+    ctx.fillStyle = '#e2e8f0'
+    ctx.fillRect(0, 0, 400, 250)
+    ctx.fillStyle    = '#94a3b8'
+    ctx.font         = 'bold 40px sans-serif'
+    ctx.textAlign    = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText('🏠', 200, 100)
+    ctx.fillStyle = '#64748b'
+    ctx.font      = 'bold 16px sans-serif'
+    ctx.fillText((texte || 'SIMMo').substring(0, 22), 200, 165)
+    ctx.fillStyle = '#94a3b8'
+    ctx.font      = '13px sans-serif'
+    ctx.fillText('Photo non disponible', 200, 190)
+    return canvas.toDataURL('image/png')
+}
+
+function photoOuPlaceholder(photo, titre) {
+    if (photo && photo !== 'null' && photo !== 'undefined' && photo !== '') {
+        return CONFIG.STORAGE_URL + photo
+    }
+    return genererPlaceholder(titre)
+}
+
+
+
     // ── Navbar dynamique ────────────────────
 
 function sInscrireNewsletter() {
@@ -930,61 +929,124 @@ function sInscrireNewsletter() {
             'Merci ! Vous recevrez nos meilleures offres.' +
         '</div>'
 }
- // ── Lancer recherche depuis le Hero ──────────
+
+
+ // ── Recherche Hero ────────────────────────────
 async function lancerRecherche() {
-    if (!verifierActionConnectee(
-        'effectuer une recherche'
-    )) return
+    if (!verifierActionConnectee('effectuer une recherche')) return
 
-    const q     = document.getElementById('heroRecherche').value.trim()
-    const ville = document.getElementById('heroVille').value.trim()
-    const type  = document.getElementById('heroType').value
+    var q     = document.getElementById('heroRecherche').value.trim()
+    var ville = document.getElementById('heroVille').value.trim()
+    var type  = document.getElementById('heroType').value
 
-    // Rediriger vers annonces.html avec les paramètres
-    let url = 'annonces.html?'
-    if (q)     url += `q=${encodeURIComponent(q)}&`
-    if (ville) url += `ville=${encodeURIComponent(ville)}&`
-    if (type)  url += `type_transaction=${type}&`
-    url += 'source=ia'  // ← indique d'utiliser l'IA
+    var url = 'annonces.html?'
+    if (q)     url += 'q='                + encodeURIComponent(q)     + '&'
+    if (ville) url += 'ville='            + encodeURIComponent(ville) + '&'
+    if (type)  url += 'type_transaction=' + type                      + '&'
+    url += 'source=ia'
 
     window.location.href = url
 }
 
-// ── Charger annonces récentes avec IA ────────
+// IDs favoris chargés au démarrage
+let idsFavoris = new Set()
+
+async function chargerIdsFavoris() {
+    if (!getToken()) return   // ← pas de token = pas d'appel
+    try {
+        const res = await fetch(CONFIG.API_URL + '/favoris/ids', {
+            headers: {
+                'Authorization': 'Bearer ' + getToken(),
+                'Accept'       : 'application/json',
+            }
+        })
+        if (!res.ok) return
+        const data = await res.json()
+        idsFavoris = new Set(data.ids || [])
+    } catch (e) {
+        console.warn('Favoris non chargés:', e.message)
+    }
+}
+
+// 
+async function toggleFavori(event, annonceId) {
+    event.preventDefault()
+    event.stopPropagation()
+    console.log('Token envoyé:', getToken()) // ✅ ajoute ça
+
+    if (!getToken()) {
+        window.location.href = 'login.html'
+        return
+    }
+
+    try {
+        const res  = await fetch(CONFIG.API_URL + '/favoris/toggle', {
+            method : 'POST',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Authorization': 'Bearer ' + getToken(),  
+                'Accept'       : 'application/json',
+            },
+            body: JSON.stringify({ annonce_id: annonceId })
+        })
+
+        if (!res.ok) return
+
+        const data = await res.json()
+
+        const btn = event.currentTarget
+        if (data.favori) {
+            idsFavoris.add(annonceId)
+            btn.innerHTML = '<i class="bi bi-heart-fill text-danger"></i>'
+        } else {
+            idsFavoris.delete(annonceId)
+            btn.innerHTML = '<i class="bi bi-heart text-white"></i>'
+        }
+
+    } catch (e) {
+        console.error('Erreur favori:', e.message)
+    }
+}
+
+// ── Chargement annonces récentes ──────────────
+//── Chargement annonces avec user_id pour personnalisation ──
+// index.html — version robuste
 async function chargerAnnonces() {
-    var container = document.getElementById('annoncesRecentes')
+    const container = document.getElementById('annoncesRecentes')
     container.innerHTML =
         '<div class="col-12 text-center py-4">' +
             '<div class="spinner-border text-primary"></div>' +
         '</div>'
 
+    // Charger les favoris — ne bloque pas si ça échoue
+    await chargerIdsFavoris().catch(() => {})
+
+    const user   = getUser()
+    const userId = user?.id || null
+
     try {
-        // Essayer l'IA
-        var iaData = await appelIA('/recommander', { limite: 6 })
+        // Tentative IA
+        const iaData = await appelIA('/ia/recommander', {
+            limite : 6,
+            user_id: userId,
+        })
 
-        if (iaData &&
-            iaData.recommandations &&
-            iaData.recommandations.length > 0) {
-
-            //  Vérification photo IA
-            console.log('Photo IA exemple:',
-                iaData.recommandations[0].photo)
-
-            container.innerHTML =
-                iaData.recommandations
-                .map(function(r) {
-                    return carteAnnonceIA(r)
-                }).join('')
+        if (iaData?.recommandations?.length > 0) {
+            container.innerHTML = iaData.recommandations
+                .map(r => carteAnnonceIA(r))
+                .join('')
             return
         }
 
-        // Fallback Laravel classique
-        var response = await fetch(
-            CONFIG.API_URL + '/annonces?limit=6',
-            { headers: { 'Accept': 'application/json' } }
-        )
-        var data     = await response.json()
-        var annonces = data.data || []
+        // Fallback Laravel — sans auth, route publique
+        const res = await fetch(CONFIG.API_URL + '/annonces?limit=6', {
+            headers: { 'Accept': 'application/json' }
+        })
+
+        if (!res.ok) throw new Error('Laravel ' + res.status)
+
+        const data    = await res.json()
+        const annonces = data.data || data.annonces || []
 
         if (annonces.length === 0) {
             container.innerHTML =
@@ -994,254 +1056,183 @@ async function chargerAnnonces() {
             return
         }
 
-        container.innerHTML = annonces.map(function(a) {
-            return carteAnnonceClassique(a)
-        }).join('')
+        container.innerHTML = annonces
+            .map(a => carteAnnonceClassique(a))
+            .join('')
 
     } catch (e) {
-        console.error('Erreur:', e)
+        console.error('Erreur chargement annonces:', e.message)
         container.innerHTML =
             '<div class="col-12 text-center text-muted py-5">' +
-                '<p>Erreur de chargement.</p>' +
+                '<i class="bi bi-wifi-off fs-2 d-block mb-2 opacity-25"></i>' +
+                '<p class="small">Impossible de charger les annonces.</p>' +
             '</div>'
     }
 }
 
-//  Carte pour annonce venant de l'IA
-function carteAnnonceIA(r) {
 
+// ── Carte annonce IA avec photo et favori ───────────────────
+function carteAnnonceIA(r) {
     var idAnnonce = r.id_annonce || r.id
 
-    // Image par défaut
-    if (r.photo) {
-    urlPhoto = CONFIG.STORAGE_URL + r.photo
-} else {
-    urlPhoto = 'https://placehold.co/400x250/e2e8f0/64748b?text=SIMMo'
-}
-    console.log(urlPhoto)
-    console.log('Annonce IA:', r)
-    console.log('Photo:', r.photo)
-    console.log('URL finale:', urlPhoto)
-
-    var quartier = r.quartier
-        ? r.quartier + ', '
-        : ''
-
-    var badge = r.type_transaction === 'location'
+    // ✅ Après — essaie tous les champs possibles
+const urlPhoto = imageUrl(
+    r.photo || r.photo_principale || r.image || r.chemin_image || r.url_photo
+) || genererPlaceholder(r.titre)
+//console.log('photo:', r.photo)
+// Dans carteAnnonceIA — ajoute ce log
+console.log('photo:', r.photo)
+console.log('urlPhoto:', imageUrl(r.photo))
+console.log('Objet complet r:', JSON.stringify(r))
+    var estFavori = idsFavoris.has(idAnnonce)
+    var quartier  = r.quartier ? r.quartier + ', ' : ''
+    var badge     = r.type_transaction === 'location'
         ? '<span class="badge bg-primary badge-transaction">Location</span>'
         : '<span class="badge bg-success badge-transaction">Vente</span>'
 
     return `
         <div class="col-12 col-md-6 col-lg-4">
-
             <a href="annonce-detail.html?id=${idAnnonce}"
                class="carte-annonce card border-0 shadow-sm text-decoration-none">
-
                 <div class="card-img-wrapper">
-
                     <img
                         src="${urlPhoto}"
                         class="card-img-top"
                         alt="${r.titre}"
-
-                        onerror="
-                            this.onerror=null;
-                            this.src='https://placehold.co/400x250/e2e8f0/64748b?text=SIMMo';
-                        "
+                        onerror="this.onerror=null;this.src=genererPlaceholder('${(r.titre||'').replace(/'/g,'')}');"
                     >
-
                     ${badge}
+
+                    <!-- Bouton favori -->
+                    <button
+                        class="btn btn-sm position-absolute"
+                        style="top:8px;right:8px;background:rgba(0,0,0,0.35);
+                               border:none;border-radius:50%;width:34px;height:34px;
+                               display:flex;align-items:center;justify-content:center;
+                               padding:0;z-index:3"
+                        onclick="toggleFavori(event, ${idAnnonce})"
+                        title="${estFavori ? 'Retirer des favoris' : 'Ajouter aux favoris'}"
+                    >
+                        <i class="bi ${estFavori ? 'bi-heart-fill text-danger' : 'bi-heart text-white'}"></i>
+                    </button>
 
                     <span class="position-absolute bottom-0 end-0
                         m-2 badge bg-dark bg-opacity-75 small">
-
                         IA ${Math.round((r.score_final || 0.5) * 100)}%
-
                     </span>
-
                 </div>
-
                 <div class="card-body">
-
-                    <p class="text-primary small fw-bold
-                        text-uppercase mb-1">
-
+                    <p class="text-primary small fw-bold text-uppercase mb-1">
                         ${r.categorie || ''}
-
                     </p>
-
-                    <h5 class="card-title fw-bold text-truncate">
-
-                        ${r.titre}
-
-                    </h5>
-
+                    <h5 class="card-title fw-bold text-truncate">${r.titre}</h5>
                     <p class="text-muted small mb-2">
-
                         <i class="bi bi-geo-alt text-primary"></i>
-
                         ${quartier}${r.ville || ''}
-
                     </p>
-
-                    <div class="d-flex justify-content-between
-                        align-items-center">
-
-                        <span class="prix-annonce">
-
-                            ${formatPrix(r.prix)}
-
-                        </span>
-
-                        ${
-                            r.prix_estime
-                            ? `
-                                <span class="badge bg-success
-                                    bg-opacity-10 text-success small">
-
-                                    ~${formatPrix(r.prix_estime)}
-
-                                </span>
-                            `
-                            : ''
-                        }
-
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="prix-annonce">${formatPrix(r.prix)}</span>
+                        ${r.prix_estime
+                            ? `<span class="badge bg-success bg-opacity-10 text-success small">
+                                ~${formatPrix(r.prix_estime)}</span>`
+                            : ''}
                     </div>
-
+                    ${r.raison
+                        ? `<p class="text-muted small fst-italic mt-1 mb-0 text-truncate">
+                            ${r.raison}</p>`
+                        : ''}
                 </div>
-
             </a>
-
-        </div>
-    `
+        </div>`
 }
-// Carte pour annonce classique Laravel
-function carteAnnonceClassique(a) {
-    // Construction URL photo
-    var urlPhoto
-    if (a.photo_principale &&
-        a.photo_principale.chemin_image) {
-        urlPhoto = CONFIG.STORAGE_URL + '/' +
-            a.photo_principale.chemin_image
-    } else {
-        urlPhoto =
-            'https://placehold.co/400x250/e2e8f0/64748b?text=SIMMo'
-    }
 
-    var quartier  = a.localisation && a.localisation.quartier
+
+// ── Carte annonce classique Laravel ──────────
+function carteAnnonceClassique(a) {
+    //  Placeholder local, zéro réseau externe
+    var urlPhoto = (a.photo_principale && a.photo_principale.chemin_image)
+        ? CONFIG.STORAGE_URL + '/' + a.photo_principale.chemin_image
+        : genererPlaceholder(a.titre)
+
+    var quartier  = (a.localisation && a.localisation.quartier)
         ? a.localisation.quartier + ', ' : ''
-    var ville     = a.localisation && a.localisation.ville
+    var ville     = (a.localisation && a.localisation.ville)
         ? a.localisation.ville : ''
-    var categorie = a.categorie && a.categorie.libelle
+    var categorie = (a.categorie && a.categorie.libelle)
         ? a.categorie.libelle : ''
     var badge     = a.type_transaction === 'location'
         ? '<span class="badge bg-primary badge-transaction">Location</span>'
         : '<span class="badge bg-success badge-transaction">Vente</span>'
-    var meuble    = a.meuble
-        ? '<span class="badge bg-warning text-dark"' +
-          ' style="position:absolute;top:12px;right:12px">Meuble</span>'
-        : ''
     var prixMois  = a.type_transaction === 'location'
-        ? '<span class="text-muted fs-6 fw-normal">/mois</span>'
-        : ''
+        ? '<span class="text-muted fs-6 fw-normal">/mois</span>' : ''
+    var titreSafe = (a.titre || '').replace(/'/g, '')
 
     return '<div class="col-12 col-md-6 col-lg-4">' +
         '<a href="annonce-detail.html?id=' + a.id + '"' +
-            ' class="carte-annonce card border-0 shadow-sm' +
-            ' text-decoration-none">' +
+            ' class="carte-annonce card border-0 shadow-sm text-decoration-none">' +
             '<div class="card-img-wrapper">' +
-                '<img' +
-                    ' src="' + urlPhoto + '"' +
-                    ' class="card-img-top"' +
-                    ' alt="' + a.titre + '"' +
-                    ' onerror="this.onerror=null;this.src=' +
-                        "'https://placehold.co/400x250/e2e8f0/64748b?text=SIMMo'" +
-                    '">' +
-                badge + meuble +
+                '<img src="' + urlPhoto + '"' +
+                    ' class="card-img-top" alt="' + a.titre + '"' +
+                    ' onerror="this.onerror=null;this.src=genererPlaceholder(\'' +
+                        titreSafe + '\')">' +   
+                badge +
             '</div>' +
             '<div class="card-body">' +
-                '<p class="text-primary small fw-bold' +
-                    ' text-uppercase mb-1">' +
-                    categorie +
-                '</p>' +
-                '<h5 class="card-title fw-bold text-truncate">' +
-                    a.titre +
-                '</h5>' +
+                '<p class="text-primary small fw-bold text-uppercase mb-1">' +
+                    categorie + '</p>' +
+                '<h5 class="card-title fw-bold text-truncate">' + a.titre + '</h5>' +
                 '<p class="text-muted small mb-2">' +
                     '<i class="bi bi-geo-alt text-primary"></i> ' +
-                    quartier + ville +
-                '</p>' +
-                '<div class="d-flex justify-content-between' +
-                    ' align-items-center">' +
+                    quartier + ville + '</p>' +
+                '<div class="d-flex justify-content-between align-items-center">' +
                     '<span class="prix-annonce">' +
-                        formatPrix(a.prix) + prixMois +
-                    '</span>' +
+                        formatPrix(a.prix) + prixMois + '</span>' +
                     '<span class="text-muted small">' +
-                        '<i class="bi bi-eye me-1"></i>' + a.vues +
-                    '</span>' +
+                        '<i class="bi bi-eye me-1"></i>' + a.vues + '</span>' +
                 '</div>' +
             '</div>' +
         '</a>' +
     '</div>'
 }
+
                   
-// ── Afficher annonces recommandées par IA ────
+// ── Affichage annonces IA (fonction générique) 
 function afficherAnnoncesIA(recommandations, container) {
     container.innerHTML = recommandations.map(function(r) {
-
-        // L'IA retourne r.photo (chemin direct de la BD)
-        var urlPhoto = r.photo
-            ? 'http://localhost:8000/storage'+r.photo
-            : 'https://placehold.co/400x250/e2e8f0/64748b?text=SIMMo'
-
+        var urlPhoto = photoOuPlaceholder(r.photo, r.titre)  
         var quartier = r.quartier ? r.quartier + ', ' : ''
+        var titreSafe = (r.titre || '').replace(/'/g, '')
 
         return '<div class="col-12 col-md-6 col-lg-4">' +
             '<a href="annonce-detail.html?id=' + r.id_annonce + '"' +
-                ' class="carte-annonce card border-0 shadow-sm' +
-                ' text-decoration-none">' +
+                ' class="carte-annonce card border-0 shadow-sm text-decoration-none">' +
                 '<div class="card-img-wrapper position-relative">' +
                     '<img src="' + urlPhoto + '"' +
-                        ' class="card-img-top"' +
-                        ' alt="' + r.titre + '"' +
-                       
-                        '">' +
+                        ' class="card-img-top" alt="' + r.titre + '"' +
+                        ' onerror="this.onerror=null;this.src=genererPlaceholder(\'' +
+                            titreSafe + '\')">' +    
                     '<span class="badge badge-transaction ' +
-                        (r.type_transaction === 'location'
-                            ? 'bg-primary' : 'bg-success') + '">' +
-                        (r.type_transaction === 'Location'
-                            ? 'Vente' : 'Location') +
+                        (r.type_transaction === 'location' ? 'bg-primary' : 'bg-success') + '">' +
+                        (r.type_transaction === 'location' ? 'Location' : 'Vente') +
                     '</span>' +
                     '<span class="position-absolute bottom-0 end-0' +
                         ' m-2 badge bg-dark bg-opacity-75 small">' +
-                        'IA ' +
-                        Math.round((r.score_final || 0) * 100) + '%' +
+                        'IA ' + Math.round((r.score_final || 0) * 100) + '%' +
                     '</span>' +
                 '</div>' +
                 '<div class="card-body">' +
-                    '<p class="text-primary small fw-bold' +
-                        ' text-uppercase mb-1">' +
-                        (r.categorie || '') +
-                    '</p>' +
-                    '<h5 class="card-title fw-bold text-truncate">' +
-                        r.titre +
-                    '</h5>' +
+                    '<p class="text-primary small fw-bold text-uppercase mb-1">' +
+                        (r.categorie || '') + '</p>' +
+                    '<h5 class="card-title fw-bold text-truncate">' + r.titre + '</h5>' +
                     '<p class="text-muted small mb-2">' +
                         '<i class="bi bi-geo-alt text-primary"></i> ' +
-                        quartier + (r.ville || '') +
-                    '</p>' +
-                    '<p class="small text-muted fst-italic mb-2' +
-                        ' text-truncate">' +
-                        (r.raison || '') +
-                    '</p>' +
-                    '<div class="d-flex justify-content-between' +
-                        ' align-items-center">' +
-                        '<span class="prix-annonce">' +
-                            formatPrix(r.prix) +
-                        '</span>' +
+                        quartier + (r.ville || '') + '</p>' +
+                    '<p class="small text-muted fst-italic mb-2 text-truncate">' +
+                        (r.raison || '') + '</p>' +
+                    '<div class="d-flex justify-content-between align-items-center">' +
+                        '<span class="prix-annonce">' + formatPrix(r.prix) + '</span>' +
                         (r.prix_estime
-                            ? '<span class="badge bg-success' +
-                              ' bg-opacity-10 text-success small">~' +
+                            ? '<span class="badge bg-success bg-opacity-10 text-success small">~' +
                               formatPrix(r.prix_estime) + '</span>'
                             : '') +
                     '</div>' +
@@ -1252,28 +1243,27 @@ function afficherAnnoncesIA(recommandations, container) {
 }
 
 
-    // ── Catégories — redirige avec vérification
-    function allerCategorie(typeBien) {
-        if (!verifierActionConnectee('parcourir par catégorie')) return
-        window.location.href = `annonces.html?type_bien=${typeBien}`
-    }
+    /// ── Catégories ────────────────────────────────
+function allerCategorie(typeBien) {
+    if (!verifierActionConnectee('parcourir par catégorie')) return
+    window.location.href = 'annonces.html?type_bien=' + typeBien
+}
 
-    // ── Init ─────────────────────────────────
-    
-    // Recherche avec touche Entrée
-    document.getElementById('heroRecherche')
-        .addEventListener('keypress', e => {
-            if (e.key === 'Enter') lancerRecherche()
-        })
-    document.getElementById('heroVille')
-        .addEventListener('keypress', e => {
-            if (e.key === 'Enter') lancerRecherche()
-        })
-        document.addEventListener('DOMContentLoaded', function() {
-    
+    // ── Init ──────────────────────────────────────
+document.getElementById('heroRecherche')
+    .addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') lancerRecherche()
+    })
+document.getElementById('heroVille')
+    .addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') lancerRecherche()
+    })
+
+document.addEventListener('DOMContentLoaded', function() {
     initNavbar()
     chargerAnnonces()
 })
+
 </script>
 </body>
 </html>

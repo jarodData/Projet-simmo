@@ -231,42 +231,83 @@ Route::middleware('auth:sanctum')
             [ChatController::class, 'envoyerUtilisateur']);
     });
 
-// Routes chat agent
-Route::middleware('auth:sanctum')
-    ->prefix('agent')
-    ->group(function () {
-        Route::get('/conversations',
-            [ChatController::class, 'conversationsAgent']);
-        Route::get('/chat/{idUtilisateur}',
-            [ChatController::class, 'conversationAgent']);
-        Route::post('/chat/envoyer',
-            [ChatController::class, 'envoyerAgent']);
-        Route::get('/chat/non-lus',
-            [ChatController::class, 'nonLusAgent']);
-    });
+// // Routes chat agent
+// Route::middleware('auth:sanctum')
+//     ->prefix('agent')
+//     ->group(function () {
+//         Route::get('/conversations',
+//             [ChatController::class, 'conversationsAgent']);
+//         Route::get('/chat/{idUtilisateur}',
+//             [ChatController::class, 'conversationAgent']);
+//         Route::post('/chat/envoyer',
+//             [ChatController::class, 'envoyerAgent']);
+//         Route::get('/chat/non-lus',
+//             [ChatController::class, 'nonLusAgent']);
+//     });
 
 
 
-    Route::middleware('auth:sanctum')
-    ->prefix('utilisateur')
-    ->group(function () {
-        // Favoris
-        Route::get('/favoris',
-            [FavoriController::class, 'index']);
-        Route::post('/favoris/{idAnnonce}/toggle',
-            [FavoriController::class, 'toggle']);
-        Route::get('/favoris/{idAnnonce}/verifier',
-            [FavoriController::class, 'verifier']);
-        Route::delete('/favoris',
-            [FavoriController::class, 'vider']);
-    });
+    // Route::middleware('auth:sanctum')
+    // ->prefix('utilisateur')
+    // ->group(function () {
+    //     // Favoris
+    //     Route::get('/favoris',
+    //         [FavoriController::class, 'index']);
+    //     Route::post('/favoris/{idAnnonce}/toggle',
+    //         [FavoriController::class, 'toggle']);
+    //     Route::get('/favoris/{idAnnonce}/verifier',
+    //         [FavoriController::class, 'verifier']);
+    //     Route::delete('/favoris',
+    //         [FavoriController::class, 'vider']);
+    // });
 
-  Route::prefix('chat')->group(function () {
+//   Route::prefix('chat')->group(function () {
 
-    Route::post('/demarrer', [ChattController::class, 'demarrerConversation']);
-    Route::post('/envoyer', [ChattController::class, 'envoyerMessage']);
-    Route::get('/messages/{id}', [ChattController::class, 'messages']);
-    Route::get('/conversations/utilisateur/{id}', [ChattController::class, 'conversationsUtilisateur']);
-    Route::get('/conversations/agent/{id}', [ChatController::class, 'conversationsAgent']);
+//     Route::post('/demarrer', [ChattController::class, 'demarrerConversation']);
+//     Route::post('/envoyer', [ChattController::class, 'envoyerMessage']);
+//     Route::get('/messages/{id}', [ChattController::class, 'messages']);
+//     Route::get('/conversations/utilisateur/{id}', [ChattController::class, 'conversationsUtilisateur']);
+//     Route::get('/conversations/agent/{id}', [ChatController::class, 'conversationsAgent']);
+// });
+
+
+
+// ── routes/api.php ──────────────────────────────────────────
+// Route::middleware('auth:sanctum')->group(function () {
+//     Route::post('/conversations',                  [ChatController::class, 'creerOuRecuperer']);
+//     Route::get('/conversations',                   [ChatController::class, 'mesConversations']);
+//     Route::get('/conversations/{id}/messages',     [ChatController::class, 'lireMessages']);
+//     Route::post('/conversations/{id}/messages',    [ChatController::class, 'envoyerMessage']);
+//     Route::get('/conversations/non-lus/count',     [ChatController::class, 'compteurNonLus']);
+// });
+
+// Route::middleware('auth:sanctum')->group(function () {
+//     Route::post('/conversations',               [ChatController::class, 'creerOuRecuperer']);
+//     Route::get('/conversations',                [ChatController::class, 'mesConversations']);
+//     Route::get('/conversations/non-lus/count',  [ChatController::class, 'compteurNonLus']);
+//     Route::get('/conversations/{id}/messages',  [ChatController::class, 'lireMessages']);
+//     Route::post('/conversations/{id}/messages', [ChatController::class, 'envoyerMessage']);
+// });
+
+// Remplace auth:sanctum par auth:utilisateur,agent
+Route::middleware('auth:utilisateur,agent')->group(function () {
+    Route::post('/conversations',               [ChatController::class, 'creerOuRecuperer']);
+    Route::get('/conversations',                [ChatController::class, 'mesConversations']);
+    Route::get('/conversations/non-lus/count',  [ChatController::class, 'compteurNonLus']);
+    Route::get('/conversations/{id}/messages',  [ChatController::class, 'lireMessages']);
+    Route::post('/conversations/{id}/messages', [ChatController::class, 'envoyerMessage']);
 });
+// // ── Favoris ───────────────────────────────────────────────────
+// Route::middleware('auth:sanctum')->prefix('favoris')->group(function () {
+//     Route::post('toggle',          [FavoriController::class, 'toggle']);
+//     Route::get('/',                [FavoriController::class, 'mesFavoris']);
+//     Route::get('ids',              [FavoriController::class, 'mesIds']);
+// });Route::delete('/favoris/vider', [FavoriController::class, 'viderTout'])
+//     ->middleware('auth:sanctum');
 
+Route::middleware('auth:utilisateur,agent')->prefix('favoris')->group(function () {
+    Route::get('ids',    [FavoriController::class, 'mesIds']);
+    Route::get('/',      [FavoriController::class, 'index']);
+    Route::post('toggle',[FavoriController::class, 'toggle']);
+    Route::delete('vider',[FavoriController::class, 'viderTout']);
+});    

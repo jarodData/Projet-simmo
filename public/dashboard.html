@@ -8,50 +8,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
-    <!-- ✅ Colle ce bloc dans le <head> de TOUTES tes pages HTML -->
-
-<!-- PWA Simmo -->
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#4F46E5">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Simmo">
-<link rel="apple-touch-icon" href="/images/icon-192.png">
-
-<script>
-    // Enregistrement du Service Worker
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/service-worker.js')
-                .then(reg => console.log('✅ Simmo SW enregistré:', reg.scope))
-                .catch(err => console.error('❌ SW erreur:', err));
-        });
-    }
-
-    // Bouton d'installation PWA (optionnel)
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-
-        // Si tu as un bouton "Installer l'app" dans ton HTML
-        const installBtn = document.getElementById('install-btn');
-        if (installBtn) {
-            installBtn.style.display = 'block';
-            installBtn.addEventListener('click', () => {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then(choice => {
-                    if (choice.outcome === 'accepted') {
-                        console.log('App installée');
-                    }
-                    deferredPrompt = null;
-                });
-            });
-        }
-    });
-</script>
-
 </head>
 <body>
 
@@ -65,10 +21,10 @@
     </div>
 </nav>
 
-<div class="container py-5">
+<div class="container py-4">
     <div class="row g-4">
 
-        <!-- ── SIDEBAR ───────────────────────── -->
+        <!-- SIDEBAR -->
         <div class="col-12 col-lg-3">
             <div class="sidebar">
                 <p class="small fw-bold text-muted text-uppercase px-2 mb-2">
@@ -81,14 +37,14 @@
                     <a class="nav-link" href="mes-annonces.html">
                         <i class="bi bi-house me-2"></i>Mes annonces
                     </a>
-                    <a class="nav-link d-flex align-items-center" href="chats.html">
+                    <a class="nav-link d-flex align-items-center" href="mes-messages.html">
                         <i class="bi bi-chat-dots me-2"></i>Mes messages
-                        <span class="badge bg-danger ms-auto" id="badgeContacts" style="display:none"></span>
+                        <span class="badge bg-danger ms-auto d-none" id="badgeContacts"></span>
                     </a>
                     <a class="nav-link" href="plan.html">
                         <i class="bi bi-credit-card me-2"></i>Mon plan
                     </a>
-                    <hr>
+                    <hr class="my-2">
                     <a class="nav-link" href="index.html">
                         <i class="bi bi-house-door me-2"></i>Accueil site
                     </a>
@@ -100,11 +56,10 @@
             </div>
         </div>
 
-        <!-- ── CONTENU ───────────────────────── -->
+        <!-- CONTENU -->
         <div class="col-12 col-lg-9">
 
-            <!-- En-tête -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
                 <div>
                     <h3 class="fw-bold mb-0" id="titreBonjour">Bonjour 👋</h3>
                     <p class="text-muted mb-0">Voici votre activité ce mois</p>
@@ -114,13 +69,13 @@
                 </a>
             </div>
 
-            <!-- Alerte plan -->
+            <!-- Alerte plan expiré -->
             <div id="alertePlan"></div>
 
-            <!-- Statistiques -->
+            <!-- Stats -->
             <div class="row g-3 mb-4">
                 <div class="col-6 col-md-3">
-                    <div class="dashboard-card p-4 text-center">
+                    <div class="dashboard-card p-3 text-center">
                         <div class="bg-primary bg-opacity-10 rounded-3 p-2 d-inline-flex mb-2">
                             <i class="bi bi-house text-primary fs-4"></i>
                         </div>
@@ -129,18 +84,17 @@
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="dashboard-card p-4 text-center">
+                    <div class="dashboard-card p-3 text-center">
                         <div class="bg-success bg-opacity-10 rounded-3 p-2 d-inline-flex mb-2">
-                            <i class="bi bi-people text-success fs-4"></i>
+                            <i class="bi bi-chat-dots text-success fs-4"></i>
                         </div>
                         <h3 class="fw-bold mb-0" id="statContacts">—</h3>
-                        <p class="text-muted small mb-0">Contacts reçus</p>
+                        <p class="text-muted small mb-0">Conversations</p>
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="dashboard-card p-4 text-center">
-                        <div class="rounded-3 p-2 d-inline-flex mb-2"
-                            style="background:rgba(124,58,237,0.1)">
+                    <div class="dashboard-card p-3 text-center">
+                        <div class="rounded-3 p-2 d-inline-flex mb-2" style="background:rgba(124,58,237,0.1)">
                             <i class="bi bi-eye fs-4" style="color:#7c3aed"></i>
                         </div>
                         <h3 class="fw-bold mb-0" id="statVues">—</h3>
@@ -148,7 +102,7 @@
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="dashboard-card p-4 text-center">
+                    <div class="dashboard-card p-3 text-center">
                         <div class="bg-warning bg-opacity-10 rounded-3 p-2 d-inline-flex mb-2">
                             <i class="bi bi-graph-up text-warning fs-4"></i>
                         </div>
@@ -162,7 +116,6 @@
             <div id="planActif" class="mb-4"></div>
 
             <div class="row g-4">
-
                 <!-- Dernières annonces -->
                 <div class="col-12 col-md-6">
                     <div class="dashboard-card p-4 h-100">
@@ -178,15 +131,15 @@
                     </div>
                 </div>
 
-                <!-- Derniers contacts -->
+                <!-- Messages -->
                 <div class="col-12 col-md-6">
                     <div class="dashboard-card p-4 h-100">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 class="fw-bold mb-0">
-                                Derniers messages
-                                <span class="badge bg-danger ms-1" id="badgeNonLus" style="display:none"></span>
+                                Messages
+                                <span class="badge bg-danger ms-1 d-none" id="badgeNonLus"></span>
                             </h5>
-                            <a href="chats.html" class="text-primary small">Voir tout</a>
+                            <a href="mes-messages.html" class="text-primary small">Voir tout</a>
                         </div>
                         <div id="derniersContacts">
                             <div class="text-center py-3">
@@ -205,206 +158,275 @@
 <script src="js/auth.js"></script>
 <script>
 
-    // ── Navbar ───────────────────────────────
-    function initNavbar() {
-        const user = getUser()
-        if (!user) {
-            window.location.href = "login.html"
-            return
-        }
-        document.getElementById('navAuth').innerHTML = `
-            <div class="d-flex align-items-center gap-2 bg-light px-3 py-2 rounded-3">
-                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold"
-                    style="width:32px;height:32px;font-size:13px">
-                    ${user?.prenom?.[0]?.toUpperCase() || 'A'}
-                </div>
-                <span class="fw-semibold small">${user?.prenom || ''}</span>
+// ── Vérification connexion ──────────────────────────────────
+const token = getToken()
+const user  = getUser()
+
+
+
+console.log('token:', token)
+console.log('user:', user)
+console.log('role:', localStorage.getItem('role'))
+console.log('estAgent:', estAgent())
+console.log('estConnecte:', estConnecte())
+console.log(localStorage.getItem('user'))
+
+if (!token || !estAgent()) {
+    window.location.href = 'login-agent.html'
+}
+
+
+// Debug temporaire
+//console.log('user:', user)
+//console.log('role:', localStorage.getItem('role'))
+//console.log('estAgent:', estAgent())
+//console.log('role:', localStorage.getItem('role'))
+//console.log('user:', localStorage.getItem('user'))
+// ── Navbar ──────────────────────────────────────────────────
+
+function initNavbar() {
+    const u = getUser() // peut être null
+    const prenom = u?.prenom || u?.nom || 'Agent' // ✅ fallback
+
+    document.getElementById('navAuth').innerHTML = `
+        <div class="d-flex align-items-center gap-2 bg-light px-3 py-2 rounded-3">
+            <div class="bg-primary text-white rounded-circle d-flex align-items-center
+                justify-content-center fw-bold"
+                style="width:32px;height:32px;font-size:13px">
+                ${prenom[0].toUpperCase()}
             </div>
-            <button class="btn btn-outline-danger btn-sm" onclick="deconnexion()">
-                <i class="bi bi-box-arrow-right"></i>
-            </button>
-        `
-        document.getElementById('titreBonjour').textContent = `Bonjour, ${user?.prenom} 👋`
-    }
+            <span class="fw-semibold small">${prenom}</span>
+        </div>
+        <button class="btn btn-outline-danger btn-sm" onclick="deconnexion()">
+            <i class="bi bi-box-arrow-right"></i>
+        </button>`
 
-    // ── Charger le dashboard ─────────────────
-    async function chargerDashboard() {
-        const user = getUser()
-        if (!user) return
+    document.getElementById('titreBonjour').textContent =
+        'Bonjour, ' + prenom + ' 👋'
+}
+// ── Dashboard principal ─────────────────────────────────────
+async function chargerDashboard() {
+    try {
+        // Appels en parallèle
+        const [data, conversations] = await Promise.all([
+            apiRequest('/agent/dashboard', 'GET', null, true).catch(() => ({})),
+            apiRequest('/conversations',   'GET', null, true).catch(() => []),
+        ])
 
-        try {
-            // Dashboard principal
-            const data = await apiRequest('/agent/dashboard', 'GET', null, true)
+        const convs = Array.isArray(conversations) ? conversations : []
 
-            // ✅ Conversations avec non_lus (corrigé côté controller aussi)
-            const conversations = await apiRequest(
-                '/chat/conversations/agent/' + user.id,
-                'GET', null, true
-            )
+        // Stats
+        document.getElementById('statAnnonces').textContent =
+            data?.annonces_actives ?? 0
+        document.getElementById('statContacts').textContent =
+            convs.length
+        document.getElementById('statVues').textContent =
+            data?.statistiques_mois?.nb_vues_total ?? 0
+        document.getElementById('statServices').textContent =
+            data?.statistiques_mois?.nb_services_rendus ?? 0
 
-            console.log("conversations agent:", conversations) // debug
-
-            // ── Stats ─────────────────────────
-            document.getElementById('statAnnonces').textContent = data.annonces_actives || 0
-            document.getElementById('statContacts').textContent = conversations.length || 0
-            document.getElementById('statVues').textContent = data.statistiques_mois?.nb_vues_total || 0
-            document.getElementById('statServices').textContent = data.statistiques_mois?.nb_services_rendus || 0
-
-            // ── Nombre messages non lus ───────
-            const nbNonLus = conversations.reduce((total, c) => total + (c.non_lus || 0), 0)
-
-            if (nbNonLus > 0) {
-                ['badgeContacts', 'badgeNonLus'].forEach(id => {
-                    const el = document.getElementById(id)
-                    if (el) { el.style.display = 'inline'; el.textContent = nbNonLus }
-                })
-            }
-
-            // ── Plan ──────────────────────────
-            afficherPlan(data.agent)
-
-            // ── Annonces ──────────────────────
-            afficherDernieresAnnonces(data.dernieres_annonces)
-
-            // ✅ Conversations corrigées
-            afficherDerniersContacts(conversations)
-
-        } catch (e) {
-            console.error("Erreur dashboard:", e)
-        }
-    }
-
-    // ── Afficher le plan ─────────────────────
-    function afficherPlan(agent) {
-        if (!agent?.plan) return
-
-        const expire = agent.date_expiration_plan
-            ? new Date(agent.date_expiration_plan) < new Date()
-            : true
-
-        const jours = agent.date_expiration_plan && !expire
-            ? Math.ceil((new Date(agent.date_expiration_plan) - new Date()) / (1000*60*60*24))
-            : 0
-
-        if (expire) {
-            document.getElementById('alertePlan').innerHTML = `
-                <div class="alert alert-warning d-flex align-items-center gap-2 mb-4">
-                    <i class="bi bi-exclamation-triangle-fill"></i>
-                    <div>
-                        Votre plan a expiré.
-                        <a href="plan.html" class="fw-bold">Renouvelez votre abonnement</a> pour continuer à publier.
-                    </div>
-                </div>`
+        // Badges non lus
+        const nbNonLus = convs.reduce((t, c) => t + (c.non_lus || 0), 0)
+        if (nbNonLus > 0) {
+            ;['badgeContacts', 'badgeNonLus'].forEach(id => {
+                const el = document.getElementById(id)
+                if (el) { el.classList.remove('d-none'); el.textContent = nbNonLus }
+            })
         }
 
-        document.getElementById('planActif').innerHTML = `
-            <div class="rounded-3 p-4 text-white"
-                style="background:linear-gradient(135deg,#1d4ed8,#0ea5e9)">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <p class="text-white-50 small mb-1">Plan actif</p>
-                        <h4 class="fw-bold mb-1">${agent.plan.nom_plan}</h4>
-                        <p class="text-white-50 small mb-0">
-                            ${expire ? '⚠️ Expiré' : `Expire dans ${jours} jour(s)`}
-                        </p>
-                    </div>
-                    <a href="plan.html" class="btn btn-light btn-sm fw-semibold">
-                        Gérer <i class="bi bi-arrow-right ms-1"></i>
-                    </a>
+        // Plan
+        if (data?.agent) afficherPlan(data.agent)
+
+        // Listes
+        afficherDernieresAnnonces(data?.dernieres_annonces || [])
+        afficherConversations(convs)
+
+    } catch (e) {
+        console.error('Erreur dashboard:', e)
+    }
+}
+
+// ── Plan ────────────────────────────────────────────────────
+function afficherPlan(agent) {
+    if (!agent?.plan) return
+
+    const expire = !agent.date_expiration_plan ||
+        new Date(agent.date_expiration_plan) < new Date()
+
+    const jours = !expire
+        ? Math.ceil(
+            (new Date(agent.date_expiration_plan) - new Date()) / 86400000
+          )
+        : 0
+
+    if (expire) {
+        document.getElementById('alertePlan').innerHTML = `
+            <div class="alert alert-warning d-flex align-items-center gap-2 mb-4">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <div>Votre plan a expiré.
+                    <a href="plan.html" class="fw-bold">Renouvelez votre abonnement</a>
+                    pour continuer à publier.
                 </div>
             </div>`
     }
 
-    // ── Afficher dernières annonces ──────────
-    function afficherDernieresAnnonces(annonces) {
-        const container = document.getElementById('dernieresAnnonces')
-        if (!annonces || annonces.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-4 text-muted">
-                    <i class="bi bi-house fs-2 d-block mb-2 opacity-25"></i>
-                    <p class="small">Aucune annonce publiée</p>
-                    <a href="creer-annonce.html" class="btn btn-sm btn-primary">Créer une annonce</a>
-                </div>`
-            return
-        }
-
-        container.innerHTML = annonces.map(a => `
-            <div class="d-flex align-items-center gap-3 p-2 rounded-3 mb-2"
-                style="transition:background 0.2s"
-                onmouseover="this.style.background='#f8fafc'"
-                onmouseout="this.style.background='transparent'">
-                <img src="${imageUrl(a.photo_principale?.chemin_image)}"
-                    class="rounded-3" style="width:48px;height:42px;object-fit:cover"
-                    onerror="this.src='https://placehold.co/48x42?text=?'">
-                <div class="flex-grow-1" style="min-width:0">
-                    <p class="fw-semibold small mb-0 text-truncate">${a.titre}</p>
-                    <p class="text-muted mb-0" style="font-size:11px">
-                        ${a.localisation?.ville || ''} •
-                        <span class="badge ${a.statut === 'active' ? 'bg-success' : 'bg-secondary'}
-                            bg-opacity-10 ${a.statut === 'active' ? 'text-success' : 'text-secondary'}">
-                            ${a.statut}
-                        </span>
+    document.getElementById('planActif').innerHTML = `
+        <div class="rounded-3 p-4 text-white mb-2"
+            style="background:linear-gradient(135deg,#1d4ed8,#0ea5e9)">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <p class="text-white-50 small mb-1">Plan actif</p>
+                    <h4 class="fw-bold mb-1">${agent.plan.nom_plan || 'Standard'}</h4>
+                    <p class="text-white-50 small mb-0">
+                        ${expire ? '⚠️ Expiré' : `Expire dans ${jours} jour(s)`}
                     </p>
                 </div>
-                <span class="text-primary fw-bold small">${formatPrix(a.prix)}</span>
+                <a href="plan.html" class="btn btn-light btn-sm fw-semibold">
+                    Gérer <i class="bi bi-arrow-right ms-1"></i>
+                </a>
             </div>
-        `).join('')
+        </div>`
+}
+
+// ── Annonces ────────────────────────────────────────────────
+function afficherDernieresAnnonces(annonces) {
+    const container = document.getElementById('dernieresAnnonces')
+
+    if (!annonces || annonces.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-house fs-2 d-block mb-2 opacity-25"></i>
+                <p class="small">Aucune annonce publiée</p>
+                <a href="creer-annonce.html" class="btn btn-sm btn-primary">
+                    Créer une annonce
+                </a>
+            </div>`
+        return
     }
 
-    // ✅ CORRIGÉ — HTML template réparé, non_lus et date corrects
-    function afficherDerniersContacts(conversations) {
-        const container = document.getElementById('derniersContacts')
+    container.innerHTML = annonces.map(a => {
+        const photo = a.photo_principale?.chemin_image
+            ? CONFIG.STORAGE_URL + '/' + a.photo_principale.chemin_image
+            : null
+        const ville   = a.localisation?.ville || a.ville || ''
+        const statut  = a.statut || 'active'
+        const couleur = statut === 'active' ? 'success' : 'secondary'
 
-        if (!conversations || conversations.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-4 text-muted">
-                    <i class="bi bi-chat-dots fs-2 d-block mb-2 opacity-25"></i>
-                    <p class="small">Aucune conversation</p>
-                </div>`
-            return
-        }
-
-        container.innerHTML = conversations.map(c => `
-            <a href="chats.html?conversation=${c.id ?? c.id_conversation}" class="text-decoration-none text-dark">
-                <div class="d-flex align-items-start gap-3 p-3 rounded-3 mb-2
-                    ${(c.non_lus || 0) > 0 ? 'bg-primary bg-opacity-10' : 'bg-light'}"
-                    style="transition:background 0.2s">
-
-                    <!-- Avatar -->
-                    <div class="bg-primary text-white rounded-circle
-                        d-flex align-items-center justify-content-center
-                        fw-bold flex-shrink-0"
-                        style="width:40px;height:40px;font-size:14px">
-                        ${c.utilisateur?.prenom?.[0]?.toUpperCase() || 'U'}
-                    </div>
-
-                    <!-- Contenu -->
+        return `
+            <a href="annonce-detail.html?id=${a.id}" class="text-decoration-none text-dark">
+                <div class="d-flex align-items-center gap-3 p-2 rounded-3 mb-2 hover-bg"
+                    style="transition:background .2s"
+                    onmouseover="this.style.background='#f8fafc'"
+                    onmouseout="this.style.background='transparent'">
+                    ${photo
+                        ? `<img src="${photo}" class="rounded-3 flex-shrink-0"
+                               style="width:48px;height:42px;object-fit:cover"
+                               onerror="this.style.display='none'">`
+                        : `<div class="rounded-3 bg-light d-flex align-items-center
+                               justify-content-center flex-shrink-0"
+                               style="width:48px;height:42px">
+                               <i class="bi bi-house text-muted"></i>
+                           </div>`
+                    }
                     <div class="flex-grow-1" style="min-width:0">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <p class="fw-semibold small mb-0 text-truncate">
-                                ${c.utilisateur?.prenom || ''} ${c.utilisateur?.nom || ''}
-                                ${(c.non_lus || 0) > 0
-                                    ? `<span class="badge bg-danger ms-1" style="font-size:9px">${c.non_lus}</span>`
-                                    : ''}
-                            </p>
-                            <small class="text-muted flex-shrink-0 ms-2">
-                                ${c.dernier_message_at
-                                    ? new Date(c.dernier_message_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
-                                    : ''}
-                            </small>
-                        </div>
-                        <p class="text-muted text-truncate mb-0" style="font-size:12px">
-                            ${c.dernier_message || '<em>Aucun message</em>'}
+                        <p class="fw-semibold small mb-0 text-truncate">${a.titre}</p>
+                        <p class="text-muted mb-0" style="font-size:11px">
+                            ${ville}
+                            <span class="badge bg-${couleur} bg-opacity-10
+                                text-${couleur} ms-1">${statut}</span>
                         </p>
                     </div>
+                    <span class="text-primary fw-bold small flex-shrink-0">
+                        ${formatPrix(a.prix)}
+                    </span>
                 </div>
-            </a>
-        `).join('')
+            </a>`
+    }).join('')
+}
+
+// ── Conversations ───────────────────────────────────────────
+function afficherConversations(conversations) {
+    const container = document.getElementById('derniersContacts')
+
+    if (!conversations || conversations.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-chat-dots fs-2 d-block mb-2 opacity-25"></i>
+                <p class="small mb-0">Aucune conversation</p>
+            </div>`
+        return
     }
 
-    // ── Init ─────────────────────────────────
-    initNavbar()
-    chargerDashboard()
+    container.innerHTML = conversations.slice(0, 5).map(c => {
+        const inter   = c.interlocuteur || {}
+        const prenom  = inter.prenom || inter.name || 'Utilisateur'
+        const nom     = inter.nom    || ''
+        const initiale = prenom[0]?.toUpperCase() || 'U'
+        const nonLus  = c.non_lus || 0
+        const date    = c.dernier_message_at
+            ? new Date(c.dernier_message_at).toLocaleDateString('fr-FR', {
+                day: '2-digit', month: 'short'
+              })
+            : ''
+
+        return `
+            <a href="chats.html?conversation_id=${c.id}"
+               class="text-decoration-none text-dark">
+                <div class="d-flex align-items-start gap-3 p-3 rounded-3 mb-2"
+                    style="background:${nonLus > 0 ? 'rgba(37,99,235,0.08)' : '#f8fafc'};
+                           transition:background .2s"
+                    onmouseover="this.style.background='#e0ecff'"
+                    onmouseout="this.style.background='${nonLus > 0 ? 'rgba(37,99,235,0.08)' : '#f8fafc'}'">
+
+                    <div class="bg-primary text-white rounded-circle flex-shrink-0
+                        d-flex align-items-center justify-content-center fw-bold"
+                        style="width:40px;height:40px;font-size:14px">
+                        ${initiale}
+                    </div>
+
+                    <div class="flex-grow-1" style="min-width:0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <p class="fw-semibold small mb-0">
+                                ${prenom} ${nom}
+                                ${nonLus > 0
+                                    ? `<span class="badge bg-danger ms-1"
+                                        style="font-size:9px">${nonLus}</span>`
+                                    : ''}
+                            </p>
+                            <small class="text-muted flex-shrink-0 ms-2">${date}</small>
+                        </div>
+                        <p class="text-muted text-truncate mb-0" style="font-size:12px">
+                            ${c.dernier_message || '<em>Nouvelle conversation</em>'}
+                        </p>
+                        ${c.annonce
+                            ? `<p class="text-muted mb-0" style="font-size:11px">
+                                <i class="bi bi-house me-1"></i>${c.annonce.titre || ''}</p>`
+                            : ''}
+                    </div>
+                </div>
+            </a>`
+    }).join('')
+}
+
+// ── Utilitaires ─────────────────────────────────────────────
+function formatPrix(prix) {
+    if (!prix) return '—'
+    return new Intl.NumberFormat('fr-FR').format(prix) + ' FCFA'
+}
+
+// ✅ Dans dashboard.html
+function deconnexion() {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    localStorage.removeItem('role')                  // ✅ ajout
+    localStorage.removeItem('redirect_after_login')  // ✅ ajout
+    window.location.href = 'index.html'              // ✅ accueil
+}
+
+// ── Init ────────────────────────────────────────────────────
+initNavbar()
+chargerDashboard()
+
 </script>
 </body>
 </html>

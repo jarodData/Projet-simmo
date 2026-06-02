@@ -6,347 +6,488 @@
     <title>Chat — SIMMo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- ✅ Colle ce bloc dans le <head> de TOUTES tes pages HTML -->
-
-<!-- PWA Simmo -->
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#4F46E5">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Simmo">
-<link rel="apple-touch-icon" href="/images/icon-192.png">
-
-<script>
-    // Enregistrement du Service Worker
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/service-worker.js')
-                .then(reg => console.log('✅ Simmo SW enregistré:', reg.scope))
-                .catch(err => console.error('❌ SW erreur:', err));
-        });
-    }
-
-    // Bouton d'installation PWA (optionnel)
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-
-        // Si tu as un bouton "Installer l'app" dans ton HTML
-        const installBtn = document.getElementById('install-btn');
-        if (installBtn) {
-            installBtn.style.display = 'block';
-            installBtn.addEventListener('click', () => {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then(choice => {
-                    if (choice.outcome === 'accepted') {
-                        console.log('✅ App installée');
-                    }
-                    deferredPrompt = null;
-                });
-            });
-        }
-    });
-</script>
-
+    <link href="css/style.css" rel="stylesheet">
     <style>
-        body { background:#f5f7fb; overflow:hidden; }
-        .chat-layout { height:100vh; }
-        .sidebar-chat { background:white; border-right:1px solid #e5e7eb; height:100vh; overflow-y:auto; }
-        .conversation-item { padding:15px; cursor:pointer; border-bottom:1px solid #f1f5f9; transition:.2s; }
-        .conversation-item:hover { background:#f8fafc; }
-        .conversation-active { background:#eff6ff; border-left:3px solid #2563eb; }
-        .chat-zone { display:flex; flex-direction:column; height:100vh; }
-        .chat-header { background:white; padding:15px 20px; border-bottom:1px solid #e5e7eb; }
-        .messages-container { flex:1; overflow-y:auto; padding:20px; }
-        .message { max-width:75%; padding:12px 16px; border-radius:18px; margin-bottom:10px; word-break:break-word; }
-        .message-moi { background:#2563eb; color:white; margin-left:auto; border-bottom-right-radius:5px; }
-        .message-autre { background:white; color:#111827; border-bottom-left-radius:5px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
-        .message small { display:block; font-size:10px; margin-top:4px; opacity:0.7; }
-        .chat-input { background:white; border-top:1px solid #e5e7eb; padding:15px; }
-        .avatar-chat { width:45px; height:45px; border-radius:50%; background:#2563eb; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:18px; }
-        .skeleton { height:70px; margin:8px; animation:pulse 1.5s infinite; background:#e5e7eb; border-radius:10px; }
-        @keyframes pulse { 0%{opacity:1} 50%{opacity:.5} 100%{opacity:1} }
-        .empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#9ca3af; }
+        body { background:#f8fafc; }
+        .chat-wrapper {
+            max-width : 700px;
+            margin    : 0 auto;
+            padding   : 16px;
+        }
+        .chat-header {
+            background    : white;
+            border-radius : 16px;
+            padding       : 16px 20px;
+            margin-bottom : 12px;
+            border        : 1px solid #e2e8f0;
+            display       : flex;
+            align-items   : center;
+            gap           : 12px;
+        }
+        .chat-box {
+            height         : calc(100vh - 280px);
+            min-height     : 300px;
+            overflow-y     : auto;
+            padding        : 16px;
+            display        : flex;
+            flex-direction : column;
+            gap            : 10px;
+            background     : #f1f5f9;
+            border-radius  : 16px;
+            border         : 1px solid #e2e8f0;
+            margin-bottom  : 12px;
+        }
+        .bubble {
+            max-width    : 72%;
+            padding      : 10px 14px;
+            border-radius: 16px;
+            font-size    : 0.9rem;
+            line-height  : 1.5;
+            word-break   : break-word;
+        }
+        .bubble.moi {
+            background    : #2563eb;
+            color         : white;
+            align-self    : flex-end;
+            border-radius : 16px 16px 4px 16px;
+        }
+        .bubble.autre {
+            background    : white;
+            color         : #1e293b;
+            align-self    : flex-start;
+            border-radius : 16px 16px 16px 4px;
+            border        : 1px solid #e2e8f0;
+        }
+        .bubble .heure {
+            font-size  : 0.68rem;
+            opacity    : 0.65;
+            margin-top : 5px;
+            display    : block;
+            text-align : right;
+        }
+        .bubble.autre .heure { text-align: left; }
+        .input-zone {
+            background    : white;
+            border-radius : 16px;
+            border        : 1px solid #e2e8f0;
+            padding       : 10px 12px;
+            display       : flex;
+            align-items   : flex-end;
+            gap           : 8px;
+        }
+        .input-zone textarea {
+            flex       : 1;
+            border     : none;
+            outline    : none;
+            resize     : none;
+            font-size  : 0.9rem;
+            min-height : 40px;
+            max-height : 120px;
+            background : transparent;
+            line-height: 1.5;
+            padding    : 4px 0;
+        }
+        .btn-envoyer {
+            background     : #2563eb;
+            border         : none;
+            border-radius  : 50%;
+            width          : 40px;
+            height         : 40px;
+            display        : flex;
+            align-items    : center;
+            justify-content: center;
+            flex-shrink    : 0;
+            color          : white;
+            transition     : background .2s;
+            cursor         : pointer;
+        }
+        .btn-envoyer:hover    { background: #1d4ed8; }
+        .btn-envoyer:disabled { background: #94a3b8; cursor: not-allowed; }
+        .separateur-date {
+            text-align : center;
+            font-size  : 0.75rem;
+            color      : #94a3b8;
+            margin     : 8px 0;
+            position   : relative;
+        }
+        .separateur-date::before,
+        .separateur-date::after {
+            content   : '';
+            position  : absolute;
+            top       : 50%;
+            width     : 35%;
+            height    : 1px;
+            background: #e2e8f0;
+        }
+        .separateur-date::before { left: 0; }
+        .separateur-date::after  { right: 0; }
+        @media (max-width: 576px) {
+            .bubble { max-width: 88%; }
+        }
     </style>
 </head>
 <body>
 
-<div class="container-fluid">
-    <div class="row chat-layout">
+<div class="chat-wrapper py-3">
 
-        <!-- SIDEBAR -->
-        <div class="col-12 col-md-4 col-lg-3 sidebar-chat">
-            <div class="p-3 border-bottom bg-white sticky-top">
-                <h5 class="fw-bold mb-0">
-                    <i class="bi bi-chat-dots text-primary me-2"></i>Messages
-                </h5>
-                <small class="text-muted" id="roleLabel"></small>
-            </div>
-            <div id="listeConversations"></div>
+    <!-- En-tête -->
+    <div class="chat-header">
+        <a href="javascript:history.back()"
+           class="btn btn-light btn-sm flex-shrink-0">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div class="bg-primary text-white rounded-circle flex-shrink-0
+            d-flex align-items-center justify-content-center fw-bold"
+            style="width:40px;height:40px;font-size:15px" id="avatarInter">?</div>
+        <div class="flex-grow-1" style="min-width:0">
+            <p class="fw-bold mb-0 text-truncate" id="nomInter">Chargement...</p>
+            <p class="text-muted small mb-0 text-truncate" id="titreAnnonce"></p>
         </div>
+        <span class="badge bg-success flex-shrink-0" id="statutLigne">
+            <i class="bi bi-circle-fill me-1" style="font-size:7px"></i>En ligne
+        </span>
+    </div>
 
-        <!-- CHAT -->
-        <div class="col-12 col-md-8 col-lg-9 p-0">
-            <div class="chat-zone">
-
-                <!-- HEADER -->
-                <div class="chat-header d-flex align-items-center gap-3">
-                    <div class="avatar-chat" id="chatAvatar">?</div>
-                    <div>
-                        <h6 class="fw-bold mb-0" id="chatNom">Sélectionnez une conversation</h6>
-                        <small class="text-muted" id="chatSous">—</small>
-                    </div>
-                </div>
-
-                <!-- MESSAGES -->
-                <div class="messages-container" id="messagesContainer">
-                    <div class="empty-state">
-                        <i class="bi bi-chat-dots" style="font-size:3rem;opacity:.2"></i>
-                        <p class="mt-3">Sélectionnez une conversation</p>
-                    </div>
-                </div>
-
-                <!-- INPUT -->
-                <div class="chat-input">
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="messageInput"
-                            placeholder="Tapez votre message...">
-                        <button class="btn btn-primary" onclick="envoyerMessage()">
-                            <i class="bi bi-send"></i>
-                        </button>
-                    </div>
-                </div>
-
-            </div>
+    <!-- Messages -->
+    <div class="chat-box" id="chatBox">
+        <div class="text-center text-muted py-5" id="chargementMsg">
+            <div class="spinner-border text-primary spinner-border-sm"></div>
+            <p class="small mt-2 mb-0">Chargement des messages...</p>
         </div>
     </div>
+
+    <!-- Saisie -->
+    <div class="input-zone">
+        <textarea
+            id="inputMessage"
+            placeholder="Écrivez votre message..."
+            rows="1"
+            onkeydown="envoyerSiEntree(event)"
+            oninput="ajusterHauteur(this)"
+        ></textarea>
+        <button class="btn-envoyer" id="btnEnvoyer" onclick="envoyerMessage()">
+            <i class="bi bi-send-fill" style="font-size:15px"></i>
+        </button>
+    </div>
+
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
 <script>
 
-// ===============================
-// VARIABLES GLOBALES
-// ✅ user et rôle déclarés TOUT EN HAUT
-// ===============================
-const user        = getUser()
-const isAgent     = estAgent()   // utilise ta fonction existante dans auth.js
-let conversationActive = null
+// ════════════════════════════════════════════════════════════
+// INIT — récupérer token et user via les fonctions de config.js
+// ════════════════════════════════════════════════════════════
 
-// ===============================
-// INIT
-// ===============================
-document.addEventListener('DOMContentLoaded', () => {
+// DOIT ÊTRE LA PREMIÈRE CHOSE dans le script
+const token = getToken()
+const user  = getUser()
 
-    if (!user) {
-        window.location.href = 'login.html'
+// Redirige vers le bon login selon le rôle
+if (!token || !user) {
+    localStorage.removeItem('redirect_after_login')
+    window.location.href = estAgent() ? 'login-agent.html' : 'login.html'
+    throw new Error('Non connecté')
+}
+
+const userId         = user.id 
+const params         = new URLSearchParams(location.search)
+const conversationId = params.get('conversation_id')
+
+//  Après — affiche la liste si pas de conversation_id
+
+
+let dernierIdVu  = 0
+let intervalId   = null
+let dateAffichee = ''
+
+if (!conversationId) {
+    //Affiche la liste
+    afficherListeConversations()
+} else {
+    // Affiche le chat
+    chargerInfosConversation()
+    chargerMessages()
+    intervalId = setInterval(chargerMessages, 5000)
+    document.getElementById('inputMessage').focus()
+}
+
+// Stopper le polling quand on quitte
+window.addEventListener('beforeunload', () => clearInterval(intervalId))
+
+async function afficherListeConversations() {
+    // Cacher l'interface chat
+    document.querySelector('.chat-box').style.display = 'none'
+    document.querySelector('.input-zone').style.display = 'none'
+    document.getElementById('nomInter').textContent = 'Mes conversations'
+    document.getElementById('avatarInter').innerHTML = '<i class="bi bi-chat-dots"></i>'
+    document.getElementById('statutLigne').style.display = 'none'
+
+    const chatBox = document.getElementById('chatBox')
+    chatBox.style.display = 'block'
+    chatBox.style.height = 'auto'
+    chatBox.innerHTML = `
+        <div class="text-center py-3">
+            <div class="spinner-border text-primary spinner-border-sm"></div>
+        </div>`
+
+    const conversations = await apiRequest('/conversations', 'GET', null, true)
+
+    if (!conversations || conversations.length === 0) {
+        chatBox.innerHTML = `
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-chat-dots fs-2 d-block mb-2 opacity-25"></i>
+                <p>Aucune conversation</p>
+            </div>`
         return
     }
 
-    // Label selon le rôle
-    document.getElementById('roleLabel').textContent =
-        isAgent ? 'Espace Agent' : 'Mes conversations'
+    chatBox.innerHTML = conversations.map(c => {
+        const inter  = c.interlocuteur || {}
+        const prenom = inter.prenom || 'Utilisateur'
+        const nom    = inter.nom || ''
+        const nonLus = c.non_lus || 0
+        const date   = c.dernier_message_at
+            ? new Date(c.dernier_message_at).toLocaleDateString('fr-FR', {
+                day: '2-digit', month: 'short'
+              })
+            : ''
 
-    chargerConversations()
-
-    // Ouvrir directement si ?conversation=ID dans l'URL
-    const params = new URLSearchParams(window.location.search)
-    const conversationId = params.get('conversation')
-
-    if (conversationId && conversationId !== 'undefined' && conversationId !== 'null') {
-        conversationActive = conversationId
-        chargerMessages()
-    }
-})
-
-// ===============================
-// CHARGER CONVERSATIONS
-// ===============================
-async function chargerConversations() {
-
-    const container = document.getElementById('listeConversations')
-    container.innerHTML = `<div class="skeleton"></div><div class="skeleton"></div>`
-
-    try {
-        // ✅ Route selon le rôle
-        const route = isAgent
-            ? '/chat/conversations/agent/' + user.id
-            : '/chat/conversations/utilisateur/' + user.id
-
-        const data = await apiRequest(route, 'GET', null, true)
-        console.log("conversations:", data)
-
-        if (!data || !data.length) {
-            container.innerHTML = `
-                <div class="text-center p-4 text-muted">
-                    <i class="bi bi-chat-dots d-block mb-2" style="font-size:2rem;opacity:.3"></i>
-                    <p class="small mb-0">Aucune conversation</p>
-                </div>`
-            return
-        }
-
-        container.innerHTML = data.map(c => {
-
-            // ✅ Agent voit le nom de l'utilisateur, utilisateur voit le nom de l'agent
-            const interlocuteur = isAgent
-                ? (c.utilisateur?.prenom || 'Utilisateur')
-                : (c.agent?.prenom || 'Agent')
-
-            const initiale = interlocuteur[0]?.toUpperCase() || '?'
-            const nonLus   = c.non_lus || 0
-            const actif    = conversationActive == c.id ? 'conversation-active' : ''
-
-            return `
-                <div class="conversation-item ${actif}"
-                    onclick="ouvrirConversation(${c.id}, '${interlocuteur}')">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="bg-primary text-white rounded-circle d-flex align-items-center
-                            justify-content-center fw-bold flex-shrink-0"
-                            style="width:38px;height:38px;font-size:14px">
-                            ${initiale}
-                        </div>
-                        <div class="flex-grow-1" style="min-width:0">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <strong class="small text-truncate">${interlocuteur}</strong>
+        return `
+            <a href="chats.html?conversation_id=${c.id}"
+               class="text-decoration-none text-dark">
+                <div class="d-flex align-items-center gap-3 p-3 rounded-3 mb-2"
+                    style="background:${nonLus > 0 ? 'rgba(37,99,235,0.08)' : 'white'};
+                           border:1px solid #e2e8f0">
+                    <div class="bg-primary text-white rounded-circle flex-shrink-0
+                        d-flex align-items-center justify-content-center fw-bold"
+                        style="width:44px;height:44px;font-size:16px">
+                        ${prenom[0]?.toUpperCase() || 'U'}
+                    </div>
+                    <div class="flex-grow-1" style="min-width:0">
+                        <div class="d-flex justify-content-between">
+                            <p class="fw-semibold small mb-0">
+                                ${prenom} ${nom}
                                 ${nonLus > 0
                                     ? `<span class="badge bg-danger ms-1">${nonLus}</span>`
                                     : ''}
-                            </div>
-                            <small class="text-muted text-truncate d-block">
-                                ${c.dernier_message || ''}
-                            </small>
+                            </p>
+                            <small class="text-muted">${date}</small>
                         </div>
+                        <p class="text-muted small text-truncate mb-0">
+                            ${c.dernier_message || 'Nouvelle conversation'}
+                        </p>
+                        ${c.annonce
+                            ? `<p class="text-muted mb-0" style="font-size:11px">
+                                <i class="bi bi-house me-1"></i>${c.annonce.titre || ''}
+                               </p>`
+                            : ''}
                     </div>
+                    <i class="bi bi-chevron-right text-muted"></i>
                 </div>
-            `
-        }).join('')
+            </a>`
+    }).join('')
+}
+
+// ════════════════════════════════════════════════════════════
+// EN-TÊTE CONVERSATION
+// ════════════════════════════════════════════════════════════
+
+async function chargerInfosConversation() {
+    try {
+        const conversations = await apiRequest('/conversations', 'GET', null, true)
+        if (!conversations || !Array.isArray(conversations)) return
+
+        const conv = conversations.find(c => c.id == conversationId)
+        if (!conv) return
+
+        const inter  = conv.interlocuteur || {}
+        const prenom = inter.prenom || inter.name || 'Utilisateur'
+        const nom    = inter.nom    || ''
+
+        document.getElementById('nomInter').textContent     = (prenom + ' ' + nom).trim()
+        document.getElementById('titreAnnonce').textContent = conv.annonce?.titre || ''
+        document.getElementById('avatarInter').textContent  = prenom[0]?.toUpperCase() || 'U'
 
     } catch (e) {
-        console.error("Erreur conversations:", e)
-        container.innerHTML = `<p class="text-danger p-3 small">Erreur de chargement</p>`
+        console.error('Erreur infos conversation:', e)
     }
 }
 
-// ===============================
-// OUVRIR CONVERSATION
-// ===============================
-async function ouvrirConversation(id, nom) {
 
-    if (!id || id === 'undefined') {
-        console.error("ID conversation manquant")
-        return
-    }
-
-    conversationActive = id
-
-    document.getElementById('chatNom').innerText    = nom || 'Chat'
-    document.getElementById('chatAvatar').innerText = (nom || 'A')[0].toUpperCase()
-    document.getElementById('chatSous').innerText   = 'En ligne'
-
-    // Marquer l'item actif dans la sidebar
-    document.querySelectorAll('.conversation-item').forEach(el => {
-        el.classList.remove('conversation-active')
-    })
-    event?.currentTarget?.classList?.add('conversation-active')
-
-    await chargerMessages()
-}
-
-// ===============================
+// ════════════════════════════════════════════════════════════
 // CHARGER MESSAGES
-// ===============================
+// ════════════════════════════════════════════════════════════
+
 async function chargerMessages() {
-    console.log("chargerMessages appelé, conversationActive =", conversationActive)
-
-    if (!conversationActive || conversationActive === 'undefined') return
-
-    const container = document.getElementById('messagesContainer')
-
     try {
-        const messages = await apiRequest(
-            '/chat/messages/' + conversationActive,
-            'GET', null, true
+        const res = await fetch(
+            CONFIG.API_URL + '/conversations/' + conversationId + '/messages',
+            {
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Accept'       : 'application/json',
+                }
+            }
         )
-        console.log("messages reçus:", messages) // ← ICI
-        console.log("URL appelée:", '/chat/messages/' + conversationActive)
-        if (!messages || !messages.length) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="bi bi-chat" style="font-size:2rem;opacity:.2"></i>
-                    <p class="mt-2 small">Aucun message — commencez la conversation !</p>
-                </div>`
-            return
-        }
 
-        container.innerHTML = messages.map(m => `
-            <div class="message ${m.sender_id == user.id ? 'message-moi' : 'message-autre'}">
-                ${m.contenu}
-                <small>${new Date(m.created_at).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}</small>
-            </div>
-        `).join('')
+        //Remplace login.html par le bon login
+if (res.status === 401) {
+    clearInterval(intervalId)
+    localStorage.removeItem('redirect_after_login')
+    window.location.href = estAgent() ? 'login-agent.html' : 'login.html'
+    return
+}
 
-        container.scrollTop = container.scrollHeight
+        if (!res.ok) return
 
-    } catch(e) {
-        console.error("Erreur messages:", e)
+        const messages = await res.json()
+        const box      = document.getElementById('chatBox')
+
+        // Supprimer le spinner au premier chargement
+        const spinner = document.getElementById('chargementMsg')
+        if (spinner) spinner.remove()
+
+        // N'ajouter que les nouveaux messages
+        const nouveaux = messages.filter(m => m.id > dernierIdVu)
+        if (nouveaux.length === 0) return
+
+        // Mémoriser si on était en bas
+        const enBas = box.scrollHeight - box.scrollTop <= box.clientHeight + 80
+
+        // Vider seulement au tout premier chargement
+        if (dernierIdVu === 0) box.innerHTML = ''
+
+        nouveaux.forEach(m => {
+            // Séparateur de date si nouveau jour
+            const jour = new Date(m.created_at).toLocaleDateString('fr-FR', {
+                weekday: 'long', day: 'numeric', month: 'long'
+            })
+            if (jour !== dateAffichee) {
+                dateAffichee    = jour
+                const sep       = document.createElement('div')
+                sep.className   = 'separateur-date'
+                sep.textContent = jour
+                box.appendChild(sep)
+            }
+
+            // Bulle message
+            const estMoi      = m.expediteur_id === userId
+            const div         = document.createElement('div')
+            div.className     = 'bubble ' + (estMoi ? 'moi' : 'autre')
+            div.innerHTML     =
+                escapeHtml(m.contenu) +
+                '<span class="heure">' + formaterHeure(m.created_at) + '</span>'
+            box.appendChild(div)
+
+            dernierIdVu = Math.max(dernierIdVu, m.id)
+        })
+
+        // Scroller vers le bas
+        if (enBas) box.scrollTop = box.scrollHeight
+
+    } catch (e) {
+        console.error('Erreur chargement messages:', e)
     }
 }
 
-// ===============================
+
+// ════════════════════════════════════════════════════════════
 // ENVOYER MESSAGE
-// ===============================
+// ════════════════════════════════════════════════════════════
+
 async function envoyerMessage() {
-
-    if (!conversationActive || conversationActive === 'undefined') {
-        alert("Veuillez sélectionner une conversation d'abord")
-        return
-    }
-
-    const input   = document.getElementById('messageInput')
+    const input   = document.getElementById('inputMessage')
+    const btn     = document.getElementById('btnEnvoyer')
     const contenu = input.value.trim()
     if (!contenu) return
 
-    // sender_type selon le rôle
-    const senderType = isAgent ? 'agent' : 'utilisateur'
+    // Vider l'input immédiatement
+    input.value        = ''
+    input.style.height = 'auto'
+    btn.disabled       = true
 
     try {
-        await apiRequest('/chat/envoyer', 'POST', {
-            id_conversation: conversationActive,
-            sender_type    : senderType,
-            sender_id      : user.id,
-            contenu        : contenu
-        }, true)
+        const res = await fetch(
+            CONFIG.API_URL + '/conversations/' + conversationId + '/messages',
+            {
+                method : 'POST',
+                headers: {
+                    'Content-Type' : 'application/json',
+                    'Authorization': 'Bearer ' + token,
+                    'Accept'       : 'application/json',
+                },
+                body: JSON.stringify({ contenu }),
+            }
+        )
+if (res.status === 401) {
+    localStorage.removeItem('redirect_after_login')
+    window.location.href = estAgent() ? 'login-agent.html' : 'login.html'
+    return
+}
 
-        input.value = ''
-        await chargerMessages()
+        if (res.ok) {
+            await chargerMessages()
+        }
 
-    } catch(e) {
-        console.error("Erreur envoi:", e)
-        alert("Erreur lors de l'envoi")
+    } catch (e) {
+        console.error('Erreur envoi:', e)
+        input.value = contenu   // remettre le texte si erreur réseau
+    } finally {
+        btn.disabled = false
+        input.focus()
     }
 }
 
-// ===============================
-// ENTER SEND
-// ===============================
-document.getElementById('messageInput')
-    .addEventListener('keypress', e => {
-        if (e.key === 'Enter') envoyerMessage()
-    })
 
-// ===============================
-// AUTO REFRESH toutes les 3s
-// ===============================
-setInterval(() => {
-        console.log("tick — conversationActive:", conversationActive)
+// ════════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════════
 
-    if (conversationActive && conversationActive !== 'undefined') {
-        chargerMessages()
+function envoyerSiEntree(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault()
+        envoyerMessage()
     }
-}, 3000)
+}
+
+function ajusterHauteur(el) {
+    el.style.height = 'auto'
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px'
+}
+
+function formaterHeure(dateStr) {
+    return new Date(dateStr).toLocaleTimeString('fr-FR', {
+        hour: '2-digit', minute: '2-digit'
+    })
+}
+
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g,  '&amp;')
+        .replace(/</g,  '&lt;')
+        .replace(/>/g,  '&gt;')
+        .replace(/\n/g, '<br>')
+}
+
+
+// ════════════════════════════════════════════════════════════
+// DÉMARRAGE
+// ════════════════════════════════════════════════════════════
+
+//<!-- chargerInfosConversation()
+//chargerMessages()
+
+// Polling toutes les 5 secondes
+//intervalId = setInterval(chargerMessages, 5000)
+
+// Stopper le polling quand on quitte la page
+//window.addEventListener('beforeunload', () => clearInterval(intervalId)) -->
+
+// Focus sur l'input
+//document.getElementById('inputMessage').focus()
 
 </script>
 </body>

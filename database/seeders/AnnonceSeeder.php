@@ -2,375 +2,276 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Carbon\Carbon;
-use App\Models\Plan;
 use App\Models\CategorieBien;
-use App\Models\Administrateur;
-use App\Models\Utilisateur;
 use App\Models\AgentImmobilier;
-use App\Models\DocumentCni;
 use App\Models\Localisation;
 use App\Models\Annonce;
 use App\Models\PhotoAnnonce;
-use App\Models\Contact;
-use App\Models\Message;
-use App\Models\HistoriqueRecherche;
-use App\Models\StatistiqueAgent;
-use App\Models\Favori;
-use App\Models\Paiement;
 
-class DatabaseSeeder extends Seeder
+class AnnonceSeeder extends Seeder
 {
+    // ============================================
+    // Images par categorie depuis Picsum Photos
+    // IDs d'images qui ressemblent a des biens
+    // ============================================
+    private array $imagesParCategorie = [
+        'appartement' => [
+            'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800',
+            'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800',
+            'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800',
+            'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800',
+            'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800',
+        ],
+        'studio' => [
+            'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800',
+            'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',
+            'https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=800',
+            'https://images.unsplash.com/photo-1631679706909-1844bbd07221?w=800',
+        ],
+        'villa' => [
+            'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800',
+            'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800',
+            'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800',
+            'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800',
+            'https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?w=800',
+        ],
+        'chambre' => [
+            'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800',
+            'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800',
+            'https://images.unsplash.com/photo-1540518614846-7eded433c457?w=800',
+        ],
+        'bureau' => [
+            'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800',
+            'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800',
+            'https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=800',
+            'https://images.unsplash.com/photo-1568992687947-868a62a9f521?w=800',
+        ],
+        'terrain' => [
+            'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800',
+            'https://images.unsplash.com/photo-1628744448840-55bdb2497bd4?w=800',
+            'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800',
+        ],
+    ];
+
+    // Compteurs par categorie pour rotation des images
+    private array $compteurs = [
+        'appartement' => 0,
+        'studio'      => 0,
+        'villa'       => 0,
+        'chambre'     => 0,
+        'bureau'      => 0,
+        'terrain'     => 0,
+    ];
+
     public function run(): void
     {
-        // ============================================
-        // 1. PLANS
-        // ============================================
-        $plans = [
-            [
-                'nom_plan'          => 'Starter',
-                'prix_mensuel'      => 0,
-                'duree_essai_jours' => 30,
-                'nb_annonces_max'   => 5,
-                'fonctionnalites'   => json_encode([
-                    'badge_verifie' => false,
-                    'mise_en_avant' => false,
-                    'statistiques'  => false,
-                ]),
-                'is_active'  => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nom_plan'          => 'Basic',
-                'prix_mensuel'      => 9900,
-                'duree_essai_jours' => 0,
-                'nb_annonces_max'   => 15,
-                'fonctionnalites'   => json_encode([
-                    'badge_verifie' => true,
-                    'mise_en_avant' => false,
-                    'statistiques'  => true,
-                ]),
-                'is_active'  => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nom_plan'          => 'Pro',
-                'prix_mensuel'      => 19900,
-                'duree_essai_jours' => 0,
-                'nb_annonces_max'   => 50,
-                'fonctionnalites'   => json_encode([
-                    'badge_verifie' => true,
-                    'mise_en_avant' => true,
-                    'statistiques'  => true,
-                ]),
-                'is_active'  => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nom_plan'          => 'Premium',
-                'prix_mensuel'      => 35000,
-                'duree_essai_jours' => 0,
-                'nb_annonces_max'   => 999,
-                'fonctionnalites'   => json_encode([
-                    'badge_verifie'       => true,
-                    'mise_en_avant'       => true,
-                    'statistiques'        => true,
-                    'support_prioritaire' => true,
-                ]),
-                'is_active'  => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ];
-        Plan::insert($plans);
-        echo "Plans crees.\n";
+        // S'assurer que le dossier existe
+        Storage::disk('public')->makeDirectory('annonces/photos');
 
-        // ============================================
-        // 2. CATEGORIES
-        // ============================================
-        $categories = [
-            ['libelle' => 'appartement', 'description' => 'Logement dans un immeuble', 'icone' => 'apartment', 'created_at' => now(), 'updated_at' => now()],
-            ['libelle' => 'studio',      'description' => 'Logement une piece',        'icone' => 'studio',    'created_at' => now(), 'updated_at' => now()],
-            ['libelle' => 'villa',       'description' => 'Maison individuelle',        'icone' => 'villa',     'created_at' => now(), 'updated_at' => now()],
-            ['libelle' => 'chambre',     'description' => 'Chambre individuelle',       'icone' => 'bed',       'created_at' => now(), 'updated_at' => now()],
-            ['libelle' => 'bureau',      'description' => 'Espace professionnel',       'icone' => 'business',  'created_at' => now(), 'updated_at' => now()],
-            ['libelle' => 'terrain',     'description' => 'Terrain constructible',      'icone' => 'terrain',   'created_at' => now(), 'updated_at' => now()],
-        ];
-        CategorieBien::insert($categories);
-        echo "Categories creees.\n";
+        $agents       = AgentImmobilier::all()->pluck('id')->toArray();
+        $categorieIds = CategorieBien::pluck('id', 'libelle');
 
-        // ============================================
-        // 3. ADMINISTRATEUR
-        // ============================================
-        Administrateur::create([
-            'nom'               => 'Admin',
-            'prenom'            => 'SIMMo',
-            'email'             => 'admin@simmo.cm',
-            'mot_de_passe_hash' => Hash::make('Admin@SIMMo2024'),
-            'role'              => 'super_admin',
-            'is_active'         => true,
-        ]);
-        echo "Administrateur cree.\n";
-
-        // ============================================
-        // 4. UTILISATEURS
-        // ============================================
-        $typesUser = ['etudiant', 'famille', 'professionnel'];
-        $nomsUser  = [
-            ['nom' => 'Kamga',   'prenom' => 'Jean',     'email' => 'jean.kamga@gmail.com'],
-            ['nom' => 'Mbarga',  'prenom' => 'Sophie',   'email' => 'sophie.mbarga@gmail.com'],
-            ['nom' => 'Fono',    'prenom' => 'Paul',     'email' => 'paul.fono@gmail.com'],
-            ['nom' => 'Bello',   'prenom' => 'Fatima',   'email' => 'fatima.bello@gmail.com'],
-            ['nom' => 'Tchamba', 'prenom' => 'Marc',     'email' => 'marc.tchamba@gmail.com'],
-            ['nom' => 'Nguema',  'prenom' => 'Alice',    'email' => 'alice.nguema@gmail.com'],
-            ['nom' => 'Essama',  'prenom' => 'David',    'email' => 'david.essama@gmail.com'],
-            ['nom' => 'Ondoa',   'prenom' => 'Brigitte', 'email' => 'brigitte.ondoa@gmail.com'],
-            ['nom' => 'Manga',   'prenom' => 'Serge',    'email' => 'serge.manga@gmail.com'],
-            ['nom' => 'Nkomo',   'prenom' => 'Celine',   'email' => 'celine.nkomo@gmail.com'],
-        ];
-
-        $utilisateurs = [];
-        foreach ($nomsUser as $i => $u) {
-            $utilisateurs[] = Utilisateur::create([
-                'nom'               => $u['nom'],
-                'prenom'            => $u['prenom'],
-                'email'             => $u['email'],
-                'mot_de_passe_hash' => Hash::make('password123'),
-                'telephone'         => '+237 6' . rand(50, 99) . ' ' . rand(100, 999) . ' ' . rand(100, 999),
-                'type_user'         => $typesUser[$i % 3],
-                'token_verification'=> null,
-                'is_verified'       => true,
-            ]);
+        if (empty($agents)) {
+            $this->command->error(
+                'Aucun agent trouve. Lancez d\'abord DatabaseSeeder.'
+            );
+            return;
         }
-        echo "Utilisateurs crees : " . count($utilisateurs) . "\n";
 
-        // ============================================
-        // 5. AGENTS IMMOBILIERS
-        // ============================================
-        $nomsAgent = [
-            ['nom' => 'Mvondo', 'prenom' => 'Eric',      'email' => 'eric.mvondo@agence.cm',    'agence' => 'AGC-2024-001'],
-            ['nom' => 'Abega',  'prenom' => 'Christine', 'email' => 'christine.abega@agence.cm','agence' => 'AGC-2024-002'],
-            ['nom' => 'Samba',  'prenom' => 'Roger',     'email' => 'roger.samba@agence.cm',    'agence' => 'AGC-2024-003'],
-            ['nom' => 'Fouda',  'prenom' => 'Martine',   'email' => 'martine.fouda@agence.cm',  'agence' => 'AGC-2024-004'],
-            ['nom' => 'Beyala', 'prenom' => 'Thomas',    'email' => 'thomas.beyala@agence.cm',  'agence' => 'AGC-2024-005'],
-        ];
+        $toutesLesAnnonces = array_merge(
+            $this->annoncesDouala(),
+            $this->annoncesYaounde(),
+            $this->annoncesAutresVilles()
+        );
 
-        $planIds = Plan::pluck('id')->toArray();
-        $agents  = [];
+        $nbCrees = 0;
 
-        foreach ($nomsAgent as $a) {
-            $idPlan   = $planIds[array_rand($planIds)];
-            $agents[] = AgentImmobilier::create([
-                'nom'                  => $a['nom'],
-                'prenom'               => $a['prenom'],
-                'email'                => $a['email'],
-                'mot_de_passe_hash'    => Hash::make('password123'),
-                'telephone'            => '+237 6' . rand(50, 99) . ' ' . rand(100, 999) . ' ' . rand(100, 999),
-                'numero_agence'        => $a['agence'],
-                'statut'               => 'actif',
-                'token_verification'   => null,
-                'is_verified'          => true,
-                'id_plan'              => $idPlan,
-                'date_souscription'    => Carbon::now()->subDays(rand(10, 60)),
-                'date_expiration_plan' => Carbon::now()->addDays(rand(10, 30)),
-            ]);
+        foreach ($toutesLesAnnonces as $i => $d) {
+            try {
+                $localisation = Localisation::create([
+                    'pays'             => 'Cameroun',
+                    'ville'            => $d['ville'],
+                    'quartier'         => $d['quartier'],
+                    'adresse_complete' => $d['adresse'],
+                    'latitude'         => $d['latitude'],
+                    'longitude'        => $d['longitude'],
+                ]);
+
+                $idCategorie = $categorieIds[$d['categorie']] ?? null;
+                if (!$idCategorie) {
+                    $this->command->warn(
+                        'Categorie introuvable : ' . $d['categorie']
+                    );
+                    continue;
+                }
+
+                $annonce = Annonce::create([
+                    'titre'            => $d['titre'],
+                    'description'      => $d['description'],
+                    'prix'             => $d['prix'],
+                    'surface_m2'       => $d['surface_m2'],
+                    'nb_pieces'        => $d['nb_pieces'],
+                    'nb_chambres'      => $d['nb_chambres'],
+                    'nb_salles_bain'   => $d['nb_salles_bain'],
+                    'type_transaction' => $d['type_transaction'],
+                    'meuble'           => $d['meuble'],
+                    'statut'           => 'active',
+                    'vues'             => $d['vues'],
+                    'score_ia'         => round(rand(60, 95) / 100, 2),
+                    'id_agent'         => $agents[$i % count($agents)],
+                    'id_categorie'     => $idCategorie,
+                    'id_localisation'  => $localisation->id,
+                ]);
+
+                // ✅ Telecharger et associer les photos
+                $this->ajouterPhotos($annonce, $d['categorie'], $d['nb_photos'] ?? 3);
+
+                $nbCrees++;
+                $this->command->info(
+                    '[' . $nbCrees . '] ' . $d['titre'] . ' - OK'
+                );
+
+            } catch (\Exception $e) {
+                $this->command->error(
+                    'Erreur : ' . $d['titre'] . ' - ' . $e->getMessage()
+                );
+            }
         }
-        echo "Agents crees : " . count($agents) . "\n";
 
-        // ============================================
-        // 6. DOCUMENTS CNI
-        // ============================================
-        foreach ($agents as $agent) {
-            DocumentCni::create([
-                'id_agent'            => $agent->id,
-                'chemin_fichier'      => 'documents/cni/cni_' . $agent->id . '.jpg',
-                'statut_verification' => 'valide',
-                'commentaire_admin'   => 'Document conforme.',
-            ]);
+        $this->command->newLine();
+        $this->command->info('================================================');
+        $this->command->info('  ANNONCES CREEES   : ' . $nbCrees);
+        $this->command->info('  PHOTOS ASSOCIEES  : ' . PhotoAnnonce::count());
+        $this->command->info('  TOTAL BD          : ' . Annonce::count());
+        $this->command->info('================================================');
+    }
+
+    // ============================================
+    // TELECHARGER ET ASSOCIER LES PHOTOS
+    // ============================================
+    private function ajouterPhotos(
+        Annonce $annonce,
+        string  $categorie,
+        int     $nbPhotos = 3
+    ): void {
+        $urls  = $this->imagesParCategorie[$categorie] ?? $this->imagesParCategorie['appartement'];
+        $count = count($urls);
+
+        for ($j = 0; $j < $nbPhotos; $j++) {
+            try {
+                // Rotation circulaire des images par categorie
+                $idx = $this->compteurs[$categorie] % $count;
+                $url = $urls[$idx];
+                $this->compteurs[$categorie]++;
+
+                // Nom unique du fichier
+                $nomFichier = 'annonces/photos/' .
+                    Str::uuid() . '.jpg';
+
+                // Telecharger l'image
+                $contenu = $this->telechargerImage($url);
+
+                if ($contenu) {
+                    // Sauvegarder dans storage/app/public/
+                    Storage::disk('public')->put(
+                        $nomFichier, $contenu
+                    );
+
+                    // Creer l'entree en base
+                    PhotoAnnonce::create([
+                        'id_annonce'    => $annonce->id,
+                        'chemin_image'  => $nomFichier,
+                        'est_principale'=> $j === 0,
+                        'ordre'         => $j + 1,
+                    ]);
+                } else {
+                    // Fallback — photo placeholder si download echoue
+                    $this->ajouterPhotoPlaceholder(
+                        $annonce, $categorie, $j
+                    );
+                }
+
+            } catch (\Exception $e) {
+                $this->command->warn(
+                    'Photo non telechargee : ' . $e->getMessage()
+                );
+                $this->ajouterPhotoPlaceholder(
+                    $annonce, $categorie, $j
+                );
+            }
         }
-        echo "Documents CNI crees.\n";
+    }
 
-        // ============================================
-        // 7. LOCALISATIONS ET ANNONCES
-        // ============================================
-        $donneesAnnonces = [
+    // ============================================
+    // TELECHARGER UNE IMAGE AVEC RETRY
+    // ============================================
+    private function telechargerImage(string $url): ?string
+    {
+        $tentatives = 3;
+
+        for ($i = 0; $i < $tentatives; $i++) {
+            try {
+                $response = Http::timeout(15)
+                    ->withHeaders([
+                        'User-Agent' => 'SIMMo-Seeder/1.0',
+                    ])
+                    ->get($url);
+
+                if ($response->successful()) {
+                    return $response->body();
+                }
+
+            } catch (\Exception $e) {
+                if ($i < $tentatives - 1) {
+                    sleep(1);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    // ============================================
+    // PHOTO PLACEHOLDER SI PAS D'INTERNET
+    // ============================================
+    private function ajouterPhotoPlaceholder(
+        Annonce $annonce,
+        string  $categorie,
+        int     $ordre
+    ): void {
+        // Utiliser picsum comme fallback simple
+        $urlFallback = 'https://picsum.photos/seed/' .
+            $annonce->id . $ordre . '/800/600';
+
+        $nomFichier  = 'annonces/photos/' .
+            Str::uuid() . '.jpg';
+
+        try {
+            $contenu = Http::timeout(10)->get($urlFallback)->body();
+            if ($contenu) {
+                Storage::disk('public')->put($nomFichier, $contenu);
+                PhotoAnnonce::create([
+                    'id_annonce'    => $annonce->id,
+                    'chemin_image'  => $nomFichier,
+                    'est_principale'=> $ordre === 0,
+                    'ordre'         => $ordre + 1,
+                ]);
+            }
+        } catch (\Exception $e) {
+            // Ignorer si pas d'internet du tout
+        }
+    }
+
+    // ============================================
+    // ANNONCES DOUALA
+    // ============================================
+    private function annoncesDouala(): array
+    {
+        return [
             [
-                'titre'            => 'Studio meuble moderne a Bastos',
-                'description'      => 'Magnifique studio entierement meuble situe au coeur du quartier Bastos. Cuisine equipee, climatisation, acces securise 24h/24. Proche de toutes les commodites, restaurants et centres commerciaux. Ideal pour un professionnel ou etudiant.',
-                'prix'             => 120000,
-                'surface_m2'       => 35,
-                'nb_pieces'        => 2,
-                'nb_chambres'      => 1,
-                'nb_salles_bain'   => 1,
-                'type_transaction' => 'location',
-                'meuble'           => true,
-                'categorie'        => 'studio',
-                'ville'            => 'Yaounde',
-                'quartier'         => 'Bastos',
-                'adresse'          => 'Rue 1234 Bastos Yaounde',
-                'latitude'         => 3.8800,
-                'longitude'        => 11.5200,
-            ],
-            [
-                'titre'            => 'Appartement 3 pieces a Bonapriso',
-                'description'      => 'Bel appartement de 3 pieces dans une residence securisee a Bonapriso. Salon spacieux, 2 chambres, cuisine equipee, balcon avec vue. Gardien, parking prive. Quartier calme et residentiel proche du centre ville de Douala.',
-                'prix'             => 250000,
-                'surface_m2'       => 85,
-                'nb_pieces'        => 3,
-                'nb_chambres'      => 2,
-                'nb_salles_bain'   => 2,
-                'type_transaction' => 'location',
-                'meuble'           => false,
-                'categorie'        => 'appartement',
-                'ville'            => 'Douala',
-                'quartier'         => 'Bonapriso',
-                'adresse'          => 'Avenue de la Republique Bonapriso',
-                'latitude'         => 4.0300,
-                'longitude'        => 9.6900,
-            ],
-            [
-                'titre'            => 'Villa avec jardin a Biyem-Assi',
-                'description'      => 'Splendide villa de standing a Biyem-Assi. 4 chambres spacieuses, grand salon, salle a manger, cuisine moderne, 2 salles de bain, grand jardin paysager, piscine, parking 3 voitures. Securite 24h. Ideal pour famille.',
-                'prix'             => 450000,
-                'surface_m2'       => 200,
-                'nb_pieces'        => 6,
-                'nb_chambres'      => 4,
-                'nb_salles_bain'   => 2,
-                'type_transaction' => 'location',
-                'meuble'           => true,
-                'categorie'        => 'villa',
-                'ville'            => 'Yaounde',
-                'quartier'         => 'Biyem-Assi',
-                'adresse'          => 'Carrefour Biyem-Assi Yaounde',
-                'latitude'         => 3.8300,
-                'longitude'        => 11.4800,
-            ],
-            [
-                'titre'            => "Chambre etudiante pres Universite",
-                'description'      => "Chambre propre et confortable a 5 minutes de l'Universite de Yaounde I. Eau et electricite inclus, wifi disponible, cuisine partagee. Environnement calme et securise. Ideal pour etudiant cherchant proximite des cours.",
-                'prix'             => 35000,
-                'surface_m2'       => 15,
-                'nb_pieces'        => 1,
-                'nb_chambres'      => 1,
-                'nb_salles_bain'   => 1,
-                'type_transaction' => 'location',
-                'meuble'           => true,
-                'categorie'        => 'chambre',
-                'ville'            => 'Yaounde',
-                'quartier'         => 'Ngoa-Ekelle',
-                'adresse'          => 'Quartier Ngoa-Ekelle Yaounde',
-                'latitude'         => 3.8650,
-                'longitude'        => 11.5000,
-            ],
-            [
-                'titre'            => 'Bureau professionnel centre Douala',
-                'description'      => 'Espace bureau moderne et fonctionnel au centre des affaires de Douala. Climatise, internet fibre, salle de reunion, reception, parking securise. Ideal pour entreprise ou professionnel independant. Contrat flexible.',
-                'prix'             => 180000,
-                'surface_m2'       => 60,
-                'nb_pieces'        => 4,
-                'nb_chambres'      => 0,
-                'nb_salles_bain'   => 1,
-                'type_transaction' => 'location',
-                'meuble'           => true,
-                'categorie'        => 'bureau',
-                'ville'            => 'Douala',
-                'quartier'         => 'Bonanjo',
-                'adresse'          => 'Avenue du General de Gaulle Bonanjo',
-                'latitude'         => 4.0500,
-                'longitude'        => 9.7000,
-            ],
-            [
-                'titre'            => 'Villa a vendre a Makepe Douala',
-                'description'      => 'Magnifique villa a vendre dans le quartier residentiel de Makepe. Construction recente, 5 chambres, 3 salles de bain, salon de reception, cuisine americaine, garage 2 voitures, jardin clos. Titre foncier disponible.',
-                'prix'             => 85000000,
-                'surface_m2'       => 250,
-                'nb_pieces'        => 8,
-                'nb_chambres'      => 5,
-                'nb_salles_bain'   => 3,
-                'type_transaction' => 'vente',
-                'meuble'           => false,
-                'categorie'        => 'villa',
-                'ville'            => 'Douala',
-                'quartier'         => 'Makepe',
-                'adresse'          => 'Rue des Palmiers Makepe Douala',
-                'latitude'         => 4.0800,
-                'longitude'        => 9.7400,
-            ],
-            [
-                'titre'            => 'Appartement F2 a Akwa Douala',
-                'description'      => 'Appartement F2 bien entretenu a Akwa. Salon, chambre, cuisine, salle de bain. Immeuble avec gardien, eau et electricite permanentes. Quartier commercial dynamique, proche de toutes les commodites et transports.',
-                'prix'             => 75000,
-                'surface_m2'       => 45,
-                'nb_pieces'        => 2,
-                'nb_chambres'      => 1,
-                'nb_salles_bain'   => 1,
-                'type_transaction' => 'location',
-                'meuble'           => false,
-                'categorie'        => 'appartement',
-                'ville'            => 'Douala',
-                'quartier'         => 'Akwa',
-                'adresse'          => 'Boulevard de la Liberte Akwa',
-                'latitude'         => 4.0511,
-                'longitude'        => 9.7028,
-            ],
-            [
-                'titre'            => 'Studio neuf a Omnisports Yaounde',
-                'description'      => 'Studio neuf jamais habite pres du Palais des Sports. Finitions haut de gamme, parquet, cuisine equipee, balcon, gardien, parking. Quartier en plein developpement avec commerces et restaurants. Loyer negociable.',
-                'prix'             => 95000,
-                'surface_m2'       => 30,
-                'nb_pieces'        => 1,
-                'nb_chambres'      => 1,
-                'nb_salles_bain'   => 1,
-                'type_transaction' => 'location',
-                'meuble'           => true,
-                'categorie'        => 'studio',
-                'ville'            => 'Yaounde',
-                'quartier'         => 'Omnisports',
-                'adresse'          => 'Avenue du 20 mai Omnisports',
-                'latitude'         => 3.8540,
-                'longitude'        => 11.5060,
-            ],
-            [
-                'titre'            => 'Terrain a batir a Bafoussam',
-                'description'      => 'Grand terrain a batir de 500m2 dans un quartier residentiel de Bafoussam. Viabilise eau et electricite, acces route bitumee, titre foncier en cours. Ideal pour construction maison familiale ou immeuble.',
-                'prix'             => 12000000,
-                'surface_m2'       => 500,
-                'nb_pieces'        => 0,
-                'nb_chambres'      => 0,
-                'nb_salles_bain'   => 0,
-                'type_transaction' => 'vente',
-                'meuble'           => false,
-                'categorie'        => 'terrain',
-                'ville'            => 'Bafoussam',
-                'quartier'         => 'Famla',
-                'adresse'          => 'Quartier Famla Bafoussam',
-                'latitude'         => 5.4737,
-                'longitude'        => 10.4176,
-            ],
-            [
-                'titre'            => 'Appartement 4 pieces a Essos Yaounde',
-                'description'      => 'Grand appartement familial a Essos. 3 chambres dont une suite parentale, double salon, cuisine equipee, 2 salles de bain. Residence fermee avec piscine, salle de sport, gardien 24h. Cadre verdoyant et tranquille.',
-                'prix'             => 320000,
-                'surface_m2'       => 110,
-                'nb_pieces'        => 5,
-                'nb_chambres'      => 3,
-                'nb_salles_bain'   => 2,
-                'type_transaction' => 'location',
-                'meuble'           => true,
-                'categorie'        => 'appartement',
-                'ville'            => 'Yaounde',
-                'quartier'         => 'Essos',
-                'adresse'          => 'Rue de la Paix Essos Yaounde',
-                'latitude'         => 3.8850,
-                'longitude'        => 11.5300,
-            ],
-             [
                 'titre'            => 'Studio meuble haut standing Akwa',
                 'description'      => 'Magnifique studio entierement meuble au coeur du quartier Akwa. Cuisine equipee, climatisation, acces securise 24h/24, wifi inclus. Vue panoramique sur la ville. Ideal pour professionnel ou cadre.',
                 'prix'             => 150000,
@@ -386,6 +287,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Boulevard de la Liberte Akwa Douala',
                 'latitude'         => 4.0511,
                 'longitude'        => 9.7028,
+                'vues'             => 187,
+                'nb_photos'        => 4,
             ],
             [
                 'titre'            => 'Appartement F3 centre commercial Akwa',
@@ -403,6 +306,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Rue Joffre Akwa Douala',
                 'latitude'         => 4.0520,
                 'longitude'        => 9.7040,
+                'vues'             => 143,
+                'nb_photos'        => 3,
             ],
             [
                 'titre'            => 'Bureau moderne Akwa centre affaires',
@@ -420,6 +325,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Avenue du General de Gaulle Akwa',
                 'latitude'         => 4.0515,
                 'longitude'        => 9.7020,
+                'vues'             => 98,
+                'nb_photos'        => 3,
             ],
             [
                 'titre'            => 'Appartement luxe Bonanjo vue mer',
@@ -437,6 +344,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Rue du Commerce Bonanjo Douala',
                 'latitude'         => 4.0490,
                 'longitude'        => 9.6980,
+                'vues'             => 312,
+                'nb_photos'        => 5,
             ],
             [
                 'titre'            => 'Villa a vendre Bonanjo titre foncier',
@@ -454,6 +363,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Boulevard de la Reunification Bonanjo',
                 'latitude'         => 4.0500,
                 'longitude'        => 9.6990,
+                'vues'             => 445,
+                'nb_photos'        => 5,
             ],
             [
                 'titre'            => 'Villa familiale Bonapriso avec piscine',
@@ -471,6 +382,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Rue de la Paix Bonapriso Douala',
                 'latitude'         => 4.0310,
                 'longitude'        => 9.6920,
+                'vues'             => 289,
+                'nb_photos'        => 5,
             ],
             [
                 'titre'            => 'Appartement 3 chambres Bonapriso',
@@ -488,6 +401,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Avenue du Bali Bonapriso Douala',
                 'latitude'         => 4.0295,
                 'longitude'        => 9.6910,
+                'vues'             => 201,
+                'nb_photos'        => 4,
             ],
             [
                 'titre'            => 'Studio neuf Bonapriso jamais habite',
@@ -505,6 +420,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Rue Castelnau Bonapriso Douala',
                 'latitude'         => 4.0300,
                 'longitude'        => 9.6900,
+                'vues'             => 156,
+                'nb_photos'        => 3,
             ],
             [
                 'titre'            => 'Villa moderne Makepe 4 chambres',
@@ -522,6 +439,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Rue des Palmiers Makepe Douala',
                 'latitude'         => 4.0800,
                 'longitude'        => 9.7400,
+                'vues'             => 234,
+                'nb_photos'        => 4,
             ],
             [
                 'titre'            => 'Appartement meuble Makepe tout confort',
@@ -539,6 +458,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Carrefour Makepe Douala',
                 'latitude'         => 4.0810,
                 'longitude'        => 9.7380,
+                'vues'             => 178,
+                'nb_photos'        => 3,
             ],
             [
                 'titre'            => 'Villa a vendre Makepe 5 chambres',
@@ -556,6 +477,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Rue de l\'Esplanade Makepe',
                 'latitude'         => 4.0820,
                 'longitude'        => 9.7390,
+                'vues'             => 389,
+                'nb_photos'        => 5,
             ],
             [
                 'titre'            => 'Chambre meublee Deido proche marche',
@@ -573,6 +496,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Rue du Marche Deido Douala',
                 'latitude'         => 4.0700,
                 'longitude'        => 9.7300,
+                'vues'             => 122,
+                'nb_photos'        => 2,
             ],
             [
                 'titre'            => 'Appartement F2 Deido bon etat',
@@ -590,6 +515,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Avenue Poincare Deido Douala',
                 'latitude'         => 4.0710,
                 'longitude'        => 9.7290,
+                'vues'             => 99,
+                'nb_photos'        => 2,
             ],
             [
                 'titre'            => 'Chambre etudiant New Bell universite',
@@ -607,6 +534,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Rue de New Bell Douala',
                 'latitude'         => 4.0400,
                 'longitude'        => 9.7100,
+                'vues'             => 167,
+                'nb_photos'        => 2,
             ],
             [
                 'titre'            => 'Villa Logpom quartier calme famille',
@@ -624,6 +553,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Rue des Fleurs Logpom Douala',
                 'latitude'         => 4.0900,
                 'longitude'        => 9.7500,
+                'vues'             => 203,
+                'nb_photos'        => 4,
             ],
             [
                 'titre'            => 'Appartement neuf Logpom 3 chambres',
@@ -641,6 +572,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Avenue de Logpom Douala',
                 'latitude'         => 4.0880,
                 'longitude'        => 9.7480,
+                'vues'             => 145,
+                'nb_photos'        => 3,
             ],
             [
                 'titre'            => 'Appartement F4 Bali residence fermee',
@@ -658,6 +591,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Rue de Bali Douala',
                 'latitude'         => 4.0600,
                 'longitude'        => 9.7100,
+                'vues'             => 267,
+                'nb_photos'        => 4,
             ],
             [
                 'titre'            => 'Villa moderne Kotto piscine privee',
@@ -675,6 +610,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Rue de Kotto Douala',
                 'latitude'         => 4.0750,
                 'longitude'        => 9.7600,
+                'vues'             => 521,
+                'nb_photos'        => 5,
             ],
             [
                 'titre'            => 'Terrain 600m2 Kotto constructible',
@@ -692,6 +629,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Avenue de Kotto Douala',
                 'latitude'         => 4.0760,
                 'longitude'        => 9.7590,
+                'vues'             => 198,
+                'nb_photos'        => 2,
             ],
             [
                 'titre'            => 'Appartement premium Cite des Palmiers',
@@ -709,6 +648,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Avenue des Palmiers Douala',
                 'latitude'         => 4.0450,
                 'longitude'        => 9.7350,
+                'vues'             => 378,
+                'nb_photos'        => 5,
             ],
             [
                 'titre'            => 'Appartement 2 chambres Ndokoti',
@@ -726,8 +667,19 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Carrefour Ndokoti Douala',
                 'latitude'         => 4.0650,
                 'longitude'        => 9.7450,
+                'vues'             => 112,
+                'nb_photos'        => 2,
             ],
-             [
+        ];
+    }
+
+    // ============================================
+    // ANNONCES YAOUNDE
+    // ============================================
+    private function annoncesYaounde(): array
+    {
+        return [
+            [
                 'titre'            => 'Appartement meuble Bastos ambassades',
                 'description'      => 'Appartement luxueux dans le quartier diplomatique de Bastos. 3 chambres, salon, cuisine equipee, 2 salles de bain, terrasse. Residence avec piscine et gardien 24h.',
                 'prix'             => 500000,
@@ -743,6 +695,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Rue 1234 Bastos Yaounde',
                 'latitude'         => 3.8800,
                 'longitude'        => 11.5200,
+                'vues'             => 445,
+                'nb_photos'        => 5,
             ],
             [
                 'titre'            => 'Studio Ngoa-Ekelle proche universites',
@@ -760,6 +714,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Quartier Ngoa-Ekelle Yaounde',
                 'latitude'         => 3.8650,
                 'longitude'        => 11.5000,
+                'vues'             => 312,
+                'nb_photos'        => 2,
             ],
             [
                 'titre'            => 'Villa 4 chambres Biyem-Assi piscine',
@@ -777,6 +733,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Carrefour Biyem-Assi Yaounde',
                 'latitude'         => 3.8300,
                 'longitude'        => 11.4800,
+                'vues'             => 378,
+                'nb_photos'        => 5,
             ],
             [
                 'titre'            => 'Appartement Essos residence calme',
@@ -794,6 +752,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Rue de la Paix Essos Yaounde',
                 'latitude'         => 3.8850,
                 'longitude'        => 11.5300,
+                'vues'             => 201,
+                'nb_photos'        => 4,
             ],
             [
                 'titre'            => 'Chambre etudiant Melen universite',
@@ -811,6 +771,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Quartier Melen Yaounde',
                 'latitude'         => 3.8900,
                 'longitude'        => 11.5400,
+                'vues'             => 289,
+                'nb_photos'        => 2,
             ],
             [
                 'titre'            => 'Bureau centre Nlongkak Yaounde',
@@ -828,6 +790,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Avenue Kennedy Nlongkak Yaounde',
                 'latitude'         => 3.8750,
                 'longitude'        => 11.5100,
+                'vues'             => 134,
+                'nb_photos'        => 3,
             ],
             [
                 'titre'            => 'Villa a vendre Omnisports Yaounde',
@@ -845,6 +809,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Avenue du 20 Mai Omnisports Yaounde',
                 'latitude'         => 3.8540,
                 'longitude'        => 11.5060,
+                'vues'             => 456,
+                'nb_photos'        => 5,
             ],
             [
                 'titre'            => 'Appartement meuble Mvog-Mbi',
@@ -862,6 +828,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Rue de Mvog-Mbi Yaounde',
                 'latitude'         => 3.8500,
                 'longitude'        => 11.5150,
+                'vues'             => 178,
+                'nb_photos'        => 3,
             ],
             [
                 'titre'            => 'Terrain 400m2 Emana Yaounde',
@@ -879,6 +847,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Quartier Emana Yaounde',
                 'latitude'         => 3.9200,
                 'longitude'        => 11.5400,
+                'vues'             => 167,
+                'nb_photos'        => 2,
             ],
             [
                 'titre'            => 'Studio neuf Omnisports Yaounde',
@@ -896,9 +866,19 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Rue Omnisports Yaounde',
                 'latitude'         => 3.8540,
                 'longitude'        => 11.5060,
-                
+                'vues'             => 223,
+                'nb_photos'        => 3,
             ],
-             [
+        ];
+    }
+
+    // ============================================
+    // ANNONCES AUTRES VILLES
+    // ============================================
+    private function annoncesAutresVilles(): array
+    {
+        return [
+            [
                 'titre'            => 'Villa familiale Bafoussam centre',
                 'description'      => 'Belle villa au centre de Bafoussam. 4 chambres, salon, salle a manger, cuisine, 2 salles de bain, jardin, parking. Quartier calme et residentiel.',
                 'prix'             => 200000,
@@ -914,6 +894,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Avenue des Palmiers Bafoussam',
                 'latitude'         => 5.4737,
                 'longitude'        => 10.4176,
+                'vues'             => 134,
+                'nb_photos'        => 3,
             ],
             [
                 'titre'            => 'Appartement 2 chambres Bafoussam',
@@ -931,6 +913,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Quartier Famla Bafoussam',
                 'latitude'         => 5.4720,
                 'longitude'        => 10.4160,
+                'vues'             => 89,
+                'nb_photos'        => 2,
             ],
             [
                 'titre'            => 'Villa a vendre Garoua titre foncier',
@@ -948,6 +932,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Rue principale Garoua',
                 'latitude'         => 9.3000,
                 'longitude'        => 13.3833,
+                'vues'             => 201,
+                'nb_photos'        => 3,
             ],
             [
                 'titre'            => 'Appartement Bamenda quartier calme',
@@ -965,6 +951,8 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Main Street Bamenda',
                 'latitude'         => 5.9597,
                 'longitude'        => 10.1456,
+                'vues'             => 78,
+                'nb_photos'        => 2,
             ],
             [
                 'titre'            => 'Terrain 500m2 Bafoussam vue montagne',
@@ -982,321 +970,9 @@ class DatabaseSeeder extends Seeder
                 'adresse'          => 'Quartier Kamkop Bafoussam',
                 'latitude'         => 5.4800,
                 'longitude'        => 10.4200,
-            ],
-        
-        ];
-
-        $categorieIds = CategorieBien::pluck('id', 'libelle');
-        $agentIds     = collect($agents)->pluck('id')->toArray();
-        $annonces     = [];
-
-        foreach ($donneesAnnonces as $i => $d) {
-            $localisation = Localisation::create([
-                'pays'             => 'Cameroun',
-                'ville'            => $d['ville'],
-                'quartier'         => $d['quartier'],
-                'adresse_complete' => $d['adresse'],
-                'latitude'         => $d['latitude'],
-                'longitude'        => $d['longitude'],
-            ]);
-
-            $annonce    = Annonce::create([
-                'titre'            => $d['titre'],
-                'description'      => $d['description'],
-                'prix'             => $d['prix'],
-                'surface_m2'       => $d['surface_m2'],
-                'nb_pieces'        => $d['nb_pieces'],
-                'nb_chambres'      => $d['nb_chambres'],
-                'nb_salles_bain'   => $d['nb_salles_bain'],
-                'type_transaction' => $d['type_transaction'],
-                'meuble'           => $d['meuble'],
-                'statut'           => 'active',
-                'vues'             => rand(10, 250),
-                'score_ia'         => round(rand(60, 95) / 100, 2),
-                'id_agent'         => $agentIds[$i % count($agentIds)],
-                'id_categorie'     => $categorieIds[$d['categorie']],
-                'id_localisation'  => $localisation->id,
-            ]);
-            $annonces[] = $annonce;
-        }
-        echo "Annonces creees : " . count($annonces) . "\n";
-
-        // ============================================
-        // 8. PHOTOS ANNONCES
-        // ============================================
-        $photosParCategorie = [
-            'appartement' => [
-                'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800',
-                'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800',
-                'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800',
-            ],
-            'studio' => [
-                'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800',
-                'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800',
-            ],
-            'villa' => [
-                'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800',
-                'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800',
-                'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800',
-            ],
-            'chambre' => [
-                'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800',
-                'https://images.unsplash.com/photo-1540518614846-7eded433c457?w=800',
-            ],
-            'bureau' => [
-                'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800',
-                'https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=800',
-            ],
-            'terrain' => [
-                'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800',
-                'https://images.unsplash.com/photo-1464207687429-7505649dae38?w=800',
+                'vues'             => 156,
+                'nb_photos'        => 2,
             ],
         ];
-
-        foreach ($annonces as $annonce) {
-            $cat    = CategorieBien::find($annonce->id_categorie)?->libelle ?? 'appartement';
-            $photos = $photosParCategorie[$cat] ?? $photosParCategorie['appartement'];
-
-            foreach ($photos as $i => $url) {
-                DB::table('photos_annonces')->insertOrIgnore([
-                    'id_annonce'     => $annonce->id,
-                    'chemin_image'   => $url,
-                    'est_principale' => $i === 0 ? 1 : 0,
-                    'ordre'          => $i + 1,
-                    'created_at'     => now(),
-                    'updated_at'     => now(),
-                ]);
-            }
-        }
-        echo "Photos inserees pour " . count($annonces) . " annonces.\n";
-
-        // ============================================
-        // 9. CONTACTS
-        // ============================================
-        foreach ($utilisateurs as $i => $user) {
-            $annonce = $annonces[$i % count($annonces)];
-            Contact::create([
-                'id_user'    => $user->id,
-                'id_agent'   => $annonce->id_agent,
-                'id_annonce' => $annonce->id,
-                'message'    => 'Bonjour, je suis interesse par votre annonce "' .
-                    $annonce->titre . '". Est-elle toujours disponible ?',
-                'statut'     => rand(0, 1) ? 'lu' : 'non_lu',
-            ]);
-        }
-        echo "Contacts crees.\n";
-
-        // ============================================
-        // 10. CONVERSATIONS
-        // ============================================
-        $annoncesList  = collect($annonces);
-        $nbConvInseres = 0;
-
-        foreach ($utilisateurs as $user) {
-            $nbConv           = rand(1, 3);
-            $annoncesChoisies = $annoncesList->random(min($nbConv, $annoncesList->count()));
-
-            foreach ($annoncesChoisies as $annonce) {
-                if ($annonce->id_agent == $user->id) continue;
-
-                $existe = DB::table('conversations')
-                    ->where('annonce_id', $annonce->id)
-                    ->where('client_id', $user->id)
-                    ->exists();
-
-                if (!$existe) {
-                    DB::table('conversations')->insert([
-                        'annonce_id'         => $annonce->id,
-                        'client_id'          => $user->id,
-                        'agent_id'           => $annonce->id_agent,
-                        'dernier_message_at' => now()->subHours(rand(1, 72)),
-                        'created_at'         => now()->subDays(rand(1, 20)),
-                        'updated_at'         => now()->subHours(rand(1, 72)),
-                    ]);
-                    $nbConvInseres++;
-                }
-            }
-        }
-        $this->command->info("✅ $nbConvInseres conversations créées");
-
-        // ============================================
-        // 11. MESSAGES CHAT
-        // ============================================
-        $conversations = DB::table('conversations')
-            ->select('id', 'client_id', 'agent_id')
-            ->get();
-
-        $messagesClient = [
-            "Bonjour, je suis intéressé par votre annonce. Est-elle toujours disponible ?",
-            "Bonjour, pouvez-vous me donner plus d'informations sur ce bien ?",
-            "Bonjour, est-il possible de visiter ce weekend ?",
-            "Bonjour, quel est le montant de la caution ?",
-            "Bonjour, est-ce que les charges sont incluses dans le loyer ?",
-            "Bonjour, y a-t-il un parking disponible ?",
-            "Bonjour, le bien est-il encore disponible ? Je suis très intéressé.",
-            "Bonjour, pouvez-vous confirmer l'adresse exacte ?",
-        ];
-
-        $messagesAgent = [
-            "Bonjour, oui le bien est toujours disponible. Quand souhaitez-vous visiter ?",
-            "Bonjour, je vous remercie de votre intérêt. N'hésitez pas à me poser vos questions.",
-            "Bonjour, je peux vous recevoir samedi matin si cela vous convient.",
-            "Bonjour, la caution équivaut à 2 mois de loyer.",
-            "Bonjour, l'eau et l'électricité sont à la charge du locataire.",
-            "Bonjour, oui une place de parking est incluse.",
-            "Bonjour, je suis disponible pour vous faire visiter cette semaine.",
-            "Bonjour, envoyez-moi votre numéro, je vous appelle pour les détails.",
-        ];
-
-        $nbMsgInseres = 0;
-        foreach ($conversations as $conv) {
-            $nbEchanges = rand(1, 4);
-            $date       = now()->subDays(rand(1, 15));
-
-            for ($i = 0; $i < $nbEchanges; $i++) {
-                DB::table('messages')->insert([
-                    'conversation_id' => $conv->id,
-                    'expediteur_id'   => $conv->client_id,
-                    'contenu'         => $messagesClient[array_rand($messagesClient)],
-                    'lu'              => 1,
-                    'created_at'      => $date,
-                    'updated_at'      => $date,
-                ]);
-                $nbMsgInseres++;
-                $date = $date->copy()->addHours(rand(1, 5));
-
-                DB::table('messages')->insert([
-                    'conversation_id' => $conv->id,
-                    'expediteur_id'   => $conv->agent_id,
-                    'contenu'         => $messagesAgent[array_rand($messagesAgent)],
-                    'lu'              => rand(0, 1),
-                    'created_at'      => $date,
-                    'updated_at'      => $date,
-                ]);
-                $nbMsgInseres++;
-                $date = $date->copy()->addHours(rand(2, 8));
-            }
-        }
-        $this->command->info("✅ $nbMsgInseres messages créés");
-
-        // ============================================
-        // 12. HISTORIQUE RECHERCHES
-        // ============================================
-        $recherches = [
-            'studio meuble Yaounde',
-            'appartement 2 chambres Douala',
-            'villa avec jardin',
-            'chambre etudiant universite',
-            'bureau climatise centre ville',
-        ];
-
-        foreach ($utilisateurs as $i => $user) {
-            for ($j = 0; $j < 3; $j++) {
-                HistoriqueRecherche::create([
-                    'id_user'           => $user->id,
-                    'terme_recherche'   => $recherches[($i + $j) % count($recherches)],
-                    'filtres_appliques' => json_encode([
-                        'ville'  => rand(0, 1) ? 'Yaounde' : 'Douala',
-                        'limite' => 12,
-                    ]),
-                    'nb_resultats'      => rand(3, 15),
-                ]);
-            }
-        }
-        echo "Historiques crees.\n";
-
-        // ============================================
-        // 13. STATISTIQUES AGENTS
-        // ============================================
-        foreach ($agents as $agent) {
-            for ($mois = 1; $mois <= 6; $mois++) {
-                StatistiqueAgent::create([
-                    'id_agent'             => $agent->id,
-                    'mois'                 => $mois,
-                    'annee'                => 2024,
-                    'nb_annonces_publiees' => rand(1, 10),
-                    'nb_contacts_recus'    => rand(5, 30),
-                    'nb_services_rendus'   => rand(1, 8),
-                    'nb_vues_total'        => rand(50, 500),
-                ]);
-            }
-        }
-        echo "Statistiques crees.\n";
-
-        // ============================================
-        // 14. FAVORIS
-        // ============================================
-        $annonceIdList    = collect($annonces)->pluck('id')->toArray();
-        $nbFavorisInseres = 0;
-
-        foreach ($utilisateurs as $user) {
-            $choix = array_slice($annonceIdList, 0, rand(2, 5));
-            foreach ($choix as $annonceId) {
-                $existe = DB::table('favoris')
-                    ->where('user_id', $user->id)
-                    ->where('annonce_id', $annonceId)
-                    ->exists();
-
-                if (!$existe) {
-                    DB::table('favoris')->insert([
-                        'user_id'    => $user->id,
-                        'annonce_id' => $annonceId,
-                        'created_at' => now()->subDays(rand(1, 30)),
-                        'updated_at' => now(),
-                    ]);
-                    $nbFavorisInseres++;
-                }
-            }
-        }
-        $this->command->info("✅ $nbFavorisInseres favoris créés");
-
-        // ============================================
-        // 15. PAIEMENTS
-        // ============================================
-        $operateurs = ['orange_money', 'mtn_momo'];
-        foreach ($agents as $i => $agent) {
-            if ($agent->id_plan) {
-                $plan = Plan::find($agent->id_plan);
-                if ($plan && $plan->prix_mensuel > 0) {
-                    Paiement::create([
-                        'id_agent'       => $agent->id,
-                        'id_plan'        => $plan->id,
-                        'operateur'      => $operateurs[$i % 2],
-                        'telephone'      => $agent->telephone,
-                        'montant'        => $plan->prix_mensuel,
-                        'reference'      => 'SIM-' . strtoupper(Str::random(8)),
-                        'statut'         => 'succes',
-                        'transaction_id' => Str::uuid()->toString(),
-                    ]);
-                }
-            }
-        }
-        echo "Paiements crees.\n";
-
-        // ============================================
-        // RESUME FINAL
-        // ============================================
-        echo "\n================================================\n";
-        echo "  SEEDER SIMMO TERMINE AVEC SUCCES\n";
-        echo "================================================\n";
-        echo "  Plans            : " . Plan::count()            . "\n";
-        echo "  Categories       : " . CategorieBien::count()   . "\n";
-        echo "  Administrateurs  : " . Administrateur::count()  . "\n";
-        echo "  Utilisateurs     : " . Utilisateur::count()     . "\n";
-        echo "  Agents           : " . AgentImmobilier::count() . "\n";
-        echo "  Annonces         : " . Annonce::count()         . "\n";
-        echo "  Contacts         : " . Contact::count()         . "\n";
-        echo "  Messages         : " . Message::count()         . "\n";
-        echo "  Favoris          : " . Favori::count()          . "\n";
-        echo "  Paiements        : " . Paiement::count()        . "\n";
-        echo "================================================\n";
-        echo "\n  COMPTE ADMIN :\n";
-        echo "  Email    : admin@simmo.cm\n";
-        echo "  Password : Admin@SIMMo2024\n";
-        echo "\n  COMPTES AGENTS (tous) :\n";
-        echo "  Password : password123\n";
-        echo "\n  COMPTES UTILISATEURS (tous) :\n";
-        echo "  Password : password123\n";
-        echo "================================================\n";
     }
 }

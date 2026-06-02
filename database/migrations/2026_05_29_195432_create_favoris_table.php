@@ -11,16 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-    Schema::create('photos_annonces', function (Blueprint $table) {
+       Schema::create('favoris', function (Blueprint $table) {
     $table->id();
-    $table->foreignId('id_annonce')->constrained('annonces')->onDelete('cascade');
-    $table->string('chemin_image');
-    $table->boolean('est_principale')->default(false);
-    $table->unsignedInteger('ordre')->default(1); // ← pas de ->after() ici
+    $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+    $table->foreignId('annonce_id')->constrained('annonces')->onDelete('cascade');
     $table->timestamps();
-});
 
-        
+    $table->unique(['user_id', 'annonce_id']); // pas de doublon
+});
     }
 
     /**
@@ -28,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('photos_annonces');
+        Schema::dropIfExists('favoris');
     }
 };

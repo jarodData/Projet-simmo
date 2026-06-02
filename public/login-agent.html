@@ -7,7 +7,7 @@
     <title>Connexion Agent — SIMMo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
 </head>
 <body class="d-flex align-items-center min-vh-100" style="background:linear-gradient(135deg,#f0fdf4,#f1f5f9)">
 <div class="container py-5">
@@ -27,7 +27,16 @@
             </div>
 
             <div id="alertContainer"></div>
-
+<!-- Lien admin invisible -->
+<p class="text-center mt-3">
+    <a href="admin/login.html"
+        style="font-size:10px;opacity:0;transition:opacity 0.3s;
+               color:rgba(0,0,0,0.2);text-decoration:none"
+        onmouseover="this.style.opacity='0.4'"
+        onmouseout="this.style.opacity='0'">
+        ·
+    </a>
+</p>
             <div class="auth-card">
                 <form id="loginAgentForm">
                     <div class="mb-3">
@@ -75,31 +84,41 @@
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
 <script>
+    localStorage.removeItem('redirect_after_login')
+
     if (estConnecte() && estAgent()) window.location.href = 'dashboard.html'
 
     document.getElementById('loginAgentForm').addEventListener('submit', async function(e) {
-        e.preventDefault()
-        showSpinner('btnLogin', 'Connexion...')
+    e.preventDefault()
+    showSpinner('btnLogin', 'Connexion...')
 
-        try {
-            const data = await apiRequest('/auth/agent/login', 'POST', {
-                email        : document.getElementById('email').value,
-                mot_de_passe : document.getElementById('motDePasse').value,
-            })
+    try {
+        const data = await apiRequest('/auth/agent/login', 'POST', {
+            email       : document.getElementById('email').value,
+            mot_de_passe: document.getElementById('motDePasse').value,
+        })
 
-            localStorage.setItem('simmo_token', data.token)
-            localStorage.setItem('simmo_user',  JSON.stringify(data.agent))
-            localStorage.setItem('simmo_role',  'agent')
-
-            showAlert(' Connexion réussie ! Redirection...', 'success')
-            setTimeout(() => window.location.href = 'dashboard.html', 1000)
-
-        } catch (err) {
-            const msg = err.data?.message || err.data?.errors?.email?.[0] || 'Erreur de connexion.'
+        //  Vérifier que data et token existent
+        if (!data || !data.token) {
+            const msg = data?.message || 'Email ou mot de passe incorrect.'
             showAlert(msg, 'danger')
             hideSpinner('btnLogin', '<i class="bi bi-box-arrow-in-right me-2"></i>Se connecter')
+            return
         }
-    })
+
+        //  Sauvegarder avec les bonnes clés
+       localStorage.setItem('token', data.token)
+localStorage.setItem('user',  JSON.stringify(data.agent || data.user)) // ✅ clé 'user'
+localStorage.setItem('role',  'agent')
+        showAlert('Connexion réussie ! Redirection...', 'success')
+
+        setTimeout(() => window.location.href = 'dashboard.html', 800)
+console.log('data complet:', data)
+    } catch (err) {
+        showAlert('Erreur de connexion.', 'danger')
+        hideSpinner('btnLogin', '<i class="bi bi-box-arrow-in-right me-2"></i>Se connecter')
+    }
+})
 </script>
 </body>
 </html>

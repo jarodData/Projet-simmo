@@ -99,7 +99,13 @@ class UtilisateurAuthController extends Controller
         return response()->json([
             'message'     => 'Connexion réussie !',
             'token'       => $token,
-            'utilisateur' => $utilisateur,
+            'utilisateur' => [
+                'id'     => $utilisateur->id,
+                'prenom' => $utilisateur->prenom,
+                'nom'    => $utilisateur->nom,
+                'email'  => $utilisateur->email,
+                'role'   => $utilisateur->type_user,
+            ],
         ], 200);
     }
 
@@ -133,5 +139,50 @@ class UtilisateurAuthController extends Controller
             'utilisateur' => $request->user(),
         ]);
     }
+
+    public function verifyEmail($token)
+{
+    // 1. Trouver l'utilisateur par token
+    $utilisateur = Utilisateur::where('email_verification_token', $token)
+        ->where('email_verified_at', null)
+        ->first();
+
+    if (!$utilisateur) {
+        // Token invalide ou déjà utilisé → rediriger avec erreur
+        return redirect(config('app.frontend_url') . '/login.html?verified=error');
+    }
+
+    // 2. Activer le compte
+    $utilisateur->update([
+        'email_verified_at'        => now(),
+        'email_verification_token' => null,
+        'statut'                   => 'actif',
+    ]);
+
+    // 3. Générer un token Sanctum pour auto-login
+    $sanctumToken = $utilisateur->createToken('auto-login-verification')->plainTextToken;
+
+    // 4. Rediriger vers le frontend avec le token
+    $redirectUrl = config('app.frontend_url')
+        . '/login.html'
+        . '?verified=success'
+        . '&token=' . $sanctumToken
+        . '&user=' . urlencode(json_encode([
+            'id'     => $utilisateur->id,
+            'prenom' => $utilisateur->prenom,
+            'nom'    => $utilisateur->nom,
+            'email'  => $utilisateur->email,
+            'role'   => $utilisateur->type_user,
+        ]));
+
+    return redirect($redirectUrl);
+}
+// app/Models/AgentImmobilier.php
+
+public function getAuthPassword()
+{
+    return $this->mot_de_passe_hash;
+}
+
 
 }

@@ -6,32 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 class Message extends Model
 {
     protected $table = 'messages';
+    public $timestamps = false;
+    protected $fillable    = ['conversation_id', 'expediteur_id', 'contenu', 'lu'];
+    const CREATED_AT       = 'created_at';
+    const UPDATED_AT       = null;
 
-    protected $fillable = [
-        'id_utilisateur',
-        'id_agent',
-        'id_annonce',
-        'expediteur',
-        'contenu',
-        'lu',
-    ];
-
-    protected $casts = [
-        'lu' => 'boolean',
-    ];
-
-    public function utilisateur()
-    {
-        return $this->belongsTo(Utilisateur::class, 'id_utilisateur');
-    }
-
-    public function agent()
-    {
-        return $this->belongsTo(AgentImmobilier::class, 'id_agent');
-    }
-
-    public function annonce()
-    {
-        return $this->belongsTo(Annonce::class, 'id_annonce');
-    }
+    public function conversation() { return $this->belongsTo(Conversation::class); }
+    public function expediteur()   { return $this->belongsTo(Utilisateur::class, 'expediteur_id'); }
 }
