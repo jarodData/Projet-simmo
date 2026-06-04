@@ -14,6 +14,8 @@ use Illuminate\Support\Str;
 
 class AgentAuthController extends Controller
 {
+
+
     //
      //  INSCRIPTION AGENT
     public function register(Request $request)
@@ -109,6 +111,16 @@ class AgentAuthController extends Controller
             'agent'   => $agent->load('plan'),
         ], 200);
     }
+    
+    public function index()
+{
+    $agents = AgentImmobilier::where('statut', 'actif')
+        ->withCount('annonces')
+        ->with('plan')
+        ->get();
+
+    return response()->json($agents);
+}
 
     //  DECONNEXION
     public function logout(Request $request)

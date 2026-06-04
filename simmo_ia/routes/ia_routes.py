@@ -13,9 +13,21 @@ from models.scoring_contextuel        import ScoringContextuel
 from config                           import settings
 import logging
 
+import joblib
+import re
+from schemas.ia_schemas import RequeteNLP
+
+
+
+
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
 moteur= MoteurHybride()
+#router = APIRouter()
+model = joblib.load('C:\www\projet-simmo\simmo_ia\simmo_ia\modeles\modele_prix.pkl')
+# molele_nlp = joblib.load('C:\www\projet-simmo\simmo_ia\models\nlp_model.joblib')
+if not moteur.prix.charger_modele():
+    print("modele prix non trouve. Lance POST /api/ia/entrainer une fois")
 scoreur_contextuel = ScoringContextuel()
 scheduler= AsyncIOScheduler()
 
@@ -37,9 +49,8 @@ def verifier_api_key(x_api_key: str = Header(..., alias="X-API-Key")):
 async def recharger_moteur(db_session=None):
     """Charge toutes les annonces actives et ré-entraîne le moteur."""
     try:
-        # Ouvrir une session si on n'en a pas (appel scheduler)
         from database import SessionLocal
-        db   = db_session or SessionLocal()
+        db = db_session or SessionLocal()
         annonces = fetch_annonces(db)
         if not db_session:
             db.close()
@@ -48,12 +59,36 @@ async def recharger_moteur(db_session=None):
             logger.warning("Aucune annonce active pour entraîner le moteur.")
             return 0
 
-        moteur.entrainer(annonces)
+        # 1. Stocker les annonces dans le moteur AVANT entraînement
+        moteur.annonces = annonces
+        moteur.prix.annonces = annonces  # <-- CRUCIAL pour le print + prédictions
+
+        # # 2. Entraîner les 2 modèles séparément
+        # moteur.prix.entrainer(annonces)
+        # moteur.nlp.entrainer_sur_corpus(annonces)
+        
+        # # 3. Sauvegarder les modèles
+        # moteur.prix.sauvegarder_modele()
+        # moteur.nlp.sauvegarder()
+
+
+ # NLP : charge si existe, sinon entraîne + sauvegarde
+        if not moteur.nlp.charger():
+            moteur.nlp.entrainer_sur_corpus(annonces)
+            moteur.nlp.sauvegarder()
+    
+    # Prix : même logique
+        if not moteur.prix.charger_modele():
+         moteur.prix.entrainer(annonces)
+         moteur.prix.sauvegarder_modele()
+    
+        print(f"Moteur prêt - {len(annonces)} annonces chargées.")
+
         logger.info(f"Moteur ré-entraîné — {len(annonces)} annonces.")
         return len(annonces)
 
     except Exception as e:
-        logger.error(f"Erreur rechargement moteur : {e}")
+        logger.error(f"Erreur rechargement moteur : {e}", exc_info=True)
         return 0
 
 
@@ -85,7 +120,7 @@ def demarrer_scheduler():
             replace_existing = True,
         )
         scheduler.start()
-        print("✅ Scheduler démarré — rechargement toutes les 6h.")
+        print(" Scheduler démarré — rechargement toutes les 6h.")
 
 @router.on_event("shutdown")
 async def shutdown():
@@ -194,6 +229,13 @@ def recommander(
     annonces = fetch_annonces(db)
     if not annonces:
         return ReponseRecommandation(total=0, recommandations=[])
+    # filtre par pri avant le moteur NLP
+    if requete.budget_max:
+        annonces= [a for a in annonces if a.get('prix', 999) <= requete.budget_max]
+    if requete.budget_min:
+        annonces = [a for a in annonces if a.get('prix', 0)>= requete.budget_min]
+    if not annonces:
+        return ReponseRecommandation(total= 0, recommandations=[] ,message="Aucune annonce dans le ce buget")
 
     # Indexer les photos par id AVANT d'appeler le moteur
     photos = {a["id"]: a.get("photo") for a in annonces}
@@ -228,6 +270,7 @@ def predire_prix(
         nb_chambres      = requete.nb_chambres,
         meuble           = requete.meuble,
         type_transaction = requete.type_transaction,
+        quartier= requete.quartier or "Inconnu" ,
     )
     if prediction["prix_estime"] is None:
         raise HTTPException(
@@ -354,6 +397,7 @@ def recherche_contextuelle(
         if lieu_geocode
         else [0.5] * len(filtrees)
     )
+    
 
     texte       = f"{requete.type_bien or ''} {requete.religion or ''}"
     scores_nlp  = moteur.nlp.calculer_similarite(texte, filtrees)
@@ -363,11 +407,10 @@ def recherche_contextuelle(
     resultats = []
     for i, annonce in enumerate(filtrees):
 
-        score_final = (
-            scores_proximite[i] * 0.40 +
-            scores_nlp[i]       * 0.25 +
-            scores_prix[i]      * 0.25 +
-            scores_pop[i]       * 0.10
+        annonce['score_contextuel'] = round(
+    scores_proximite[i] * 0.40 + 
+    scores_prix[i] * 0.30 +
+    scores_nlp[i] * 0.30,
         )
 
         distance_ref = None
@@ -400,6 +443,7 @@ def recherche_contextuelle(
             nb_chambres      = annonce.get("nb_chambres") or 1,
             meuble           = annonce.get("meuble") or False,
             type_transaction = annonce.get("type_transaction", "location"),
+            quartier= annonce.get("quartier", "Inconnu"),
         )
 
         resultats.append({
@@ -451,6 +495,145 @@ def analyser_quartier(
 ):
     return scoreur_contextuel.analyser_contexte_quartier(lat, lon)
 
+@router.post("/ia/recherche-nlp")
+def recherche_nlp(
+    requete : RequeteNLP,           # remplace par RequeteNLP si tu ajoutes le schema
+    db      : Session = Depends(get_db),
+    _       : None    = Depends(verifier_api_key),
+):
+    # description = requete.description
+    # limite = requete.limite
+    """
+    Recherche par description en langage naturel.
+    Flux :
+      1. Extraction des critères structurés (regex NLP léger)
+      2. Pré-filtrage SQL via fetch_annonces + filtres durs
+      3. Scoring TF-IDF via moteur.nlp.calculer_similarite()
+      4. Scoring prix via moteur._score_prix()
+      5. Tri et retour avec criteres_extraits + mots_cles_nlp
+    """
+    description = requete.description.strip()
+    limite = requete.limite or 12
+    
+    if len(description) < 5:
+        raise HTTPException(status_code=400, detail="Description trop courte (min 5 caractères).")
+
+    # ── 1. Extraire les critères depuis la description ──
+    criteres = extraire_criteres_nlp(description)
+    logger.info(f"[NLP] Critères extraits : {criteres}")
+
+    # ── 2. Charger les annonces et pré-filtrer ──
+    annonces = fetch_annonces(db)
+    if not annonces:
+        return {
+            "criteres_extraits" : criteres,
+            "mots_cles_nlp"     : [],
+            "recommandations"   : [],
+            "total"             : 0,
+        }
+
+    # Pré-filtrage dur (rapide, avant le NLP coûteux)
+    filtrees = annonces
+    if criteres.get("ville"):
+        filtrees = [a for a in filtrees
+                    if criteres["ville"].lower() in (a.get("ville") or "").lower()]
+    if criteres.get("type_bien"):
+        filtrees = [a for a in filtrees
+                    if criteres["type_bien"].lower() in (a.get("categorie") or "").lower()]
+    if criteres.get("type_transaction"):
+        filtrees = [a for a in filtrees
+                    if a.get("type_transaction") == criteres["type_transaction"]]
+    if criteres.get("budget_max"):
+        filtrees = [a for a in filtrees
+                    if float(a.get("prix") or 0) <= criteres["budget_max"]]
+    if criteres.get("nb_chambres"):
+        filtrees = [a for a in filtrees
+                    if int(a.get("nb_chambres") or 0) >= criteres["nb_chambres"]]
+    if criteres.get("surface_min"):
+        filtrees = [a for a in filtrees
+                    if float(a.get("surface_m2") or 0) >= criteres["surface_min"]]
+    if criteres.get("meuble"):
+        filtrees = [a for a in filtrees if a.get("meuble")]
+
+    # Si le pré-filtrage est trop restrictif, on élargit sur toutes les annonces
+    if len(filtrees) < 3:
+        logger.warning("[NLP] Pré-filtrage trop restrictif, élargissement.")
+        filtrees = annonces[:100]
+
+    # ── 3. Scoring TF-IDF (ton modèle NLPAnalyser) ──
+    scores_nlp  = moteur.nlp.calculer_similarite(description, filtrees)
+
+    # ── 4. Scoring prix ──
+    scores_prix = moteur._score_prix(filtrees, criteres)
+
+    # ── 5. Assembler et trier ──
+    resultats = []
+    for i, annonce in enumerate(filtrees):
+        score_nlp   = float(scores_nlp[i])
+        score_prix  = float(scores_prix[i])
+        # Pondération : NLP 70% + Prix 30%
+        score_final = round(score_nlp * 0.70 + score_prix * 0.30, 4)
+
+        # Prédiction prix via ton modèle ML
+        prediction = moteur.prix.predire_prix(
+            ville            = annonce.get("ville", ""),
+            categorie        = annonce.get("categorie", ""),
+            surface_m2       = annonce.get("surface_m2") or 50,
+            nb_chambres      = annonce.get("nb_chambres") or 1,
+            meuble           = annonce.get("meuble") or False,
+            type_transaction = annonce.get("type_transaction", "location"),
+            quartier         = annonce.get("quartier") or "Inconnu",
+        )
+
+        # Raison lisible
+        raisons = []
+        if score_nlp > 0.25:
+            raisons.append("correspond à votre description")
+        if criteres.get("ville") and criteres["ville"].lower() in (annonce.get("ville") or "").lower():
+            raisons.append(f"situé à {criteres['ville']}")
+        if criteres.get("budget_max") and float(annonce.get("prix") or 0) <= criteres["budget_max"]:
+            raisons.append("dans votre budget")
+        if annonce.get("meuble") and criteres.get("meuble"):
+            raisons.append("meublé")
+        if criteres.get("nb_chambres") and int(annonce.get("nb_chambres") or 0) >= criteres["nb_chambres"]:
+            raisons.append(f"{annonce.get('nb_chambres')} chambre(s)")
+
+        resultats.append({
+            "id_annonce"  : annonce["id"],
+            "titre"       : annonce["titre"],
+            "prix"        : float(annonce["prix"]),
+            "categorie"   : annonce.get("categorie"),
+            "ville"       : annonce.get("ville"),
+            "quartier"    : annonce.get("quartier"),
+            "latitude"    : annonce.get("latitude"),
+            "longitude"   : annonce.get("longitude"),
+            "photo"       : annonce.get("photo"),
+            "nb_chambres" : annonce.get("nb_chambres"),
+            "surface_m2"  : annonce.get("surface_m2"),
+            "meuble"      : annonce.get("meuble"),
+            "score_final" : score_final,
+            "score_nlp"   : round(score_nlp, 4),
+            "score_prix"  : round(score_prix, 4),
+            "prix_estime" : prediction.get("prix_estime"),
+            "raison"      : ("Ce bien " + ", ".join(raisons) + ".") if raisons
+                            else "Correspond à votre recherche.",
+        })
+
+    # Tri par score décroissant
+    resultats.sort(key=lambda x: x["score_final"], reverse=True)
+
+    # Mots-clés extraits par ton modèle TF-IDF
+    mots_cles = moteur.nlp.extraire_mots_cles(description, n=6)
+
+    return {
+        "criteres_extraits" : criteres,
+        "mots_cles_nlp"     : mots_cles,
+        "recommandations"   : resultats[:limite],
+        "total"             : len(resultats),
+    }
+
+
+
 
 # ─────────────────────────────────────────────────────
 # Helper : raison contextuelle
@@ -482,3 +665,108 @@ def _generer_raison_contextuelle(score, score_prox, distance,
         raisons.append("correspond à vos critères")
 
     return "Ce bien " + ", ".join(raisons) + "."
+
+
+
+def extraire_criteres_nlp(texte: str) -> dict:
+    """
+    Extrait les critères structurés depuis une description libre.
+    Utilisé AVANT le TF-IDF pour pré-filtrer les annonces en base.
+    """
+    t = texte.lower()
+    criteres = {}
+
+    # ── Type de bien ──
+    types_bien = {
+        'appartement' : ['appartement', 'appart'],
+        'studio'      : ['studio', 'f1'],
+        'villa'       : ['villa', 'maison', 'duplex', 'triplex'],
+        'chambre'     : ['chambre seule', 'chambre individuelle'],
+        'bureau'      : ['bureau', 'local commercial', 'boutique', 'magasin'],
+        'terrain'     : ['terrain', 'parcelle'],
+    }
+    for type_bien, mots in types_bien.items():
+        if any(m in t for m in mots):
+            criteres['type_bien'] = type_bien
+            break
+
+    # ── Ville ──
+    villes = {
+        'Douala'    : ['douala', 'dla'],
+        'Yaounde'   : ['yaounde', 'yaoundé', 'capitale'],
+        'Bafoussam' : ['bafoussam', 'baf'],
+        'Garoua'    : ['garoua'],
+        'Bamenda'   : ['bamenda'],
+    }
+    for ville, mots in villes.items():
+        if any(m in t for m in mots):
+            criteres['ville'] = ville
+            break
+
+    # ── Quartier ──
+    quartiers = {
+        'Bonamoussadi' : ['bonamoussadi', 'bonams'],
+        'Akwa'         : ['akwa'],
+        'Bonapriso'    : ['bonapriso'],
+        'Makepe'       : ['makepe'],
+        'Deido'        : ['deido'],
+        'Bepanda'      : ['bepanda'],
+        'Logpom'       : ['logpom'],
+        'Bastos'       : ['bastos'],
+        'Nlongkak'     : ['nlongkak'],
+    }
+    for quartier, mots in quartiers.items():
+        if any(m in t for m in mots):
+            criteres['quartier'] = quartier
+            break
+
+    # ── Transaction ──
+    if any(m in t for m in ['louer', 'location', 'à louer', 'mensuel', 'loyer']):
+        criteres['type_transaction'] = 'location'
+    elif any(m in t for m in ['acheter', 'achat', 'vente', 'à vendre', 'acquisition']):
+        criteres['type_transaction'] = 'vente'
+
+    # ── Budget ──
+    patterns_budget = [
+        (r'(\d[\d\s]*)[\s]*(?:f\s*cfa|fcfa|cfa|xaf|francs?)', False),
+        (r'(\d+)\s*k\b',                                        True),   # 150k → 150000
+        (r'moins\s*de\s*(\d[\d\s]*)',                           False),
+        (r'budget\s*(?:de|:)?\s*(\d[\d\s]*)',                   False),
+        (r'(\d{2,})\s*000',                                     False),
+    ]
+    for pattern, is_k in patterns_budget:
+        m = re.search(pattern, t, re.IGNORECASE)
+        if m:
+            val = int(m.group(1).replace(' ', ''))
+            if is_k and val < 10000:
+                val *= 1000
+            if 1000 < val < 100_000_000:
+                criteres['budget_max'] = val
+                break
+
+    # Mots signalant budget bas → plafond par défaut 150k
+    if 'budget_max' not in criteres:
+        if any(m in t for m in ['pas cher', 'abordable', 'économique', 'bon marché', 'modeste']):
+            criteres['budget_max'] = 150_000
+
+    # ── Chambres ──
+    for pattern in [r'(\d+)\s*(?:chambre|pièce|piece)', r'f(\d)\b', r'(\d)\s*ch\b']:
+        m = re.search(pattern, t, re.IGNORECASE)
+        if m:
+            nb = int(m.group(1))
+            if 1 <= nb <= 10:
+                criteres['nb_chambres'] = nb
+                break
+
+    # ── Surface ──
+    m = re.search(r'(\d+)\s*m[²2]', t, re.IGNORECASE)
+    if m:
+        s = int(m.group(1))
+        if 10 < s < 2000:
+            criteres['surface_min'] = s
+
+    # ── Caractéristiques booléennes ──
+    if any(m in t for m in ['meublé', 'meuble', 'équipé', 'avec meubles']):
+        criteres['meuble'] = True
+
+    return criteres

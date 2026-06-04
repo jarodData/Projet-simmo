@@ -3,546 +3,232 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat — SIMMo</title>
+    <title>Mes Messages — SIMMo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
-    <!-- ✅ Colle ce bloc dans le <head> de TOUTES tes pages HTML -->
-
-<!-- PWA Simmo -->
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#4F46E5">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Simmo">
-<link rel="apple-touch-icon" href="/images/icon-192.png">
-
-<script>
-    // Enregistrement du Service Worker
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/service-worker.js')
-                .then(reg => console.log('✅ Simmo SW enregistré:', reg.scope))
-                .catch(err => console.error('❌ SW erreur:', err));
-        });
-    }
-
-    // Bouton d'installation PWA (optionnel)
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-
-        // Si tu as un bouton "Installer l'app" dans ton HTML
-        const installBtn = document.getElementById('install-btn');
-        if (installBtn) {
-            installBtn.style.display = 'block';
-            installBtn.addEventListener('click', () => {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then(choice => {
-                    if (choice.outcome === 'accepted') {
-                        console.log('✅ App installée');
-                    }
-                    deferredPrompt = null;
-                });
-            });
-        }
-    });
-</script>
-
     <style>
-        .chat-container {
-            height         : calc(100vh - 180px);
-            display        : flex;
-            flex-direction : column;
+        .conv-item {
+            border-radius : 12px;
+            border        : 1px solid #e2e8f0;
+            padding       : 16px;
+            margin-bottom : 10px;
+            background    : white;
+            cursor        : pointer;
+            transition    : all 0.2s;
+            text-decoration: none;
+            color          : inherit;
+            display        : block;
         }
-        .chat-messages {
-            flex           : 1;
-            overflow-y     : auto;
-            padding        : 20px;
-            background     : #f8fafc;
-            border-radius  : 12px;
-            border         : 1px solid #e2e8f0;
+        .conv-item:hover {
+            border-color : #2563eb;
+            box-shadow   : 0 4px 12px rgba(37,99,235,0.1);
+            color        : inherit;
         }
-        .message-bubble {
-            max-width      : 70%;
-            padding        : 10px 14px;
-            border-radius  : 16px;
-            margin-bottom  : 8px;
-            font-size      : 14px;
-            line-height    : 1.5;
+        .conv-item.non-lu {
+            background   : #eff6ff;
+            border-color : #93c5fd;
         }
-        .message-envoye {
+        .avatar {
+            width          : 46px;
+            height         : 46px;
+            border-radius  : 50%;
             background     : #2563eb;
             color          : white;
-            border-bottom-right-radius : 4px;
-            margin-left    : auto;
+            display        : flex;
+            align-items    : center;
+            justify-content: center;
+            font-weight    : bold;
+            font-size      : 16px;
+            flex-shrink    : 0;
         }
-        .message-recu {
-            background     : white;
-            color          : #1e293b;
-            border         : 1px solid #e2e8f0;
-            border-bottom-left-radius  : 4px;
+        .apercu {
+            font-size  : 13px;
+            color      : #64748b;
+            white-space: nowrap;
+            overflow   : hidden;
+            text-overflow: ellipsis;
+            max-width  : 300px;
         }
-        .message-time {
-            font-size      : 11px;
-            opacity        : 0.6;
-            margin-top     : 4px;
+        .date-msg {
+            font-size  : 11px;
+            color      : #94a3b8;
+            white-space: nowrap;
         }
-        .chat-input-zone {
-            padding        : 16px 0 0;
-            border-top     : 1px solid #e2e8f0;
-        }
-        .agent-info-card {
-            background     : white;
-            border-radius  : 12px;
-            border         : 1px solid #e2e8f0;
-            padding        : 16px;
-            margin-bottom  : 16px;
-        }
-        .conversation-item {
-            padding        : 12px;
-            border-radius  : 10px;
-            cursor         : pointer;
-            transition     : background 0.2s;
-            border-bottom  : 1px solid #f1f5f9;
-        }
-        .conversation-item:hover,
-        .conversation-item.active {
-            background     : #eff6ff;
+        .annonce-info {
+            font-size    : 11px;
+            color        : #64748b;
+            background   : #f8fafc;
+            border-radius: 6px;
+            padding      : 4px 8px;
+            margin-top   : 6px;
+            display      : inline-block;
         }
     </style>
 </head>
-<body>
+<body style="background:#f8fafc">
 
 <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top border-bottom">
     <div class="container">
         <a class="navbar-brand fw-bold fs-4" href="index.html">
-            <i class="bi bi-buildings text-primary me-1"></i>
-            SIMMo
+            <i class="bi bi-buildings text-primary me-1"></i>SIMMo
         </a>
         <div class="d-flex gap-2" id="navAuth"></div>
     </div>
 </nav>
 
-<div class="container py-4">
-    <div id="pageContenu">
+<div class="container py-4" style="max-width:720px">
+
+    <!-- En-tête -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="index.html" class="btn btn-light btn-sm">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h4 class="fw-bold mb-0">
+                <i class="bi bi-chat-dots text-primary me-2"></i>
+                Mes Messages
+            </h4>
+            <p class="text-muted small mb-0" id="nbConvs"></p>
+        </div>
+    </div>
+
+    <!-- Alertes -->
+    <div id="alertContainer"></div>
+
+    <!-- Liste conversations -->
+    <div id="listeConversations">
         <div class="text-center py-5">
             <div class="spinner-border text-primary"></div>
         </div>
     </div>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
 <script>
-    const params    = new URLSearchParams(window.location.search)
-    const idAgent   = params.get('agent')
-    const idUser    = params.get('user')
-    let   intervalId = null
 
-    document.addEventListener('DOMContentLoaded', function() {
-        if (!estConnecte()) {
-            window.location.href = 'login.html'
-            return
-        }
-        initNavbar()
+// ── Vérification connexion ───────────────────────────────────
+const token = getToken()
+const user  = getUser()
 
-        if (estAgent()) {
-            chargerChatAgent()
-        } else {
-            if (!idAgent) {
-                window.location.href = 'annonces.html'
-                return
-            }
-            chargerChatUtilisateur()
-        }
-    })
+if (!token || !user) {
+    localStorage.setItem('redirect_after_login', location.href)
+    window.location.href = 'login.html'
+}
 
-    function initNavbar() {
-        const user = getUser()
-        document.getElementById('navAuth').innerHTML = `
-            <span class="small fw-semibold me-2">
-                ${user?.prenom || ''}
-            </span>
-            <button class="btn btn-outline-danger btn-sm"
-                onclick="deconnexion()">
-                <i class="bi bi-box-arrow-right"></i>
-            </button>`
+// ── Init ─────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+    initNavbar()
+    chargerConversations()
+
+    // Rafraîchir toutes les 10 secondes
+    setInterval(chargerConversations, 10000)
+})
+
+// ── Charger les conversations ────────────────────────────────
+async function chargerConversations() {
+    try {
+        const conversations = await apiRequest('/conversations', 'GET', null, true)
+        if (!conversations) return
+
+        const convs = Array.isArray(conversations) ? conversations : []
+
+        const nbNonLus = convs.reduce((t, c) => t + (c.non_lus || 0), 0)
+
+        document.getElementById('nbConvs').textContent =
+            convs.length + ' conversation(s)' +
+            (nbNonLus > 0 ? ` — ${nbNonLus} non lu(s)` : '')
+
+        afficherConversations(convs)
+
+    } catch (e) {
+        console.error('Erreur conversations:', e)
+    }
+}
+
+// ── Afficher la liste ────────────────────────────────────────
+function afficherConversations(convs) {
+    const container = document.getElementById('listeConversations')
+
+    if (!convs || convs.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-chat-dots display-3 d-block mb-3 opacity-25"></i>
+                <h5>Aucune conversation</h5>
+                <p class="small">Contactez un agent depuis une annonce pour démarrer.</p>
+                <a href="annonces.html" class="btn btn-primary mt-2">
+                    Parcourir les annonces
+                </a>
+            </div>`
+        return
     }
 
-    // ============================================
-    // CHAT UTILISATEUR
-    // ============================================
-    async function chargerChatUtilisateur() {
-        try {
-            // Charger infos agent
-            const annonce = params.get('annonce')
-            let infoAgent = ''
+    container.innerHTML = convs.map(c => {
+        const inter    = c.interlocuteur || {}
+        const prenom   = inter.prenom || inter.name || 'Agent'
+        const nom      = inter.nom    || ''
+        const initiale = prenom[0]?.toUpperCase() || 'A'
+        const nonLus   = c.non_lus || 0
+        const apercu   = c.dernier_message || '<em>Démarrer la conversation</em>'
+        const date     = c.dernier_message_at
+            ? formaterDate(c.dernier_message_at)
+            : ''
 
-            if (annonce) {
-                const data = await apiRequest(`/annonces/${annonce}`)
-                const a    = data.annonce || data
-                infoAgent  = `
-                    <div class="agent-info-card d-flex
-                        align-items-center gap-3">
-                        <div class="bg-primary text-white rounded-circle
-                            d-flex align-items-center justify-content-center
-                            fw-bold flex-shrink-0"
-                            style="width:48px;height:48px;font-size:18px">
-                            ${a.agent?.prenom?.[0]?.toUpperCase() || 'A'}
-                        </div>
-                        <div class="flex-grow-1">
-                            <p class="fw-bold mb-0">
-                                ${a.agent?.prenom || ''} ${a.agent?.nom || ''}
+        return `
+            <a href="chat.html?conversation_id=${c.id}"
+               class="conv-item ${nonLus > 0 ? 'non-lu' : ''}">
+                <div class="d-flex align-items-start gap-3">
+
+                    <!-- Avatar -->
+                    <div class="avatar">${initiale}</div>
+
+                    <!-- Contenu -->
+                    <div class="flex-grow-1" style="min-width:0">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <p class="fw-semibold mb-0">
+                                ${prenom} ${nom}
+                                ${nonLus > 0
+                                    ? `<span class="badge bg-danger ms-1"
+                                        style="font-size:10px">${nonLus}</span>`
+                                    : ''}
                             </p>
-                            <p class="text-muted small mb-0">
+                            <span class="date-msg">${date}</span>
+                        </div>
+
+                        <p class="apercu mb-0">${apercu}</p>
+
+                        ${c.annonce ? `
+                            <span class="annonce-info">
                                 <i class="bi bi-house me-1"></i>
-                                ${a.titre}
-                            </p>
-                        </div>
-                        <a href="annonce-detail.html?id=${a.id}"
-                            class="btn btn-outline-primary btn-sm">
-                            Voir l'annonce
-                        </a>
-                    </div>`
-            }
-
-            document.getElementById('pageContenu').innerHTML = `
-                <div class="row justify-content-center">
-                    <div class="col-12 col-md-8">
-                        ${infoAgent}
-                        <div class="chat-container">
-                            <div class="chat-messages"
-                                id="zoneMessages">
-                                <div class="text-center py-3 text-muted small">
-                                    Début de la conversation
-                                </div>
-                            </div>
-                            <div class="chat-input-zone">
-                                <div class="input-group">
-                                    <input type="text"
-                                        id="inputMessage"
-                                        class="form-control form-control-lg"
-                                        placeholder="Ecrivez votre message..."
-                                        onkeypress="if(event.key==='Enter')envoyerMessage()">
-                                    <button class="btn btn-primary px-4"
-                                        onclick="envoyerMessage()">
-                                        <i class="bi bi-send-fill"></i>
-                                    </button>
-                                </div>
-                                <p class="text-muted small mt-2 mb-0">
-                                    <i class="bi bi-lock me-1"></i>
-                                    Messages directs avec l'agent
-                                </p>
-                            </div>
-                        </div>
+                                ${c.annonce.titre || ''}
+                                — ${formatPrix(c.annonce.prix)}
+                            </span>` : ''}
                     </div>
-                </div>`
 
-            chargerMessages()
-            // Actualiser toutes les 5 secondes
-            intervalId = setInterval(chargerMessages, 100000)
-
-        } catch (e) {
-            console.error(e)
-        }
-    }
-
-    async function chargerMessages() {
-        try {
-            const messages = await apiRequest(
-                `/utilisateur/chat/${idAgent}`,
-                'GET', null, true
-            )
-            afficherMessages(messages, 'utilisateur')
-        } catch (e) {
-            console.error(e)
-        }
-    }
-
-    async function envoyerMessage() {
-        const input   = document.getElementById('inputMessage')
-        const contenu = input.value.trim()
-        if (!contenu) return
-
-        input.value   = ''
-        input.disabled = true
-
-        try {
-            await apiRequest('/utilisateur/chat/envoyer', 'POST', {
-                id_agent   : parseInt(idAgent),
-                contenu,
-                id_annonce : params.get('annonce')
-                    ? parseInt(params.get('annonce')) : null,
-            }, true)
-            await chargerMessages()
-        } catch (e) {
-            console.error(e)
-            showAlert('Erreur envoi message.', 'danger')
-        } finally {
-            input.disabled = false
-            input.focus()
-        }
-    }
-
-    // ============================================
-    // CHAT AGENT
-    // ============================================
-    async function chargerChatAgent() {
-        document.getElementById('pageContenu').innerHTML = `
-            <div class="row g-4">
-                <div class="col-12 col-md-4">
-                    <div class="bg-white rounded-3 border">
-                        <div class="p-3 border-bottom">
-                            <h5 class="fw-bold mb-0">Conversations</h5>
-                        </div>
-                        <div id="listeConversations">
-                            <div class="text-center py-4">
-                                <div class="spinner-border
-                                    spinner-border-sm text-primary">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Flèche -->
+                    <i class="bi bi-chevron-right text-muted flex-shrink-0 mt-1"></i>
                 </div>
-                <div class="col-12 col-md-8">
-                    <div id="zoneChat">
-                        <div class="text-center py-5 text-muted">
-                            <i class="bi bi-chat-dots
-                                fs-1 d-block mb-3 opacity-25"></i>
-                            <p>Selectionnez une conversation</p>
-                        </div>
-                    </div>
-                </div>
-            </div>`
+            </a>`
+    }).join('')
+}
 
-        chargerConversations()
-        intervalId = setInterval(chargerConversations, 100000)
-    }
+// ── Helpers ──────────────────────────────────────────────────
+function formaterDate(dateStr) {
+    const d    = new Date(dateStr)
+    const now  = new Date()
+    const diff = now - d
 
-    async function chargerConversations() {
-        try {
-            const conversations = await apiRequest(
-                '/agent/conversations',
-                'GET', null, true
-            )
-            const container = document.getElementById('listeConversations')
+    if (diff < 60000)        return 'À l\'instant'
+    if (diff < 3600000)      return Math.floor(diff / 60000) + ' min'
+    if (diff < 86400000)     return Math.floor(diff / 3600000) + 'h'
+    if (diff < 604800000)    return Math.floor(diff / 86400000) + 'j'
 
-            if (!conversations || conversations.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-5 text-muted small">
-                        <i class="bi bi-chat-dots
-                            d-block fs-3 mb-2 opacity-25"></i>
-                        Aucune conversation
-                    </div>`
-                return
-            }
+    return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+}
 
-            container.innerHTML = conversations.map(c => `
-                <div class="conversation-item
-                    ${idUser == c.utilisateur?.id ? 'active' : ''}"
-                    onclick="ouvrirConversation(
-                        ${c.utilisateur?.id},
-                        '${c.utilisateur?.prenom} ${c.utilisateur?.nom}'
-                    )">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="bg-primary text-white rounded-circle
-                            d-flex align-items-center justify-content-center
-                            fw-bold flex-shrink-0"
-                            style="width:40px;height:40px;font-size:15px">
-                            ${c.utilisateur?.prenom?.[0]?.toUpperCase() || 'U'}
-                        </div>
-                        <div class="flex-grow-1 min-width-0">
-                            <div class="d-flex justify-content-between">
-                                <p class="fw-semibold small mb-0 text-truncate">
-                                    ${c.utilisateur?.prenom || ''}
-                                    ${c.utilisateur?.nom || ''}
-                                </p>
-                                ${c.non_lus > 0 ? `
-                                    <span class="badge bg-primary
-                                        rounded-pill ms-1 flex-shrink-0">
-                                        ${c.non_lus}
-                                    </span>` : ''}
-                            </div>
-                            <p class="text-muted text-truncate mb-0"
-                                style="font-size:12px">
-                                ${c.dernier_message || ''}
-                            </p>
-                        </div>
-                    </div>
-                </div>`).join('')
-
-            // Ouvrir la conversation sélectionnée
-            if (idUser) {
-                const conv = conversations.find(
-                    c => c.utilisateur?.id == idUser
-                )
-                if (conv) {
-                    ouvrirConversation(
-                        conv.utilisateur?.id,
-                        `${conv.utilisateur?.prenom} ${conv.utilisateur?.nom}`
-                    )
-                }
-            }
-
-        } catch (e) {
-            console.error(e)
-        }
-    }
-
-    async function ouvrirConversation(idUtilisateur, nomUtilisateur) {
-        // Mettre à jour l'URL
-        const url = new URL(window.location)
-        url.searchParams.set('user', idUtilisateur)
-        window.history.pushState({}, '', url)
-
-        document.getElementById('zoneChat').innerHTML = `
-            <div class="bg-white rounded-3 border h-100 d-flex
-                flex-col" style="flex-direction:column">
-                <div class="p-3 border-bottom d-flex
-                    align-items-center gap-3">
-                    <div class="bg-primary text-white rounded-circle
-                        d-flex align-items-center justify-content-center
-                        fw-bold"
-                        style="width:40px;height:40px;font-size:15px">
-                        ${nomUtilisateur?.[0]?.toUpperCase() || 'U'}
-                    </div>
-                    <div>
-                        <p class="fw-bold mb-0 small">
-                            ${nomUtilisateur}
-                        </p>
-                        <p class="text-muted mb-0"
-                            style="font-size:11px">
-                            Utilisateur
-                        </p>
-                    </div>
-                </div>
-                <div class="chat-messages flex-grow-1 m-3"
-                    id="zoneMessages" style="height:400px">
-                    <div class="text-center py-3 text-muted small">
-                        Chargement...
-                    </div>
-                </div>
-                <div class="p-3 border-top">
-                    <div class="input-group">
-                        <input type="text"
-                            id="inputMessage"
-                            class="form-control"
-                            placeholder="Repondre..."
-                            onkeypress="if(event.key==='Enter')
-                                envoyerMessageAgent(${idUtilisateur})">
-                        <button class="btn btn-primary"
-                            onclick="envoyerMessageAgent(${idUtilisateur})">
-                            <i class="bi bi-send-fill"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>`
-
-        // Charger les messages
-        try {
-            const messages = await apiRequest(
-                `/agent/chat/${idUtilisateur}`,
-                'GET', null, true
-            )
-            afficherMessages(messages, 'agent')
-        } catch (e) {
-            console.error(e)
-        }
-    }
-
-    async function envoyerMessageAgent(idUtilisateur) {
-        const input   = document.getElementById('inputMessage')
-        const contenu = input.value.trim()
-        if (!contenu) return
-
-        input.value    = ''
-        input.disabled = true
-
-        try {
-            await apiRequest('/agent/chat/envoyer', 'POST', {
-                id_utilisateur : idUtilisateur,
-                contenu,
-            }, true)
-
-            const messages = await apiRequest(
-                `/agent/chat/${idUtilisateur}`,
-                'GET', null, true
-            )
-            afficherMessages(messages, 'agent')
-
-        } catch (e) {
-            console.error(e)
-        } finally {
-            input.disabled = false
-            input.focus()
-        }
-    }
-
-    // ============================================
-    // AFFICHER LES MESSAGES
-    // ============================================
-    function afficherMessages(messages, roleConnecte) {
-        const zone = document.getElementById('zoneMessages')
-        if (!zone) return
-
-        if (!messages || messages.length === 0) {
-            zone.innerHTML = `
-                <div class="text-center py-4 text-muted small">
-                    Aucun message. Commencez la conversation.
-                </div>`
-            return
-        }
-
-        zone.innerHTML = messages.map(m => {
-            const estMoi  = m.expediteur === roleConnecte
-            const heure   = new Date(m.created_at)
-                .toLocaleTimeString('fr-FR', {
-                    hour: '2-digit', minute: '2-digit'
-                })
-            const date    = new Date(m.created_at)
-                .toLocaleDateString('fr-FR', {
-                    day: '2-digit', month: 'short'
-                })
-
-            return `
-                <div class="d-flex ${estMoi
-                    ? 'justify-content-end' : 'justify-content-start'}
-                    mb-3">
-                    <div class="message-bubble ${estMoi
-                        ? 'message-envoye' : 'message-recu'}">
-                        <p class="mb-1">${m.contenu}</p>
-                        <p class="message-time
-                            ${estMoi ? 'text-end' : 'text-start'}">
-                            ${date} ${heure}
-                            ${estMoi && m.lu
-                                ? ' Lu' : ''}
-                        </p>
-                    </div>
-                </div>`
-        }).join('')
-
-        // Scroller vers le bas
-        zone.scrollTop = zone.scrollHeight
-    }
-
-    // Nettoyer l'intervalle quand on quitte la page
-    window.addEventListener('beforeunload', function() {
-        if (intervalId) clearInterval(intervalId)
-    })
-
-    function showAlert(msg, type) {
-        const el = document.createElement('div')
-        el.className = `alert alert-${type} position-fixed
-            bottom-0 end-0 m-3`
-        el.style.zIndex = '9999'
-        el.textContent  = msg
-        document.body.appendChild(el)
-        setTimeout(() => el.remove(), 3000)
-    }
 </script>
 </body>
 </html>

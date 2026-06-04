@@ -25,9 +25,11 @@ const PAGES_PUBLIQUES = [
 // Pages réservées aux utilisateurs connectés
 const PAGES_UTILISATEUR = [
     'recommandations.html',
-    'recherche-contextuelle.html',
     'recherche-description.html',
     'mes-favoris.html',
+    'mes-messages.html',  
+    
+
 ]
 
 // Pages réservées aux agents

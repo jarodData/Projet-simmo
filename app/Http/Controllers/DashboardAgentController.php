@@ -49,16 +49,24 @@ class DashboardAgentController extends Controller
             ->orderBy('mois', 'desc')
             ->limit(6)
             ->get();
-
+$nbServicesRendus = \App\Models\Message::whereHas('conversation', function($q) use ($agent) {
+    $q->where('agent_id', $agent->id);
+})->where('expediteur_id', '!=', $agent->id)
+  ->count();
         return response()->json([
-            'agent'              => $agent->load('plan'),
-            'statistiques_mois'  => $statMois,
-            'annonces_actives'   => $annoncesActives,
-            'contacts_non_lus'   => $contactsNonLus,
-            'dernieres_annonces' => $dernieresAnnonces,
-            'derniers_contacts'  => $derniersContacts,
-            'stats_6_mois'       => $stats6Mois,
-        ]);
+    'agent'              => $agent->load('plan'),
+    'statistiques_mois'  => [
+        'nb_vues_total'      => $statMois?->nb_vues_total      ?? $agent->annonces()->sum('vues'),
+        'nb_contacts_recus'  => $statMois?->nb_contacts_recus  ?? $contactsNonLus,
+        'nb_services_rendus' => $statMois?->nb_services_rendus ?? $nbServicesRendus,
+        'nb_annonces_publiees'=> $statMois?->nb_annonces_publiees ?? $annoncesActives,
+    ],
+    'annonces_actives'   => $annoncesActives,
+    'contacts_non_lus'   => $contactsNonLus,
+    'dernieres_annonces' => $dernieresAnnonces,
+    'derniers_contacts'  => $derniersContacts,
+    'stats_6_mois'       => $stats6Mois,
+]);
     }
 
     //  LISTE DES UTILISATEURS QUI ONT CONTACTÉ L'AGENT

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Dict, Optional, List ,Any
 
 class RequeteRecommandation(BaseModel):
     user_id        : Optional[int]  = None
@@ -44,6 +44,7 @@ class RequetePrixPredit(BaseModel):
     nb_chambres         : int
     meuble              : bool
     type_transaction    : str
+    quartier            : str= "Inconnu"
 
 class ReponsePrixPredit(BaseModel):
     prix_estime         : float
@@ -101,3 +102,12 @@ class ReponseContextuelle(BaseModel):
     lieu_geocode       : Optional[dict]
     lieux_culte_trouves: Optional[list]
     annonces           : list
+class RequeteNLP(BaseModel):
+    description : str
+    limite      : Optional[int] = 12    
+
+class ReponseNLP(BaseModel):
+    criteres_extraits : Dict[str, Any]
+    mots_cles_nlp     : List[str]
+    recommandations   : List[Dict[str, Any]]
+    total             : int    

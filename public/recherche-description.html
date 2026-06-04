@@ -555,8 +555,8 @@ function scorerAnnonces(annonces, criteres, texteOriginal) {
         let raisons = []
 
         // ── Type de bien (30pts) ──────────────
-        if (criteres.type_bien && a.categorie) {
-            if (a.categorie.toLowerCase().includes(criteres.type_bien)) {
+        if (criteres.categories_bien && a.id_categorie) {
+            if (a.id_categorie.toLowerCase().includes(criteres.type_bien)) {
                 score += 30
                 raisons.push(`type de bien correspondant`)
             }
@@ -836,7 +836,7 @@ function afficherResultats(annonces) {
                     <!-- Infos -->
                     <div class="p-3">
                         <p class="text-primary small fw-bold text-uppercase mb-1">
-                            ${a.categorie?.libelle || ''}
+                            ${a.id_categorie?.libelle || ''}
                         </p>
                         <h6 class="fw-bold mb-1 text-truncate">${a.titre}</h6>
                         <p class="text-muted small mb-2">

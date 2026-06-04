@@ -14,6 +14,10 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\FavoriController;
 use App\Http\Controllers\ChattController;
 
+use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Request; // ✅ déjà importé normalement
+
+
 // ============================================
 // ROUTES PUBLIQUES (sans token)
 // ============================================
@@ -28,6 +32,29 @@ Route::get('/test-mail', function () {
     Mail::raw('Test SIMMo', function ($m) {
         $m->to('tonmail@gmail.com')->subject('Test');
     });
+});
+
+// Route publique pour lister les agents
+// ✅ Route directe sans controller
+Route::get('/agents', function() {
+    $agents = \App\Models\AgentImmobilier::where('statut', 'actif')
+        ->withCount('annonces')
+        ->with('plan')
+        ->select('id', 'nom', 'prenom', 'email', 'telephone', 'statut')
+        ->get()
+        ->map(function($a) {
+            return [
+                'id'            => $a->id,
+                'nom'           => $a->nom,
+                'prenom'        => $a->prenom,
+                'email'         => $a->email,
+                'telephone'     => $a->telephone,
+                'nb_annonces'   => $a->annonces_count,
+                'plan'          => $a->plan,
+            ];
+        });
+
+    return response()->json($agents);
 });
 
 // ============================================
@@ -311,3 +338,22 @@ Route::middleware('auth:utilisateur,agent')->prefix('favoris')->group(function (
     Route::post('toggle',[FavoriController::class, 'toggle']);
     Route::delete('vider',[FavoriController::class, 'viderTout']);
 });    
+
+// // ✅ Ajoute $request en paramètre de chaque closure
+// Route::post('/ia/recommander', function (Request $request) {
+//     $response = Http::post('http://127.0.0.1:8001/api/ia/recommander', 
+//         $request->all());
+//     return $response->json();
+// });
+
+// Route::post('/ia/recherche-contextuelle', function (Request $request) {
+//     $response = Http::post('http://127.0.0.1:8001/api/ia/recherche-contextuelle', 
+//         $request->all());
+//     return $response->json();
+// });
+
+// Route::post('/ia/recherche-description', function (Request $request) {
+//     $response = Http::post('http://127.0.0.1:8001/api/ia/recherche-description', 
+//         $request->all());
+//     return $response->json();
+// });

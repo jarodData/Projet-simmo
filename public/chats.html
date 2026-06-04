@@ -333,7 +333,7 @@ async function chargerMessages() {
             }
         )
 
-        //Remplace login.html par le bon login
+        
 if (res.status === 401) {
     clearInterval(intervalId)
     localStorage.removeItem('redirect_after_login')
@@ -362,8 +362,11 @@ if (res.status === 401) {
 
         nouveaux.forEach(m => {
             // Séparateur de date si nouveau jour
+             console.log('created_at:', m.created_at)
+
             const jour = new Date(m.created_at).toLocaleDateString('fr-FR', {
-                weekday: 'long', day: 'numeric', month: 'long'
+                weekday: 'long', day: 'numeric', month: 'long',timeZone: 'Africa/Douala'
+                
             })
             if (jour !== dateAffichee) {
                 dateAffichee    = jour
@@ -459,8 +462,11 @@ function ajusterHauteur(el) {
 }
 
 function formaterHeure(dateStr) {
+    if (!dateStr) return ''
     return new Date(dateStr).toLocaleTimeString('fr-FR', {
-        hour: '2-digit', minute: '2-digit'
+        hour    : '2-digit',
+        minute  : '2-digit',
+        timeZone: 'Africa/Douala' // ✅ UTC+1 Cameroun
     })
 }
 

@@ -7,6 +7,17 @@ const CONFIG = {
     IA_KEY     : 'simmo-secret-key-2026',
 }
 
+// const BASE_URL = window.location.origin
+
+// const CONFIG = {
+//     API_URL    : BASE_URL + '/api',
+//     STORAGE_URL: BASE_URL + '/storage',
+//     IA_URL     : window.location.origin,
+//     IA_KEY     : 'simmo-secret-key-2026',
+// }
+
+
+
 // ── TOKEN : agent ET utilisateur ont le même token key ──────
 // Admin garde ses propres clés séparées
 
@@ -24,7 +35,7 @@ function getAdmin()      { try { return JSON.parse(localStorage.getItem('simmo_a
 function sauvegarderSession(token, user) {
     localStorage.setItem('token', token)
     localStorage.setItem('user',  JSON.stringify(user))
-    // ✅ role toujours propre
+    // role toujours propre
     const role = (user.role === 'agent' || user.type === 'agent')
         ? 'agent' : 'utilisateur'
     localStorage.setItem('role', role)
@@ -204,7 +215,17 @@ function initNavbar() {
                 <li><a class="dropdown-item" href="profil.html">
                     <i class="bi bi-person me-2 text-primary"></i>Mon profil</a></li>
                 ${!estAgent() ? `<li><a class="dropdown-item" href="mes-favoris.html">
-                    <i class="bi bi-heart-fill text-danger me-2"></i>Mes favoris</a></li>` : ''}
+                    <i class="bi bi-heart-fill text-danger me-2"></i>Mes favoris</a></li>
+                    ` : ''}
+                    
+${!estAgent() ? `
+<li>
+    <a class="dropdown-item" href="chats.html">
+        <i class="bi bi-chat-dots me-2 text-primary"></i>
+        Mes messages
+        <span class="badge bg-danger ms-1 d-none" id="badgeNavMessages"></span>
+    </a>
+</li>` : ''}
                 ${estAgent() ? `
                 <li><a class="dropdown-item" href="dashboard.html">
                     <i class="bi bi-grid me-2 text-primary"></i>Dashboard</a></li>

@@ -60,7 +60,11 @@ def fetch_annonces(db: Session):
             LEFT JOIN photos_annonces p
                 ON  p.id_annonce = a.id
                 AND p.est_principale = 1
-            WHERE a.statut = 'active'
+            WHERE a.statut = 'active' 
+            AND a.prix > 10000
+            AND a.prix < 1000000 -- < 1 milliard
+            AND a.surface_m2 > 10
+            AND a.surface_m2 < 1000
             ORDER BY a.id DESC
         """)
 
@@ -74,7 +78,7 @@ def fetch_annonces(db: Session):
                 "prix"            : float(row["prix"] or 0),
                 "categorie"       : str(row["categorie"] or ""),
                 "ville"           : str(row["ville"] or ""),
-                "quartier"        : row["quartier"],
+                "quartier"        : row["quartier"] if row["quartier"] else "Inconnue",
                 "surface_m2"      : float(row["surface_m2"]) if row["surface_m2"] else None,
                 "nb_chambres"     : int(row["nb_chambres"])   if row["nb_chambres"] else None,
                 "meuble"          : bool(row["meuble"]),

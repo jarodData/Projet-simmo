@@ -1,268 +1,157 @@
 import requests
-import math
-from typing import Optional
+from geopy.geocoders import Nominatim
+from geopy.distance import geodesic
+import time
+from functools import lru_cache
 
 class ScoringContextuel:
+    def __init__(self):
+        # 1. USER_AGENT OBLIGATOIRE sinon Nominatim = 403
+        self.geolocator = Nominatim(user_agent="SIMMo-App/1.0")
+        self.overpass_url = "https://overpass-api.de/api/interpreter"
+        # 2. Cache simple pour éviter de spammer l'API
+        self._cache_geocode = {}
+        print("ScoringContextuel initialisé avec Nominatim et Overpass")
+    @lru_cache(maxsize=100)
+    
+    def geocoder_lieu(self, nom, ville):
+        """Convertit 'Université de Yaoundé I, Yaoundé' → lat, lon"""
+        query = f"{nom}, {ville}, Cameroun"
 
-    # ── Lieux de culte reconnus ──────────────
-    LIEUX_CULTE = {
-        # Musulman
-        'musulman'  : ['mosque', 'place_of_worship'],
-        'islam'     : ['mosque', 'place_of_worship'],
-        'mosquee'   : ['mosque'],
+        # Cache local
+        if query in self._cache_geocode:
+            return self._cache_geocode[query]
 
-        # Chrétien catholique
-        'catholique': ['place_of_worship'],
-        'catholic'  : ['place_of_worship'],
-
-        # Chrétien protestant
-        'protestant': ['place_of_worship'],
-        'chretien'  : ['place_of_worship'],
-        'eglise'    : ['place_of_worship'],
-
-        # Loisirs & commodités
-        'marche'    : ['marketplace', 'market'],
-        'hopital'   : ['hospital', 'clinic'],
-        'pharmacie' : ['pharmacy'],
-        'ecole'     : ['school', 'university', 'college'],
-        'universite': ['university', 'college'],
-        'stade'     : ['stadium', 'sports_centre'],
-        'supermarche': ['supermarket', 'mall'],
-        'restaurant': ['restaurant', 'fast_food'],
-        'banque'    : ['bank', 'atm'],
-    }
-
-    # ── Religion → tag OSM ───────────────────
-    RELIGION_TAGS = {
-        'musulman'  : 'muslim',
-        'islam'     : 'muslim',
-        'catholique': 'christian',
-        'protestant': 'christian',
-        'chretien'  : 'christian',
-    }
-
-    def geocoder_lieu(self, nom_lieu: str, ville: str = '') -> Optional[dict]:
-        """
-        Géocode un lieu via Nominatim (OpenStreetMap)
-        Retourne les coordonnées GPS
-        """
         try:
-            query = f"{nom_lieu}, {ville}, Cameroun" if ville else f"{nom_lieu}, Cameroun"
-            url   = "https://nominatim.openstreetmap.org/search"
-            params = {
-                'q'              : query,
-                'format'         : 'json',
-                'limit'          : 1,
-                'addressdetails' : 1,
-            }
-            headers = {'User-Agent': 'SIMMo-App/1.0'}
-            response = requests.get(url, params=params, headers=headers, timeout=5)
-            data     = response.json()
-
-            if data:
-                return {
-                    'nom'      : data[0].get('display_name', nom_lieu),
-                    'latitude' : float(data[0]['lat']),
-                    'longitude': float(data[0]['lon']),
-                    'type'     : data[0].get('type', ''),
+            location = self.geolocator.geocode(query, timeout=10)
+            if location:
+                result = {
+                    'nom': location.address,
+                    'latitude': location.latitude,
+                    'longitude': location.longitude
                 }
-            return None
+                self._cache_geocode[query] = result
+                time.sleep(1) # Respect rate limit Nominatim: 1 req/sec
+                return result
         except Exception as e:
-            print(f"Erreur géocodage: {e}")
-            return None
+            print(f"Erreur geocodage {query}: {e}")
 
-    def chercher_lieux_proches(self, lat: float, lon: float,
-                                type_lieu: str, religion: str = None,
-                                rayon_km: float = 3) -> list:
+        return None
+    
+
+    def chercher_lieux_proches(self, lat, lon, type_lieu, religion=None, rayon_km=2):
+        """Overpass API pour trouver mosquées, écoles, hôpitaux..."""
+        # 3. TIMEOUT 10s sinon ça freeze
+        query = f"""
+        [out:json][timeout:10];
+        (
+          node["{type_lieu}"](around:{rayon_km*1000},{lat},{lon});
+          way["{type_lieu}"](around:{rayon_km*1000},{lat},{lon});
+        );
+        out center 20;
         """
-        Cherche des lieux via Overpass API (OpenStreetMap)
-        autour de coordonnées GPS
-        """
+
+        if religion:
+            query = query.replace(f'["{type_lieu}"]', f'["{type_lieu}"]["religion"="{religion}"]')
+
         try:
-            rayon_m = rayon_km * 1000
-
-            # Construction de la requête Overpass
-            if religion and religion.lower() in self.RELIGION_TAGS:
-                tag_religion = self.RELIGION_TAGS[religion.lower()]
-                query = f"""
-                [out:json][timeout:10];
-                (
-                    node["amenity"="place_of_worship"]
-                       ["religion"="{tag_religion}"]
-                       (around:{rayon_m},{lat},{lon});
-                    way["amenity"="place_of_worship"]
-                       ["religion"="{tag_religion}"]
-                       (around:{rayon_m},{lat},{lon});
-                );
-                out center;
-                """
-            else:
-                amenities = self.LIEUX_CULTE.get(
-                    type_lieu.lower(), [type_lieu.lower()]
-                )
-                amenity_filters = ''.join([
-                    f'node["amenity"="{a}"](around:{rayon_m},{lat},{lon});'
-                    for a in amenities
-                ])
-                query = f"""
-                [out:json][timeout:10];
-                ({amenity_filters});
-                out center;
-                """
-
-            response = requests.post(
-                'https://overpass-api.de/api/interpreter',
-                data=query,
-                timeout=15
-            )
-            data = response.json()
+            r = requests.post(self.overpass_url, data=query, timeout=10)
+            r.raise_for_status()
+            data = r.json()
 
             lieux = []
-            for element in data.get('elements', [])[:10]:
-                lat_lieu = element.get('lat') or element.get('center', {}).get('lat')
-                lon_lieu = element.get('lon') or element.get('center', {}).get('lon')
-                tags     = element.get('tags', {})
-
-                if lat_lieu and lon_lieu:
-                    distance = self._haversine(lat, lon, lat_lieu, lon_lieu)
+            for el in data.get('elements', []):
+                lat2 = el.get('lat') or el.get('center', {}).get('lat')
+                lon2 = el.get('lon') or el.get('center', {}).get('lon')
+                if lat2 and lon2:
+                    dist = geodesic((lat, lon), (lat2, lon2)).km
                     lieux.append({
-                        'nom'      : tags.get('name', type_lieu),
-                        'latitude' : lat_lieu,
-                        'longitude': lon_lieu,
-                        'distance_km': round(distance, 2),
-                        'type'     : tags.get('amenity', type_lieu),
+                        'nom': el.get('tags', {}).get('name', 'Sans nom'),
+                        'distance_km': round(dist, 2),
+                        'lat': lat2,
+                        'lon': lon2
                     })
-
-            # Trier par distance
-            lieux.sort(key=lambda x: x['distance_km'])
-            return lieux
-
+            return sorted(lieux, key=lambda x: x['distance_km'])
         except Exception as e:
             print(f"Erreur Overpass: {e}")
             return []
 
-    def scorer_annonces_par_contexte(self, annonces: list,
-                                      lat_ref: float, lon_ref: float,
-                                      rayon_max_km: float = 5) -> list:
+    def scorer_annonces_par_contexte(self, annonces, lat_travail, lon_travail, rayon_km=2):
         """
-        Score chaque annonce selon sa proximité
-        avec le point de référence (lieu de travail, école, etc.)
+        Modifie directement les annonces pour ajouter prix_moyen_marche
+        Retourne une liste de floats [0.95, 0.3, 0.7,...]
         """
-        scores = []
+        scores_proximite = []  #
+    
+    # 1. Calcule le prix moyen du marché 1 seule fois = montant vert
+        prix_moyen_marche = self.calculer_prix_moyen_marche('Chambre', 'Douala')
+
         for annonce in annonces:
-            lat_a = annonce.get('latitude')
-            lon_a = annonce.get('longitude')
+        # 2. Ajoute le prix moyen à chaque annonce
+            annonce['prix_moyen_marche'] = prix_moyen_marche
 
-            if not lat_a or not lon_a:
-                scores.append(0.3)
-                continue
+        # 3. Calcule score distance
+        if 'latitude' in annonce and 'longitude' in annonce and annonce['latitude'] and annonce['longitude']:
+            try:
+                dist = geodesic((lat_travail, lon_travail),
+                               (annonce['latitude'], annonce['longitude'])).km
 
-            distance = self._haversine(
-                lat_ref, lon_ref,
-                float(lat_a), float(lon_a)
-            )
+                # Score: 1.0 si 0km, 0.0 si >=10km
+                score = max(0, 1 - dist/10)
+                annonce['distance_km'] = round(dist, 2)
+            except:
+                score = 0.5
+                annonce['distance_km'] = None
+        else:
+            score = 0.5
+            annonce['distance_km'] = None
 
-            # Score décroissant selon la distance
-            if distance <= 0.5:
-                score = 1.0
-            elif distance <= 1:
-                score = 0.9
-            elif distance <= 2:
-                score = 0.75
-            elif distance <= 3:
-                score = 0.6
-            elif distance <= 5:
-                score = 0.4
-            elif distance <= 10:
-                score = 0.2
-            else:
-                score = 0.0
+        scores_proximite.append(round(score, 2)) # ← juste le float
 
-            scores.append(round(score, 4))
-
-        return scores
-
-    def analyser_contexte_quartier(self, lat: float, lon: float) -> dict:
-        """
-        Analyse l'environnement d'un quartier :
-        nombre de mosquées, églises, écoles, hôpitaux, marchés à proximité
-        """
+        return scores_proximite
+        # 7. Trie par meilleur score
+        # return sorted(annonces_scored, key=lambda x: x['score_contextuel'], reverse=True)
+    def calculer_prix_moyen_marche(self, type_bien, ville, quartier=None):
         try:
-            query = f"""
-            [out:json][timeout:15];
-            (
-                node["amenity"~"mosque|place_of_worship|school|university|
-                     hospital|clinic|pharmacy|marketplace|supermarket|bank"]
-                    (around:2000,{lat},{lon});
-            );
-            out;
-            """
-            response = requests.post(
-                'https://overpass-api.de/api/interpreter',
-                data=query,
-                timeout=20
-            )
-            data     = response.json()
-            elements = data.get('elements', [])
-
-            analyse = {
-                'lieux_culte'  : 0,
-                'mosquees'     : 0,
-                'eglises'      : 0,
-                'ecoles'       : 0,
-                'hopitaux'     : 0,
-                'pharmacies'   : 0,
-                'marches'      : 0,
-                'banques'      : 0,
-                'score_services': 0.0,
+            prix_base = {
+                'Chambre': 65000,
+                'Studio': 120000,
+                'Appartement': 200000,
+                'Villa': 450000
             }
+            prix_base_val = prix_base.get(type_bien, 80000)
 
-            for e in elements:
-                tags    = e.get('tags', {})
-                amenity = tags.get('amenity', '')
-                religion = tags.get('religion', '')
+            if quartier:
+                quartier_lower = quartier.lower()
+                if 'bonapriso' in quartier_lower or 'bonanjo' in quartier_lower:
+                    prix_base_val *= 1.4  # +40% quartiers chics
+                elif 'bepanda' in quartier_lower or 'makepe' in quartier_lower:
+                    prix_base_val *= 1.1  # +10% quartiers moyens
+                elif 'nyalla' in quartier_lower or 'pk14' in quartier_lower:
+                    prix_base_val *= 0.85  # -15% quartiers populaires
 
-                if amenity == 'place_of_worship':
-                    analyse['lieux_culte'] += 1
-                    if religion == 'muslim':
-                        analyse['mosquees'] += 1
-                    elif religion == 'christian':
-                        analyse['eglises'] += 1
-                elif amenity in ['school', 'university', 'college']:
-                    analyse['ecoles'] += 1
-                elif amenity in ['hospital', 'clinic']:
-                    analyse['hopitaux'] += 1
-                elif amenity == 'pharmacy':
-                    analyse['pharmacies'] += 1
-                elif amenity in ['marketplace', 'supermarket']:
-                    analyse['marches'] += 1
-                elif amenity == 'bank':
-                    analyse['banques'] += 1
+            return round(prix_base_val)
+        except Exception:
+            return 80000  # prix par défaut si crash
+    def analyser_contexte_quartier(self, lat, lon, rayon_km=2):
+        compteur = {'lieux_culte': 0, 'mosquees': 0, 'eglises': 0,
+                    'ecoles': 0, 'hopitaux': 0, 'pharmacies': 0,
+                    'marches': 0, 'banques': 0}
 
-            # Score global des services du quartier
-            score = min(
-                (analyse['ecoles']    * 0.2 +
-                 analyse['hopitaux']  * 0.25 +
-                 analyse['pharmacies']* 0.15 +
-                 analyse['marches']   * 0.2 +
-                 analyse['banques']   * 0.1 +
-                 analyse['lieux_culte'] * 0.1) / 3,
-                1.0
-            )
-            analyse['score_services'] = round(score, 4)
+        mosquees = self.cher_lieux_proches(lat, lon, 'place_of_worship', 'muslim', rayon_km)
+        compteur['mosquees'] = len(mosquees)
+        compteur['lieux_culte'] += len(mosquees)
 
-            return analyse
+        eglises = self.cher_lieux_proches(lat, lon, 'place_of_worship', 'christian', rayon_km)
+        compteur['eglises'] = len(eglises)
+        compteur['lieux_culte'] += len(eglises)
 
-        except Exception as e:
-            print(f"Erreur analyse quartier: {e}")
-            return {}
+        compteur['ecoles'] = len(self.cher_lieux_proches(lat, lon, 'amenity', 'school', rayon_km))
+        compteur['hopitaux'] = len(self.cher_lieux_proches(lat, lon, 'amenity', 'hospital', rayon_km))
+        compteur['pharmacies'] = len(self.cher_lieux_proches(lat, lon, 'amenity', 'pharmacy', rayon_km))
+        compteur['marches'] = len(self.cher_lieux_proches(lat, lon, 'amenity', 'marketplace', rayon_km))
+        compteur['banques'] = len(self.cher_lieux_proches(lat, lon, 'amenity', 'bank', rayon_km))
 
-    @staticmethod
-    def _haversine(lat1, lon1, lat2, lon2) -> float:
-        R = 6371
-        lat1, lon1 = math.radians(lat1), math.radians(lon1)
-        lat2, lon2 = math.radians(lat2), math.radians(lon2)
-        dlat = lat2 - lat1
-        dlon = lon2 - lon1
-        a = math.sin(dlat/2)**2 + math.cos(lat1)*math.cos(lat2)*math.sin(dlon/2)**2
-        return R * 2 * math.asin(math.sqrt(a))
+        total = sum(compteur.values())
+        compteur['score_services'] = round(min(1.0, total / 20), 2)
+        return compteur
