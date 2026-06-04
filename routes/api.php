@@ -114,6 +114,8 @@ Route::middleware('auth:sanctum')
         Route::get('/mes-contacts',
             [ContactController::class, 'mesContactsUtilisateur']);
     });
+    // routes/api.php
+Route::post('/contact/agent', [ContactController::class, 'envoyerMessage']);
 
 // ============================================
 // ROUTES AGENT CONNECTÉ
@@ -357,3 +359,25 @@ Route::middleware('auth:utilisateur,agent')->prefix('favoris')->group(function (
 //         $request->all());
 //     return $response->json();
 // });
+
+// routes/web.php — section admin CNI à ajouter
+
+use App\Http\Controllers\Admin\CniController;
+
+// Groupe admin avec middleware auth + admin
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
+
+    // ── CNI ──────────────────────────────────────
+    Route::prefix('cni')->name('cni.')->group(function () {
+
+        Route::get ('/',                    [CniController::class, 'index'])    ->name('index');
+        Route::get ('/verifier',            [CniController::class, 'verifier']) ->name('verifier');
+        Route::get ('/{agent}',             [CniController::class, 'show'])     ->name('show');
+        Route::get ('/image/{agent}',       [CniController::class, 'image'])    ->name('image');
+        Route::get ('/stats/json',          [CniController::class, 'stats'])    ->name('stats');
+
+        Route::post('/analyser',            [CniController::class, 'analyser']) ->name('analyser');
+        Route::post('/valider/{agent}',     [CniController::class, 'valider'])  ->name('valider');
+        Route::post('/decision/{agent}',    [CniController::class, 'decision']) ->name('decision');
+    });
+});

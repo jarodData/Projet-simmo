@@ -5,6 +5,9 @@ use App\Models\Contact;
 use App\Models\Annonce;
 use App\Models\StatistiqueAgent;
 use Illuminate\Http\Request;
+// app/Http/Controllers/ContactController.php
+use Illuminate\Support\Facades\Mail;
+use App\Mail\MessageAgent;
 
 class ContactController extends Controller
 {
@@ -87,4 +90,26 @@ class ContactController extends Controller
 
         return response()->json($contacts);
     }
+
+    
+
+public function envoyerMessage(Request $request)
+{
+    $data = $request->validate([
+        'prenom'  => 'required|string',
+        'nom'     => 'required|string',
+        'email'   => 'required|email',
+        'sujet'   => 'required|string',
+        'message' => 'required|string|max:1000',
+        'copie'   => 'boolean',
+    ]);
+
+    Mail::to('agent@simmo.cm')->send(new MessageAgent($data));
+
+    if ($data['copie'] ?? false) {
+        Mail::to($data['email'])->send(new MessageAgent($data));
+    }
+
+    return response()->json(['message' => 'Envoyé avec succès.']);
+}
 }

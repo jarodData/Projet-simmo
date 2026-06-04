@@ -30,5 +30,16 @@ return [
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
+    
+    'anthropic' => [
+        'key' => env('ANTHROPIC_API_KEY'),
+    ],
 
 ];
+// return [
+//     // ... autres services existants ...
+
+//     'anthropic' => [
+//         'key' => env('ANTHROPIC_API_KEY'),
+//     ],
+// ];

@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>   
-     <link rel="shortcut icon" href="../favicon.png" type="image/png">
-
+<head>
+    <link rel="shortcut icon" href="../favicon.png" type="image/png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard — Admin SIMMo</title>
@@ -10,41 +9,135 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="../css/styles.css" rel="stylesheet">
     <style>
-        .admin-layout {
-            display    : flex;
-            min-height : 100vh;
+        :root {
+            --primary   : #2563eb;
+            --success   : #16a34a;
+            --warning   : #d97706;
+            --danger    : #dc2626;
+            --info      : #0891b2;
+            --purple    : #7c3aed;
+            --sidebar-w : 240px;
         }
+
+        /* ── Layout ── */
+        .admin-layout { display: flex; min-height: 100vh; }
         #adminSidebar {
-            width      : 240px;
-            min-width  : 240px;
-            background : white;
-            border-right: 1px solid #e2e8f0;
-            display    : flex;
-            flex-direction: column;
-            position   : sticky;
-            top        : 0;
-            height     : 100vh;
-            overflow-y : auto;
+            width: var(--sidebar-w); min-width: var(--sidebar-w);
+            background: white; border-right: 1px solid #e2e8f0;
+            display: flex; flex-direction: column;
+            position: sticky; top: 0; height: 100vh; overflow-y: auto;
         }
-        .admin-main {
-            flex       : 1;
-            background : #f8fafc;
-            overflow-x : hidden;
-        }
+        .admin-main { flex: 1; background: #f8fafc; overflow-x: hidden; }
+
+        /* ── Stat cards ── */
         .stat-card {
-            background   : white;
-            border-radius: 16px;
-            border       : 1px solid #e2e8f0;
-            padding      : 20px;
+            background: white; border-radius: 16px;
+            border: 1px solid #e2e8f0; padding: 20px;
+            transition: box-shadow .2s, transform .2s;
         }
+        .stat-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.07); transform: translateY(-2px); }
         .stat-icon {
-            width        : 48px;
-            height       : 48px;
-            border-radius: 12px;
-            display      : flex;
-            align-items  : center;
-            justify-content: center;
-            font-size    : 20px;
+            width: 48px; height: 48px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; font-size: 20px;
+        }
+        .stat-trend { font-size: 11px; font-weight: 600; }
+        .trend-up   { color: var(--success); }
+        .trend-down { color: var(--danger); }
+
+        /* ── Mini bar chart ── */
+        .sparkbar {
+            display: flex; align-items: flex-end; gap: 3px;
+            height: 32px; margin-top: 8px;
+        }
+        .sparkbar-col {
+            flex: 1; border-radius: 3px 3px 0 0;
+            background: #e0e7ff; transition: background .2s;
+            min-height: 4px;
+        }
+        .sparkbar-col.active { background: var(--primary); }
+
+        /* ── Quick actions ── */
+        .quick-action {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; gap: 8px; padding: 16px 8px;
+            background: white; border: 1px solid #e2e8f0; border-radius: 14px;
+            cursor: pointer; transition: all .2s; text-decoration: none; color: inherit;
+            font-size: 13px; font-weight: 600; text-align: center;
+        }
+        .quick-action:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(37,99,235,.1); }
+        .quick-action i { font-size: 22px; }
+
+        /* ── Activité feed ── */
+        .activity-item {
+            display: flex; align-items: flex-start; gap: 12px;
+            padding: 10px 0; border-bottom: 1px solid #f1f5f9;
+        }
+        .activity-item:last-child { border-bottom: none; }
+        .activity-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            margin-top: 5px; flex-shrink: 0;
+        }
+
+        /* ── Alertes système ── */
+        .alert-sys {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 16px; border-radius: 12px; margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        /* ── Taux de conversion ── */
+        .kpi-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 0; border-bottom: 1px solid #f1f5f9;
+        }
+        .kpi-row:last-child { border-bottom: none; }
+        .kpi-bar-track {
+            flex: 1; height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden;
+        }
+        .kpi-bar-fill { height: 100%; border-radius: 3px; transition: width .6s ease; }
+
+        /* ── Top villes ── */
+        .ville-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 0; font-size: 13px;
+        }
+        .ville-flag {
+            width: 28px; height: 28px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 700;
+        }
+
+        /* ── Hover bg util ── */
+        .hover-bg { transition: background .15s; }
+        .hover-bg:hover { background: #f8fafc; }
+
+        /* ── Badge statut ── */
+        .badge-actif    { background:#dcfce7; color:#16a34a; }
+        .badge-attente  { background:#fef9c3; color:#854d0e; }
+        .badge-suspendu { background:#fee2e2; color:#dc2626; }
+
+        /* ── Notifications badge ── */
+        .notif-badge {
+            position: absolute; top: -4px; right: -4px;
+            background: var(--danger); color: white;
+            font-size: 9px; font-weight: 700; min-width: 16px; height: 16px;
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            padding: 0 4px;
+        }
+
+        /* ── Refresh btn ── */
+        .btn-refresh { transition: transform .3s; }
+        .btn-refresh.spinning i { animation: spin .6s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Modal annonce rapide ── */
+        .annonce-preview {
+            border: 1px solid #e2e8f0; border-radius: 12px;
+            padding: 12px; margin-bottom: 8px; font-size: 13px;
+            display: flex; gap: 10px; align-items: center;
+        }
+        .annonce-preview img {
+            width: 52px; height: 52px; border-radius: 8px; object-fit: cover; flex-shrink: 0;
         }
     </style>
 </head>
@@ -57,89 +150,238 @@
     <!-- CONTENU PRINCIPAL -->
     <div class="admin-main p-4">
 
-        <!-- En-tête -->
-        <div class="d-flex justify-content-between
-            align-items-center mb-4">
+        <!-- ── En-tête ── -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h3 class="fw-bold mb-0">Tableau de bord</h3>
-                <p class="text-muted small mb-0">
-                    Vue d'ensemble de la plateforme SIMMo
-                </p>
+                <p class="text-muted small mb-0">Vue d'ensemble de la plateforme SIMMo</p>
             </div>
-            <div class="text-muted small">
-                <i class="bi bi-clock me-1"></i>
-                <span id="dateCourante"></span>
+            <div class="d-flex align-items-center gap-3">
+                <!-- Notifications -->
+                <div class="position-relative">
+                    <button class="btn btn-light border rounded-circle p-2"
+                            onclick="afficherNotifications()" title="Notifications">
+                        <i class="bi bi-bell fs-5"></i>
+                    </button>
+                    <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+                </div>
+                <!-- Rafraîchir -->
+                <button class="btn btn-light border btn-refresh" id="btnRefresh"
+                        onclick="rafraichir()" title="Rafraîchir">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+                <!-- Date -->
+                <div class="text-muted small d-none d-md-block">
+                    <i class="bi bi-clock me-1"></i>
+                    <span id="dateCourante"></span>
+                </div>
             </div>
         </div>
 
         <div id="alertContainer"></div>
 
-        <!-- ── STATISTIQUES GLOBALES ───── -->
+        <!-- ── ALERTES SYSTÈME ── -->
+        <div id="alertesSysteme" class="mb-4" style="display:none"></div>
+
+        <!-- ── ACTIONS RAPIDES ── -->
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <p class="text-muted small fw-semibold text-uppercase mb-2" style="letter-spacing:.05em">Actions rapides</p>
+            </div>
+            <div class="col-6 col-sm-4 col-md-2">
+                <a href="agents.html?action=nouveau" class="quick-action">
+                    <i class="bi bi-person-plus text-primary"></i>
+                    Nouvel agent
+                </a>
+            </div>
+            <div class="col-6 col-sm-4 col-md-2">
+                <a href="annonces.html?action=nouvelle" class="quick-action">
+                    <i class="bi bi-house-add text-success"></i>
+                    Annonce
+                </a>
+            </div>
+            <div class="col-6 col-sm-4 col-md-2">
+                <a href="agents.html?statut=en_attente" class="quick-action">
+                    <i class="bi bi-id-card text-warning"></i>
+                    Valider CNI
+                </a>
+            </div>
+            <div class="col-6 col-sm-4 col-md-2">
+                <a href="utilisateurs.html" class="quick-action">
+                    <i class="bi bi-people text-info"></i>
+                    Utilisateurs
+                </a>
+            </div>
+            <div class="col-6 col-sm-4 col-md-2">
+                <a href="paiements.html" class="quick-action">
+                    <i class="bi bi-credit-card text-purple" style="color:var(--purple)"></i>
+                    Paiements
+                </a>
+            </div>
+            <div class="col-6 col-sm-4 col-md-2">
+                <a href="rapports.html" class="quick-action">
+                    <i class="bi bi-file-earmark-bar-graph text-danger"></i>
+                    Rapports
+                </a>
+            </div>
+        </div>
+
+        <!-- ── STATISTIQUES GLOBALES ── -->
         <div class="row g-3 mb-4" id="statsContainer">
             <div class="col-12 text-center py-4">
                 <div class="spinner-border text-primary"></div>
             </div>
         </div>
 
-        <!-- ── CNI EN ATTENTE ──────────── -->
+        <!-- ── KPI + TOP VILLES ── -->
         <div class="row g-4 mb-4">
+            <!-- Taux de conversion -->
             <div class="col-12 col-lg-6">
-                <div class="bg-white rounded-3 border p-4">
-                    <div class="d-flex justify-content-between
-                        align-items-center mb-3">
-                        <h5 class="fw-bold mb-0">
-                            <i class="bi bi-id-card text-warning me-2"></i>
-                            CNI en attente de validation
-                        </h5>
-                        <a href="agents.html?statut=en_attente"
-                            class="text-primary small">
-                            Voir tout
-                        </a>
-                    </div>
-                    <div id="cniEnAttente">
-                        <div class="text-center py-3">
-                            <div class="spinner-border spinner-border-sm
-                                text-primary"></div>
-                        </div>
+                <div class="bg-white rounded-3 border p-4 h-100">
+                    <h5 class="fw-bold mb-4">
+                        <i class="bi bi-speedometer2 text-primary me-2"></i>
+                        Indicateurs clés
+                    </h5>
+                    <div id="kpiContainer">
+                        <div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>
                     </div>
                 </div>
             </div>
-
-            <!-- ── DERNIERS AGENTS ─────── -->
+            <!-- Top villes -->
             <div class="col-12 col-lg-6">
-                <div class="bg-white rounded-3 border p-4">
-                    <div class="d-flex justify-content-between
-                        align-items-center mb-3">
-                        <h5 class="fw-bold mb-0">
-                            <i class="bi bi-person-badge
-                                text-primary me-2"></i>
-                            Derniers agents inscrits
-                        </h5>
-                        <a href="agents.html" class="text-primary small">
-                            Voir tout
-                        </a>
-                    </div>
-                    <div id="derniersAgents">
-                        <div class="text-center py-3">
-                            <div class="spinner-border spinner-border-sm
-                                text-primary"></div>
-                        </div>
+                <div class="bg-white rounded-3 border p-4 h-100">
+                    <h5 class="fw-bold mb-4">
+                        <i class="bi bi-geo-alt text-success me-2"></i>
+                        Top villes
+                    </h5>
+                    <div id="topVilles">
+                        <div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ── ÉVOLUTION MENSUELLE ─────── -->
-        <div class="bg-white rounded-3 border p-4">
-            <h5 class="fw-bold mb-4">
-                <i class="bi bi-graph-up text-primary me-2"></i>
-                Évolution des 6 derniers mois
-            </h5>
-            <div id="tableEvolution">
-                <div class="text-center py-3">
-                    <div class="spinner-border spinner-border-sm
-                        text-primary"></div>
+        <!-- ── CNI + DERNIERS AGENTS ── -->
+        <div class="row g-4 mb-4">
+            <div class="col-12 col-lg-6">
+                <div class="bg-white rounded-3 border p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-id-card text-warning me-2"></i>
+                            CNI en attente
+                            <span class="badge bg-warning text-dark ms-1" id="cniCount">…</span>
+                        </h5>
+                        <a href="agents.html?statut=en_attente" class="text-primary small">Voir tout</a>
+                    </div>
+                    <div id="cniEnAttente">
+                        <div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>
+                    </div>
                 </div>
+            </div>
+            <div class="col-12 col-lg-6">
+                <div class="bg-white rounded-3 border p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-person-badge text-primary me-2"></i>
+                            Derniers agents inscrits
+                        </h5>
+                        <a href="agents.html" class="text-primary small">Voir tout</a>
+                    </div>
+                    <div id="derniersAgents">
+                        <div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── ANNONCES RÉCENTES + ACTIVITÉ ── -->
+        <div class="row g-4 mb-4">
+            <!-- Annonces récentes -->
+            <div class="col-12 col-lg-7">
+                <div class="bg-white rounded-3 border p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-house-door text-warning me-2"></i>
+                            Annonces récentes
+                        </h5>
+                        <a href="annonces.html" class="text-primary small">Voir tout</a>
+                    </div>
+                    <div id="annoncesRecentes">
+                        <div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Journal d'activité -->
+            <div class="col-12 col-lg-5">
+                <div class="bg-white rounded-3 border p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-activity text-danger me-2"></i>
+                            Activité récente
+                        </h5>
+                        <button class="btn btn-link btn-sm text-muted p-0"
+                                onclick="chargerActivite()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                    <div id="journalActivite">
+                        <div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── ÉVOLUTION MENSUELLE ── -->
+        <div class="bg-white rounded-3 border p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold mb-0">
+                    <i class="bi bi-graph-up text-primary me-2"></i>
+                    Évolution des 6 derniers mois
+                </h5>
+                <!-- Sélecteur métrique -->
+                <div class="btn-group btn-group-sm" id="metriqueSelector">
+                    <button class="btn btn-primary active" data-m="utilisateurs">Utilisateurs</button>
+                    <button class="btn btn-outline-secondary" data-m="agents">Agents</button>
+                    <button class="btn btn-outline-secondary" data-m="annonces">Annonces</button>
+                    <button class="btn btn-outline-secondary" data-m="revenus">Revenus</button>
+                </div>
+            </div>
+            <!-- Mini chart visuel -->
+            <div id="chartEvolution" class="mb-3" style="height:120px;display:flex;align-items:flex-end;gap:6px"></div>
+            <div id="tableEvolution">
+                <div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>
+            </div>
+        </div>
+
+        <!-- ── PIED DE PAGE ── -->
+        <div class="text-center text-muted small py-2">
+            SIMMo Admin • Dernière mise à jour : <span id="derniereMaj">—</span>
+            &nbsp;|&nbsp;
+            <a href="#" onclick="exporterDashboard()" class="text-muted">
+                <i class="bi bi-download me-1"></i>Exporter
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- ── MODAL NOTIFICATIONS ── -->
+<div class="modal fade" id="modalNotifs" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-bell me-2"></i>Notifications
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="listeNotifications">
+                <p class="text-muted text-center py-3">Aucune notification</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm btn-outline-secondary"
+                        onclick="marquerToutLu()">
+                    Tout marquer comme lu
+                </button>
             </div>
         </div>
     </div>
@@ -149,199 +391,478 @@
 <script src="../js/config.js"></script>
 <script src="js/admin.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    if (!getAdminToken()) {
-        document.body.innerHTML = `
-            <div style="display:flex;align-items:center;
-                justify-content:center;height:100vh;
-                background:#0f172a;color:white;
-                flex-direction:column;gap:16px">
-                <i class="bi bi-shield-lock" style="font-size:4rem"></i>
-                <h3>Accès refusé</h3>
-                <p style="color:rgba(255,255,255,0.5)">
-                    Cette page est réservée aux administrateurs.
+// ════════════════════════════════════════════════════════
+//  DONNÉES MOCK — à remplacer par adminRequest('/dashboard')
+// ════════════════════════════════════════════════════════
+const MOCK = {
+    stats: {
+        total_utilisateurs : 1842,
+        nouveaux_ce_mois   : 134,
+        variation_users    : +12,
+        total_agents       : 287,
+        agents_en_attente  : 8,
+        variation_agents   : +5,
+        total_annonces     : 3421,
+        annonces_actives   : 2180,
+        variation_annonces : +8,
+        revenus_ce_mois    : 4850000,
+        revenus_total      : 38200000,
+        variation_revenus  : +18,
+    },
+    cni_en_attente: [
+        { id_agent: 12, created_at: new Date(Date.now()-3600000*2), agent: { prenom:'Kouamé', nom:'Thierry' } },
+        { id_agent: 15, created_at: new Date(Date.now()-3600000*5), agent: { prenom:'Aminata', nom:'Bah'    } },
+        { id_agent: 19, created_at: new Date(Date.now()-3600000*9), agent: { prenom:'Jean',   nom:'Nkono'  } },
+    ],
+    derniers_agents: [
+        { prenom:'Sylvie',  nom:'Mbarga',    email:'s.mbarga@mail.com',  statut:'actif'     },
+        { prenom:'Patrick', nom:'Essama',    email:'p.essama@mail.com',  statut:'en_attente'},
+        { prenom:'Fatima',  nom:'Abdoulaye', email:'f.abd@mail.com',     statut:'actif'     },
+        { prenom:'Cyrille', nom:'Ngono',     email:'c.ngono@mail.com',   statut:'suspendu'  },
+    ],
+    evolution_mensuelle: [
+        { mois:'Janvier',  utilisateurs:98,  agents:12, annonces:210, revenus:2800000 },
+        { mois:'Février',  utilisateurs:112, agents:15, annonces:245, revenus:3100000 },
+        { mois:'Mars',     utilisateurs:130, agents:18, annonces:290, revenus:3600000 },
+        { mois:'Avril',    utilisateurs:118, agents:14, annonces:275, revenus:3300000 },
+        { mois:'Mai',      utilisateurs:155, agents:22, annonces:340, revenus:4200000 },
+        { mois:'Juin',     utilisateurs:134, agents:19, annonces:310, revenus:4850000 },
+    ],
+    annonces_recentes: [
+        { id:1, titre:'Villa F5 Bastos',       ville:'Yaoundé',  prix:850000, type:'vente',    photo:'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=100', statut:'active'  },
+        { id:2, titre:'Studio meublé Akwa',    ville:'Douala',   prix:95000,  type:'location', photo:'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=100', statut:'active'  },
+        { id:3, titre:'Appartement 3 pièces',  ville:'Douala',   prix:180000, type:'location', photo:'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=100', statut:'pending' },
+        { id:4, titre:'Terrain 500m² Logpom',  ville:'Douala',   prix:5200000,type:'vente',    photo:'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=100', statut:'active'  },
+    ],
+    activite: [
+        { type:'inscription', texte:'Nouveau compte : Marie Ondoua',        heure:'Il y a 5 min',  couleur:'#2563eb' },
+        { type:'cni',         texte:'CNI soumise : Thierry Kouamé',          heure:'Il y a 18 min', couleur:'#d97706' },
+        { type:'annonce',     texte:'Annonce publiée : Villa F5 Bastos',     heure:'Il y a 32 min', couleur:'#16a34a' },
+        { type:'paiement',    texte:'Paiement reçu : 95 000 F — Studio Akwa',heure:'Il y a 1h',    couleur:'#7c3aed' },
+        { type:'signalement', texte:'Signalement : Annonce #87 suspectée',   heure:'Il y a 2h',    couleur:'#dc2626' },
+        { type:'inscription', texte:'Nouveau compte : Paul Biya Jr.',        heure:'Il y a 3h',    couleur:'#2563eb' },
+    ],
+    kpi: [
+        { label:'Taux activation agents',   valeur:78, couleur:'#2563eb' },
+        { label:'Annonces avec photo',      valeur:91, couleur:'#16a34a' },
+        { label:'Taux paiement réussi',     valeur:84, couleur:'#7c3aed' },
+        { label:'Rétention utilisateurs',   valeur:67, couleur:'#d97706' },
+    ],
+    top_villes: [
+        { nom:'Douala',    annonces:1840, pct:54, couleur:'#2563eb' },
+        { nom:'Yaoundé',   annonces:1120, pct:33, couleur:'#16a34a' },
+        { nom:'Bafoussam', annonces:260,  pct:8,  couleur:'#d97706' },
+        { nom:'Garoua',    annonces:120,  pct:4,  couleur:'#dc2626' },
+        { nom:'Bamenda',   annonces:81,   pct:2,  couleur:'#7c3aed' },
+    ],
+    alertes: [
+        { type:'warning', texte:'8 CNI en attente de validation depuis plus de 24h', lien:'agents.html?statut=en_attente' },
+        { type:'danger',  texte:'3 signalements d\'annonces non traités',             lien:'signalements.html' },
+    ],
+};
+
+// ════════════════════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════════════════════
+function formatDate(d) {
+    return new Date(d).toLocaleDateString('fr-FR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+}
+function badgeStatut(s) {
+    const map = { actif:'badge-actif', en_attente:'badge-attente', suspendu:'badge-suspendu' };
+    const label = { actif:'Actif', en_attente:'En attente', suspendu:'Suspendu' };
+    return `<span class="badge ${map[s]||'bg-secondary'}">${label[s]||s}</span>`;
+}
+function tendance(v) {
+    if (v > 0) return `<span class="stat-trend trend-up"><i class="bi bi-arrow-up-short"></i>+${v}%</span>`;
+    if (v < 0) return `<span class="stat-trend trend-down"><i class="bi bi-arrow-down-short"></i>${v}%</span>`;
+    return `<span class="stat-trend text-muted">stable</span>`;
+}
+
+// ════════════════════════════════════════════════════════
+//  RENDU STATS
+// ════════════════════════════════════════════════════════
+function rendreStats(stats) {
+    document.getElementById('statsContainer').innerHTML = `
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-primary bg-opacity-10 mb-3">
+                    <i class="bi bi-people text-primary"></i>
+                </div>
+                <h3 class="fw-bold mb-0">${stats.total_utilisateurs.toLocaleString('fr-FR')}</h3>
+                <p class="text-muted small mb-1">Utilisateurs</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-success">+${stats.nouveaux_ce_mois} ce mois</small>
+                    ${tendance(stats.variation_users)}
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-success bg-opacity-10 mb-3">
+                    <i class="bi bi-person-badge text-success"></i>
+                </div>
+                <h3 class="fw-bold mb-0">${stats.total_agents.toLocaleString('fr-FR')}</h3>
+                <p class="text-muted small mb-1">Agents</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-warning">${stats.agents_en_attente} en attente</small>
+                    ${tendance(stats.variation_agents)}
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-warning bg-opacity-10 mb-3">
+                    <i class="bi bi-house text-warning"></i>
+                </div>
+                <h3 class="fw-bold mb-0">${stats.total_annonces.toLocaleString('fr-FR')}</h3>
+                <p class="text-muted small mb-1">Annonces</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-success">${stats.annonces_actives} actives</small>
+                    ${tendance(stats.variation_annonces)}
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-info bg-opacity-10 mb-3">
+                    <i class="bi bi-cash-stack text-info"></i>
+                </div>
+                <h3 class="fw-bold mb-0">${Number(stats.revenus_ce_mois).toLocaleString('fr-FR')} F</h3>
+                <p class="text-muted small mb-1">Revenus ce mois</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">Total : ${Number(stats.revenus_total).toLocaleString('fr-FR')} F</small>
+                    ${tendance(stats.variation_revenus)}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// ════════════════════════════════════════════════════════
+//  RENDU CHART ÉVOLUTION
+// ════════════════════════════════════════════════════════
+let _evo = [];
+let _metrique = 'utilisateurs';
+
+function rendreChart(evo, metrique) {
+    const vals  = evo.map(e => e[metrique]);
+    const max   = Math.max(...vals) || 1;
+    const chart = document.getElementById('chartEvolution');
+    chart.innerHTML = vals.map((v, i) => {
+        const h    = Math.max(8, Math.round((v / max) * 110));
+        const last = i === vals.length - 1;
+        return `
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+                <span style="font-size:10px;color:#94a3b8;font-weight:600">
+                    ${metrique === 'revenus' ? (v/1000000).toFixed(1)+'M' : v}
+                </span>
+                <div style="width:100%;height:${h}px;border-radius:6px 6px 0 0;
+                    background:${last ? '#2563eb' : '#bfdbfe'};transition:all .4s"></div>
+                <span style="font-size:9px;color:#94a3b8">${evo[i].mois.slice(0,3)}</span>
+            </div>`;
+    }).join('');
+}
+
+function rendreTableEvolution(evo) {
+    document.getElementById('tableEvolution').innerHTML = `
+        <div class="table-responsive">
+            <table class="table table-hover align-middle small">
+                <thead class="table-light">
+                    <tr>
+                        <th>Mois</th>
+                        <th class="text-center">Utilisateurs</th>
+                        <th class="text-center">Agents</th>
+                        <th class="text-center">Annonces</th>
+                        <th class="text-end">Revenus</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${evo.map(e => `
+                        <tr>
+                            <td class="fw-semibold">${e.mois}</td>
+                            <td class="text-center"><span class="badge bg-primary bg-opacity-10 text-primary">+${e.utilisateurs}</span></td>
+                            <td class="text-center"><span class="badge bg-success bg-opacity-10 text-success">+${e.agents}</span></td>
+                            <td class="text-center"><span class="badge bg-warning bg-opacity-10 text-warning">+${e.annonces}</span></td>
+                            <td class="text-end fw-semibold">${Number(e.revenus).toLocaleString('fr-FR')} F</td>
+                        </tr>`).join('')}
+                </tbody>
+            </table>
+        </div>`;
+}
+
+// Sélecteur métrique
+document.getElementById('metriqueSelector').addEventListener('click', e => {
+    const btn = e.target.closest('[data-m]');
+    if (!btn) return;
+    _metrique = btn.dataset.m;
+    document.querySelectorAll('#metriqueSelector .btn').forEach(b => {
+        b.classList.toggle('btn-primary', b === btn);
+        b.classList.toggle('btn-outline-secondary', b !== btn);
+    });
+    rendreChart(_evo, _metrique);
+});
+
+// ════════════════════════════════════════════════════════
+//  RENDU KPI
+// ════════════════════════════════════════════════════════
+function rendreKPI(kpi) {
+    document.getElementById('kpiContainer').innerHTML = kpi.map(k => `
+        <div class="kpi-row">
+            <div style="width:160px;font-size:13px;color:#475569">${k.label}</div>
+            <div class="kpi-bar-track">
+                <div class="kpi-bar-fill" style="width:${k.valeur}%;background:${k.couleur}"></div>
+            </div>
+            <div style="width:40px;text-align:right;font-size:13px;font-weight:600;color:${k.couleur}">
+                ${k.valeur}%
+            </div>
+        </div>`).join('');
+}
+
+// ════════════════════════════════════════════════════════
+//  RENDU TOP VILLES
+// ════════════════════════════════════════════════════════
+function rendreTopVilles(villes) {
+    document.getElementById('topVilles').innerHTML = villes.map((v, i) => `
+        <div class="ville-row">
+            <div class="ville-flag" style="background:${v.couleur}20;color:${v.couleur};font-size:12px">
+                #${i+1}
+            </div>
+            <div style="flex:1">
+                <div class="d-flex justify-content-between mb-1">
+                    <span style="font-size:13px;font-weight:600">${v.nom}</span>
+                    <span style="font-size:12px;color:#64748b">${v.annonces.toLocaleString('fr-FR')} annonces</span>
+                </div>
+                <div class="kpi-bar-track">
+                    <div class="kpi-bar-fill" style="width:${v.pct}%;background:${v.couleur}"></div>
+                </div>
+            </div>
+            <div style="width:36px;text-align:right;font-size:12px;font-weight:600;color:${v.couleur}">
+                ${v.pct}%
+            </div>
+        </div>`).join('');
+}
+
+// ════════════════════════════════════════════════════════
+//  RENDU ALERTES SYSTÈME
+// ════════════════════════════════════════════════════════
+function rendreAlertes(alertes) {
+    if (!alertes.length) return;
+    const el = document.getElementById('alertesSysteme');
+    el.style.display = 'block';
+    el.innerHTML = alertes.map(a => `
+        <div class="alert-sys alert-${a.type === 'danger' ? 'danger' : 'warning'} border">
+            <i class="bi bi-exclamation-triangle-fill text-${a.type}"></i>
+            <span class="flex-grow-1">${a.texte}</span>
+            <a href="${a.lien}" class="btn btn-sm btn-${a.type} ms-2">Traiter</a>
+        </div>`).join('');
+    // Badge notifications
+    const badge = document.getElementById('notifBadge');
+    badge.textContent = alertes.length;
+    badge.style.display = 'flex';
+}
+
+// ════════════════════════════════════════════════════════
+//  RENDU ANNONCES RÉCENTES
+// ════════════════════════════════════════════════════════
+function rendreAnnoncesRecentes(annonces) {
+    document.getElementById('annoncesRecentes').innerHTML = annonces.map(a => `
+        <div class="annonce-preview">
+            <img src="${a.photo}" alt="${a.titre}" onerror="this.src='../img/placeholder.jpg'">
+            <div class="flex-grow-1">
+                <p class="fw-semibold mb-0" style="font-size:13px">${a.titre}</p>
+                <p class="text-muted mb-1" style="font-size:11px">
+                    <i class="bi bi-geo-alt"></i> ${a.ville} &nbsp;•&nbsp;
+                    <span class="text-capitalize">${a.type}</span>
                 </p>
-                <a href="login.html"
-                    style="background:#2563eb;color:white;
-                        padding:10px 30px;border-radius:8px;
-                        text-decoration:none;font-weight:bold">
-                    Se connecter
+                <span class="fw-bold" style="font-size:13px;color:#2563eb">
+                    ${Number(a.prix).toLocaleString('fr-FR')} F
+                </span>
+            </div>
+            <div class="d-flex flex-column gap-1 align-items-end">
+                <span class="badge ${a.statut === 'active' ? 'bg-success' : 'bg-warning text-dark'}" style="font-size:10px">
+                    ${a.statut === 'active' ? 'Active' : 'En attente'}
+                </span>
+                <a href="annonces.html?id=${a.id}" class="btn btn-outline-primary btn-sm" style="font-size:11px">
+                    Voir
                 </a>
-            </div>`
-        return
+            </div>
+        </div>`).join('');
+}
+
+// ════════════════════════════════════════════════════════
+//  RENDU JOURNAL D'ACTIVITÉ
+// ════════════════════════════════════════════════════════
+function chargerActivite() {
+    const icons = {
+        inscription: 'bi-person-plus',
+        cni:         'bi-id-card',
+        annonce:     'bi-house',
+        paiement:    'bi-credit-card',
+        signalement: 'bi-flag',
+    };
+    document.getElementById('journalActivite').innerHTML =
+        MOCK.activite.map(a => `
+            <div class="activity-item">
+                <div class="activity-dot" style="background:${a.couleur}"></div>
+                <div class="flex-grow-1">
+                    <p class="mb-0" style="font-size:13px">${a.texte}</p>
+                    <p class="mb-0 text-muted" style="font-size:11px">${a.heure}</p>
+                </div>
+                <i class="bi ${icons[a.type]||'bi-dot'}" style="color:${a.couleur};font-size:16px"></i>
+            </div>`).join('');
+}
+
+// ════════════════════════════════════════════════════════
+//  NOTIFICATIONS MODAL
+// ════════════════════════════════════════════════════════
+function afficherNotifications() {
+    document.getElementById('listeNotifications').innerHTML =
+        MOCK.alertes.length
+            ? MOCK.alertes.map(a => `
+                <div class="d-flex align-items-start gap-3 p-3 border-bottom">
+                    <i class="bi bi-exclamation-circle text-${a.type} fs-5 mt-1"></i>
+                    <div>
+                        <p class="mb-1 small">${a.texte}</p>
+                        <a href="${a.lien}" class="btn btn-sm btn-outline-${a.type}">Voir</a>
+                    </div>
+                </div>`).join('')
+            : '<p class="text-muted text-center py-4">Aucune notification en attente ✅</p>';
+    new bootstrap.Modal(document.getElementById('modalNotifs')).show();
+}
+function marquerToutLu() {
+    document.getElementById('notifBadge').style.display = 'none';
+    document.getElementById('listeNotifications').innerHTML =
+        '<p class="text-muted text-center py-4">Tout est à jour ✅</p>';
+}
+
+// ════════════════════════════════════════════════════════
+//  EXPORT CSV
+// ════════════════════════════════════════════════════════
+function exporterDashboard() {
+    const evo = _evo;
+    const csv = ['Mois,Utilisateurs,Agents,Annonces,Revenus (F)']
+        .concat(evo.map(e => `${e.mois},${e.utilisateurs},${e.agents},${e.annonces},${e.revenus}`))
+        .join('\n');
+    const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'simmo-dashboard.csv'; a.click();
+    URL.revokeObjectURL(url);
+}
+
+// ════════════════════════════════════════════════════════
+//  RAFRAÎCHIR
+// ════════════════════════════════════════════════════════
+function rafraichir() {
+    const btn = document.getElementById('btnRefresh');
+    btn.classList.add('spinning');
+    chargerDashboard().finally(() => {
+        btn.classList.remove('spinning');
+        document.getElementById('derniereMaj').textContent =
+            new Date().toLocaleTimeString('fr-FR');
+    });
+}
+
+// ════════════════════════════════════════════════════════
+//  CHARGEMENT PRINCIPAL
+// ════════════════════════════════════════════════════════
+async function chargerDashboard() {
+    try {
+        // ── Remplacer MOCK par : const data = await adminRequest('/dashboard')
+        const data = MOCK;
+
+        rendreStats(data.stats);
+        rendreAlertes(data.alertes);
+        rendreKPI(data.kpi);
+        rendreTopVilles(data.top_villes);
+
+        // CNI
+        const cni = data.cni_en_attente;
+        document.getElementById('cniCount').textContent = cni.length;
+        document.getElementById('cniEnAttente').innerHTML =
+            cni.length === 0
+                ? '<p class="text-muted small text-center py-3">Aucune CNI en attente ✅</p>'
+                : cni.map(c => `
+                    <div class="d-flex align-items-center gap-3 p-2 rounded-3 mb-2 bg-warning bg-opacity-10">
+                        <i class="bi bi-id-card text-warning fs-4"></i>
+                        <div class="flex-grow-1">
+                            <p class="fw-semibold small mb-0">${c.agent?.prenom} ${c.agent?.nom}</p>
+                            <p class="text-muted" style="font-size:11px;margin:0">${formatDate(c.created_at)}</p>
+                        </div>
+                        <a href="agents.html?id=${c.id_agent}" class="btn btn-warning btn-sm fw-bold">Valider</a>
+                    </div>`).join('');
+
+        // Agents
+        document.getElementById('derniersAgents').innerHTML =
+            data.derniers_agents.map(a => `
+                <div class="d-flex align-items-center gap-3 p-2 rounded-3 mb-2 hover-bg">
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center
+                        justify-content-center fw-bold flex-shrink-0"
+                        style="width:36px;height:36px;font-size:14px">
+                        ${a.prenom?.[0]?.toUpperCase()}
+                    </div>
+                    <div class="flex-grow-1">
+                        <p class="fw-semibold small mb-0">${a.prenom} ${a.nom}</p>
+                        <p class="text-muted" style="font-size:11px;margin:0">${a.email}</p>
+                    </div>
+                    ${badgeStatut(a.statut)}
+                </div>`).join('');
+
+        // Annonces récentes
+        rendreAnnoncesRecentes(data.annonces_recentes);
+
+        // Activité
+        chargerActivite();
+
+        // Évolution
+        _evo = data.evolution_mensuelle;
+        rendreChart(_evo, _metrique);
+        rendreTableEvolution(_evo);
+
+        document.getElementById('derniereMaj').textContent =
+            new Date().toLocaleTimeString('fr-FR');
+
+    } catch (e) {
+        console.error(e);
+        document.getElementById('statsContainer').innerHTML =
+            '<div class="col-12"><div class="alert alert-danger">Erreur de chargement.</div></div>';
     }
-    // Continuer l'initialisation normale
-    init()
-})
-    // ── Init ─────────────────────────────────
-    initAdminNavbar('dashboard.html')
+}
+
+// ════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════
+function init() {
+    if (typeof initAdminNavbar === 'function') initAdminNavbar('dashboard.html');
+
     document.getElementById('dateCourante').textContent =
         new Date().toLocaleDateString('fr-FR', {
-            weekday: 'long', day: 'numeric',
-            month: 'long', year: 'numeric'
-        })
+            weekday:'long', day:'numeric', month:'long', year:'numeric'
+        });
 
-    // ── Charger le dashboard ──────────────────
-    async function chargerDashboard() {
-        try {
-            const data = await adminRequest('/dashboard')
+    chargerDashboard();
 
-            //  Statistiques
-            const stats = data.stats
-            document.getElementById('statsContainer').innerHTML = `
-                <div class="col-6 col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon bg-primary bg-opacity-10 mb-3">
-                            <i class="bi bi-people text-primary"></i>
-                        </div>
-                        <h3 class="fw-bold mb-0">${stats.total_utilisateurs}</h3>
-                        <p class="text-muted small mb-1">Utilisateurs</p>
-                        <small class="text-success">
-                            +${stats.nouveaux_ce_mois} ce mois
-                        </small>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon bg-success bg-opacity-10 mb-3">
-                            <i class="bi bi-person-badge text-success"></i>
-                        </div>
-                        <h3 class="fw-bold mb-0">${stats.total_agents}</h3>
-                        <p class="text-muted small mb-1">Agents</p>
-                        <small class="text-warning">
-                            ${stats.agents_en_attente} en attente
-                        </small>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon bg-warning bg-opacity-10 mb-3">
-                            <i class="bi bi-house text-warning"></i>
-                        </div>
-                        <h3 class="fw-bold mb-0">${stats.total_annonces}</h3>
-                        <p class="text-muted small mb-1">Annonces</p>
-                        <small class="text-success">
-                            ${stats.annonces_actives} actives
-                        </small>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon bg-info bg-opacity-10 mb-3">
-                            <i class="bi bi-cash-stack text-info"></i>
-                        </div>
-                        <h3 class="fw-bold mb-0">
-                            ${Number(stats.revenus_ce_mois)
-                                .toLocaleString('fr-FR')} F
-                        </h3>
-                        <p class="text-muted small mb-1">Revenus ce mois</p>
-                        <small class="text-muted">
-                            Total: ${Number(stats.revenus_total)
-                                .toLocaleString('fr-FR')} F
-                        </small>
-                    </div>
-                </div>
-            `
+    // Auto-refresh toutes les 5 minutes
+    setInterval(rafraichir, 5 * 60 * 1000);
+}
 
-            //  CNI en attente
-            const cni = data.cni_en_attente
-            document.getElementById('cniEnAttente').innerHTML =
-                cni.length === 0
-                    ? '<p class="text-muted small text-center py-3">Aucune CNI en attente ✅</p>'
-                    : cni.map(c => `
-                        <div class="d-flex align-items-center gap-3
-                            p-2 rounded-3 mb-2 bg-warning bg-opacity-10">
-                            <i class="bi bi-id-card text-warning fs-4"></i>
-                            <div class="flex-grow-1">
-                                <p class="fw-semibold small mb-0">
-                                    ${c.agent?.prenom} ${c.agent?.nom}
-                                </p>
-                                <p class="text-muted" style="font-size:11px;margin:0">
-                                    ${formatDate(c.created_at)}
-                                </p>
-                            </div>
-                            <a href="agents.html?id=${c.id_agent}"
-                                class="btn btn-warning btn-sm fw-bold">
-                                Valider
-                            </a>
-                        </div>`).join('')
-
-            //  Derniers agents
-            const agents = data.derniers_agents
-            document.getElementById('derniersAgents').innerHTML =
-                agents.map(a => `
-                    <div class="d-flex align-items-center gap-3 p-2
-                        rounded-3 mb-2 hover-bg">
-                        <div class="bg-primary text-white rounded-circle
-                            d-flex align-items-center justify-content-center
-                            fw-bold flex-shrink-0"
-                            style="width:36px;height:36px;font-size:14px">
-                            ${a.prenom?.[0]?.toUpperCase()}
-                        </div>
-                        <div class="flex-grow-1">
-                            <p class="fw-semibold small mb-0">
-                                ${a.prenom} ${a.nom}
-                            </p>
-                            <p class="text-muted" style="font-size:11px;margin:0">
-                                ${a.email}
-                            </p>
-                        </div>
-                        ${badgeStatut(a.statut)}
-                    </div>`).join('')
-
-            //  Évolution mensuelle
-            const evo = data.evolution_mensuelle
-            document.getElementById('tableEvolution').innerHTML = `
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Mois</th>
-                                <th class="text-center">Utilisateurs</th>
-                                <th class="text-center">Agents</th>
-                                <th class="text-center">Annonces</th>
-                                <th class="text-end">Revenus</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${evo.map(e => `
-                                <tr>
-                                    <td class="fw-semibold">${e.mois}</td>
-                                    <td class="text-center">
-                                        <span class="badge bg-primary bg-opacity-10
-                                            text-primary">
-                                            +${e.utilisateurs}
-                                        </span>
-                                    </td>
-                                    <td class="text-center">
-                                        <span class="badge bg-success bg-opacity-10
-                                            text-success">
-                                            +${e.agents}
-                                        </span>
-                                    </td>
-                                    <td class="text-center">
-                                        <span class="badge bg-warning bg-opacity-10
-                                            text-warning">
-                                            +${e.annonces}
-                                        </span>
-                                    </td>
-                                    <td class="text-end fw-semibold">
-                                        ${Number(e.revenus)
-                                            .toLocaleString('fr-FR')} F
-                                    </td>
-                                </tr>`).join('')}
-                        </tbody>
-                    </table>
-                </div>`
-
-        } catch (e) {
-            console.error(e)
-            document.getElementById('statsContainer').innerHTML =
-                '<div class="col-12"><div class="alert alert-danger">Erreur de chargement.</div></div>'
-        }
+document.addEventListener('DOMContentLoaded', function () {
+    if (typeof getAdminToken === 'function' && !getAdminToken()) {
+        document.body.innerHTML = `
+            <div style="display:flex;align-items:center;justify-content:center;
+                height:100vh;background:#0f172a;color:white;flex-direction:column;gap:16px">
+                <i class="bi bi-shield-lock" style="font-size:4rem"></i>
+                <h3>Accès refusé</h3>
+                <p style="color:rgba(255,255,255,0.5)">Cette page est réservée aux administrateurs.</p>
+                <a href="login.html" style="background:#2563eb;color:white;padding:10px 30px;
+                    border-radius:8px;text-decoration:none;font-weight:bold">
+                    Se connecter
+                </a>
+            </div>`;
+        return;
     }
-
-    chargerDashboard()
+    init();
+});
 </script>
 </body>
 </html>

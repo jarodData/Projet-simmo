@@ -1,0 +1,125 @@
+
+<style>
+.form-wrap { max-width: 520px; margin: 1.5rem auto; }
+.form-header { display: flex; align-items: center; gap: 14px; margin-bottom: 1.5rem; }
+.avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--color-background-info); display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--color-text-info); font-weight: 500; flex-shrink: 0; }
+.form-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.5rem; }
+.field { margin-bottom: 1rem; }
+.field label { display: block; font-size: 13px; color: var(--color-text-secondary); margin-bottom: 6px; }
+.field input, .field select, .field textarea { width: 100%; box-sizing: border-box; }
+.field textarea { resize: vertical; min-height: 110px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.char-count { font-size: 12px; color: var(--color-text-tertiary); text-align: right; margin-top: 4px; }
+.btn-send { width: 100%; padding: 10px; margin-top: 0.5rem; background: var(--color-background-info); color: var(--color-text-info); border: none; border-radius: var(--border-radius-md); font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-send:hover { opacity: 0.88; }
+.success-msg { display: none; text-align: center; padding: 2rem 1rem; }
+.success-msg i { font-size: 40px; color: var(--color-text-success); display: block; margin-bottom: 12px; }
+</style>
+    <link href="css/styles.css" rel="stylesheet">
+
+
+<h2 class="sr-only">Formulaire de contact — envoyer un message à un agent</h2>
+
+<div class="form-wrap">
+  <div class="form-header">
+    <div class="avatar"><i class="ti ti-building-estate" aria-hidden="true"></i></div>
+    <div>
+      <p style="font-weight: 500; font-size: 15px; margin: 0; color: var(--color-text-primary);">Contacter un agent</p>
+      <p style="font-size: 13px; color: var(--color-text-secondary); margin: 0;">Votre message sera envoyé par mail</p>
+    </div>
+  </div>
+
+  <div class="form-card" id="formCard">
+    <div class="row2">
+      <div class="field">
+        <label for="prenom">Prénom</label>
+        <input type="text" id="prenom" placeholder="Jean" />
+      </div>
+      <div class="field">
+        <label for="nom">Nom</label>
+        <input type="text" id="nom" placeholder="Dupont" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="email">Adresse e-mail</label>
+      <input type="email" id="email" placeholder="jean.dupont@email.com" />
+    </div>
+
+    <div class="field">
+      <label for="tel">Téléphone (optionnel)</label>
+      <input type="tel" id="tel" placeholder="+237 6XX XXX XXX" />
+    </div>
+
+    <div class="field">
+      <label for="sujet">Sujet</label>
+      <select id="sujet">
+        <option value="">— Choisir un sujet —</option>
+        <option>Demande de visite</option>
+        <option>Renseignement sur une annonce</option>
+        <option>Estimation de bien</option>
+        <option>Proposition de mandat</option>
+        <option>Autre</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="message">Message</label>
+      <textarea id="message" placeholder="Bonjour, je souhaite obtenir plus d'informations sur…" maxlength="1000" oninput="document.getElementById('cc').textContent=this.value.length+'/1000'"></textarea>
+      <div class="char-count" id="cc">0/1000</div>
+    </div>
+
+    <div class="field" style="display:flex; align-items:center; gap:8px;">
+      <input type="checkbox" id="copie" style="width:auto; margin:0;" />
+      <label for="copie" style="margin:0; font-size:13px; cursor:pointer;">Recevoir une copie de ce message</label>
+    </div>
+
+    <button class="btn-send" onclick="envoyerMessage()">
+      <i class="ti ti-send" aria-hidden="true"></i> Envoyer le message
+    </button>
+  </div>
+
+  <div class="success-msg" id="successMsg">
+    <i class="ti ti-circle-check"></i>
+    <p style="font-weight:500; font-size:15px; margin:0 0 6px; color:var(--color-text-primary);">Message envoyé !</p>
+    <p style="font-size:13px; color:var(--color-text-secondary); margin:0;">L'agent vous répondra dans les plus brefs délais.</p>
+  </div>
+</div>
+
+<script>
+function envoyerMessage() {
+  const prenom = document.getElementById('prenom').value.trim();
+  const nom    = document.getElementById('nom').value.trim();
+  const email  = document.getElementById('email').value.trim();
+  const sujet  = document.getElementById('sujet').value;
+  const msg    = document.getElementById('message').value.trim();
+
+  if (!prenom || !nom || !email || !sujet || !msg) {
+    alert('Veuillez remplir tous les champs obligatoires.');
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    alert('Adresse e-mail invalide.');
+    return;
+  }
+
+  document.getElementById('formCard').style.display = 'none';
+  document.getElementById('successMsg').style.display = 'block';
+  async function envoyerMessage() {
+  // ... validations ...
+
+  const res = await fetch(CONFIG.API_URL + '/contact/agent', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + getToken(),
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify({ prenom, nom, email, sujet, message: msg, copie })
+  });
+
+  if (!res.ok) { alert('Erreur lors de l\'envoi.'); return; }
+  // afficher le message de succès
+}
+}
+</script>

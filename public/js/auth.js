@@ -42,6 +42,7 @@ const PAGES_AGENT = [
     'mes-messages.html',  
     'plan.html',
     'paiement.html',
+    'formulaire_contact_agent.html',
 ]
 
 

@@ -6,16 +6,16 @@ use App\Models\Utilisateur;
 
 class Favori extends Model
 {
-    protected $table    = 'favoris';
-    protected $fillable = ['id_utilisateur', 'id_annonce'];  // ← unifié
+   // protected $table    = 'favoris';
+    protected $fillable = ['user_id', 'annonce_id']; // ✅ corrigé
 
-    public function annonce()
-    {
-        return $this->belongsTo(Annonce::class, 'id_annonce');
-    }
+public function annonce()
+{
+    return $this->belongsTo(Annonce::class, 'annonce_id'); // ✅ corrigé
+}
 
-    public function utilisateur()
-    {
-        return $this->belongsTo(Utilisateur::class, 'id_utilisateur');
-    }
+public function utilisateur()
+{
+    return $this->belongsTo(Utilisateur::class, 'user_id'); // ✅ corrigé
+}
 }

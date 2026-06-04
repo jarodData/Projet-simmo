@@ -1,4 +1,4 @@
-# routes/ia_router.py  — version complète fusionnée
+# routes/ia_router.py  — version corrigée
 
 from fastapi                          import APIRouter, Query, Depends, HTTPException, Header, BackgroundTasks
 from sqlalchemy.orm                   import Session
@@ -12,24 +12,22 @@ from utils.hybrid_engine              import MoteurHybride
 from models.scoring_contextuel        import ScoringContextuel
 from config                           import settings
 import logging
-
 import joblib
 import re
-from schemas.ia_schemas import RequeteNLP
-
-
+from functools                        import lru_cache
+from schemas.ia_schemas               import RequeteNLP
 
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
-moteur= MoteurHybride()
-#router = APIRouter()
-model = joblib.load('C:\www\projet-simmo\simmo_ia\simmo_ia\modeles\modele_prix.pkl')
-# molele_nlp = joblib.load('C:\www\projet-simmo\simmo_ia\models\nlp_model.joblib')
+moteur = MoteurHybride()
+model  = joblib.load('C:\www\projet-simmo\simmo_ia\simmo_ia\modeles\modele_prix.pkl')
+
 if not moteur.prix.charger_modele():
     print("modele prix non trouve. Lance POST /api/ia/entrainer une fois")
+
 scoreur_contextuel = ScoringContextuel()
-scheduler= AsyncIOScheduler()
+scheduler = AsyncIOScheduler()
 
 
 # ─────────────────────────────────────────────────────
@@ -37,20 +35,14 @@ scheduler= AsyncIOScheduler()
 # ─────────────────────────────────────────────────────
 
 def verifier_api_key(x_api_key: str = Header(..., alias="X-API-Key")):
-    """
-    Le frontend envoie : 'X-API-Key: simmo-secret-key-2026'
-    FastAPI convertit les tirets en underscores si pas d'alias.
-    L'alias="X-API-Key" force la lecture du bon header.
-    """
     if x_api_key != settings.API_KEY:
         raise HTTPException(status_code=401, detail="Clé API invalide.")
 
 
 async def recharger_moteur(db_session=None):
-    """Charge toutes les annonces actives et ré-entraîne le moteur."""
     try:
         from database import SessionLocal
-        db = db_session or SessionLocal()
+        db       = db_session or SessionLocal()
         annonces = fetch_annonces(db)
         if not db_session:
             db.close()
@@ -59,31 +51,18 @@ async def recharger_moteur(db_session=None):
             logger.warning("Aucune annonce active pour entraîner le moteur.")
             return 0
 
-        # 1. Stocker les annonces dans le moteur AVANT entraînement
-        moteur.annonces = annonces
-        moteur.prix.annonces = annonces  # <-- CRUCIAL pour le print + prédictions
+        moteur.annonces       = annonces
+        moteur.prix.annonces  = annonces
 
-        # # 2. Entraîner les 2 modèles séparément
-        # moteur.prix.entrainer(annonces)
-        # moteur.nlp.entrainer_sur_corpus(annonces)
-        
-        # # 3. Sauvegarder les modèles
-        # moteur.prix.sauvegarder_modele()
-        # moteur.nlp.sauvegarder()
-
-
- # NLP : charge si existe, sinon entraîne + sauvegarde
         if not moteur.nlp.charger():
             moteur.nlp.entrainer_sur_corpus(annonces)
             moteur.nlp.sauvegarder()
-    
-    # Prix : même logique
-        if not moteur.prix.charger_modele():
-         moteur.prix.entrainer(annonces)
-         moteur.prix.sauvegarder_modele()
-    
-        print(f"Moteur prêt - {len(annonces)} annonces chargées.")
 
+        if not moteur.prix.charger_modele():
+            moteur.prix.entrainer(annonces)
+            moteur.prix.sauvegarder_modele()
+
+        print(f"Moteur prêt - {len(annonces)} annonces chargées.")
         logger.info(f"Moteur ré-entraîné — {len(annonces)} annonces.")
         return len(annonces)
 
@@ -93,22 +72,9 @@ async def recharger_moteur(db_session=None):
 
 
 # ─────────────────────────────────────────────────────
-# Démarrage & arrêt
+# Scheduler
 # ─────────────────────────────────────────────────────
 
-# @router.on_event("startup")
-# async def startup():
-#     await recharger_moteur()
-#     scheduler.add_job(
-#         recharger_moteur,
-#         trigger          = "interval",
-#         hours            = 6,
-#         id               = "recharger_moteur",
-#         max_instances    = 1,
-#         replace_existing = True,
-#     )
-#     scheduler.start()
-#     logger.info("Scheduler démarré — rechargement automatique toutes les 6h.")
 def demarrer_scheduler():
     if not scheduler.running:
         scheduler.add_job(
@@ -120,7 +86,8 @@ def demarrer_scheduler():
             replace_existing = True,
         )
         scheduler.start()
-        print(" Scheduler démarré — rechargement toutes les 6h.")
+        print("Scheduler démarré — rechargement toutes les 6h.")
+
 
 @router.on_event("shutdown")
 async def shutdown():
@@ -129,7 +96,7 @@ async def shutdown():
 
 
 # ─────────────────────────────────────────────────────
-# /api/annonces  — page d'accueil
+# /api/annonces
 # ─────────────────────────────────────────────────────
 
 @router.get("/annonces")
@@ -141,17 +108,12 @@ def get_annonces(
     if not annonces:
         return {"annonces": [], "total": 0}
 
-    # Tri par id décroissant (les plus récentes)
     annonces_triees = sorted(annonces, key=lambda x: x.get("id", 0), reverse=True)
-
-    return {
-        "annonces": annonces_triees[:limit],
-        "total":    len(annonces),
-    }
+    return {"annonces": annonces_triees[:limit], "total": len(annonces)}
 
 
 # ─────────────────────────────────────────────────────
-# /api/recherche  — recherche IA paginée
+# /api/recherche
 # ─────────────────────────────────────────────────────
 
 @router.get("/recherche")
@@ -197,12 +159,10 @@ def recherche(
 
     resultats = moteur.recommander(toutes, requete)
 
-    # Tri secondaire si demandé
-    if   tri == "prix_asc":   resultats.sort(key=lambda x: x["prix"])
-    elif tri == "prix_desc":  resultats.sort(key=lambda x: x["prix"], reverse=True)
-    elif tri == "populaire":  resultats.sort(key=lambda x: x["score_popularite"], reverse=True)
-    elif tri == "recent":     resultats.sort(key=lambda x: x["id_annonce"], reverse=True)
-    # tri == "pertinent"  →  score_final IA déjà appliqué
+    if   tri == "prix_asc":  resultats.sort(key=lambda x: x["prix"])
+    elif tri == "prix_desc": resultats.sort(key=lambda x: x["prix"], reverse=True)
+    elif tri == "populaire": resultats.sort(key=lambda x: x["score_popularite"], reverse=True)
+    elif tri == "recent":    resultats.sort(key=lambda x: x["id_annonce"], reverse=True)
 
     total = len(resultats)
     debut = (page - 1) * limite
@@ -217,7 +177,7 @@ def recherche(
 
 
 # ─────────────────────────────────────────────────────
-# /api/ia/recommander  — recommandations personnalisées
+# /api/ia/recommander
 # ─────────────────────────────────────────────────────
 
 @router.post("/ia/recommander")
@@ -229,31 +189,24 @@ def recommander(
     annonces = fetch_annonces(db)
     if not annonces:
         return ReponseRecommandation(total=0, recommandations=[])
-    # filtre par pri avant le moteur NLP
+
     if requete.budget_max:
-        annonces= [a for a in annonces if a.get('prix', 999) <= requete.budget_max]
+        annonces = [a for a in annonces if a.get('prix', 999) <= requete.budget_max]
     if requete.budget_min:
-        annonces = [a for a in annonces if a.get('prix', 0)>= requete.budget_min]
+        annonces = [a for a in annonces if a.get('prix', 0) >= requete.budget_min]
     if not annonces:
-        return ReponseRecommandation(total= 0, recommandations=[] ,message="Aucune annonce dans le ce buget")
+        return ReponseRecommandation(total=0, recommandations=[], message="Aucune annonce dans ce budget")
 
-    # Indexer les photos par id AVANT d'appeler le moteur
-    photos = {a["id"]: a.get("photo") for a in annonces}
-
+    photos    = {a["id"]: a.get("photo") for a in annonces}
     resultats = moteur.recommander(annonces, requete.dict())
 
-    # Réinjecter la photo dans chaque résultat
     for r in resultats:
         id_annonce = r.get("id_annonce") or r.get("id")
-        r["photo"] = photos.get(id_annonce)  
-        #  Ajoute ce print pour vérifier
-        print("RESULTAT PHOTO:", resultats[0].get("photo") if resultats else "vide")
+        r["photo"] = photos.get(id_annonce)
+
+    return ReponseRecommandation(total=len(resultats), recommandations=resultats)
 
 
-    return ReponseRecommandation(
-        total           = len(resultats),
-        recommandations = resultats,
-    )
 # ─────────────────────────────────────────────────────
 # /api/ia/predire-prix
 # ─────────────────────────────────────────────────────
@@ -270,18 +223,15 @@ def predire_prix(
         nb_chambres      = requete.nb_chambres,
         meuble           = requete.meuble,
         type_transaction = requete.type_transaction,
-        quartier= requete.quartier or "Inconnu" ,
+        quartier         = requete.quartier or "Inconnu",
     )
     if prediction["prix_estime"] is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Modèle de prédiction pas encore disponible."
-        )
+        raise HTTPException(status_code=503, detail="Modèle de prédiction pas encore disponible.")
     return ReponsePrixPredit(**prediction)
 
 
 # ─────────────────────────────────────────────────────
-# /api/ia/entrainer  — entraînement manuel
+# /api/ia/entrainer
 # ─────────────────────────────────────────────────────
 
 @router.post("/ia/entrainer")
@@ -295,7 +245,7 @@ def entrainer(
 
 
 # ─────────────────────────────────────────────────────
-# /api/ia/recharger  — rechargement en arrière-plan
+# /api/ia/recharger
 # ─────────────────────────────────────────────────────
 
 @router.post("/ia/recharger")
@@ -303,7 +253,6 @@ async def recharger_manuel(
     background_tasks : BackgroundTasks,
     _                : None = Depends(verifier_api_key),
 ):
-    """Force un ré-entraînement sans bloquer la réponse HTTP."""
     background_tasks.add_task(recharger_moteur)
     return {"message": "Rechargement lancé en arrière-plan.", "status": "ok"}
 
@@ -317,9 +266,7 @@ def statut_moteur(_: None = Depends(verifier_api_key)):
     prochain = scheduler.get_job("recharger_moteur")
     return {
         "moteur_entraine":       moteur.nlp.est_entraine,
-        "prochain_rechargement": str(
-            prochain.next_run_time if prochain else "inconnu"
-        ),
+        "prochain_rechargement": str(prochain.next_run_time if prochain else "inconnu"),
     }
 
 
@@ -337,7 +284,7 @@ def health():
 
 
 # ─────────────────────────────────────────────────────
-# /api/ia/recherche-contextuelle
+# /api/ia/recherche-contextuelle  — VERSION CORRIGÉE
 # ─────────────────────────────────────────────────────
 
 @router.post("/ia/recherche-contextuelle")
@@ -349,8 +296,8 @@ def recherche_contextuelle(
     annonces = fetch_annonces(db)
     print("PHOTO ANNONCE 0:", annonces[0].get("photo") if annonces else "vide")
 
-    lieu_geocode       = None
-    lieux_culte        = []
+    lieu_geocode        = None
+    lieux_culte         = []
     commodites_trouvees = {}
 
     if requete.lieu_reference:
@@ -379,7 +326,22 @@ def recherche_contextuelle(
             if lieux:
                 commodites_trouvees[commodite] = lieux[:3]
 
-    filtrees = moteur._appliquer_filtres(annonces, requete.dict())
+    # CORRECTION 2 : passer uniquement les filtres standards à _appliquer_filtres
+    # (évite les KeyError sur lieu_reference, religion, commodites, etc.)
+    # Note : RequeteContextuelle n'a pas de champ "ville", on utilise ville_reference
+    filtres_standards = {k: v for k, v in {
+        "ville":            requete.ville_reference,
+        "type_bien":        requete.type_bien,
+        "budget_max":       requete.budget_max,
+        "budget_min":       requete.budget_min,
+        "nb_chambres":      requete.nb_chambres,
+        "type_transaction": requete.type_transaction,
+        "surface_min":      requete.surface_min,
+        "meuble":           requete.meuble,
+    }.items() if v is not None}
+
+    filtrees = moteur._appliquer_filtres(annonces, filtres_standards)
+
     if not filtrees:
         return {
             "total":               0,
@@ -397,54 +359,88 @@ def recherche_contextuelle(
         if lieu_geocode
         else [0.5] * len(filtrees)
     )
-    
+
+    # CORRECTION 2 (suite) : forcer 0.5 pour annonces sans coordonnées
+    # même quand lieu_geocode existe, pour ne pas les favoriser
+    if lieu_geocode:
+        for i, a in enumerate(filtrees):
+            if not a.get("latitude") or not a.get("longitude"):
+                scores_proximite[i] = 0.5
 
     texte       = f"{requete.type_bien or ''} {requete.religion or ''}"
     scores_nlp  = moteur.nlp.calculer_similarite(texte, filtrees)
-    scores_prix = moteur._score_prix(filtrees, requete.dict())
+    scores_prix = moteur._score_prix(filtrees, filtres_standards)
     scores_pop  = moteur._score_popularite(filtrees)
 
-    resultats = []
-    for i, annonce in enumerate(filtrees):
+    # CORRECTION 3 (perf) : pré-calculer analyse_quartier et lieux_culte
+    # en dehors de la boucle pour éviter N appels réseau
+    # On ne calcule que pour les annonces qui ont des coordonnées
+    cache_quartier  = {}
+    cache_culte     = {}
+    annonces_avec_coords = [
+        (i, a) for i, a in enumerate(filtrees)
+        if a.get("latitude") and a.get("longitude")
+    ]
 
-        annonce['score_contextuel'] = round(
-    scores_proximite[i] * 0.40 + 
-    scores_prix[i] * 0.30 +
-    scores_nlp[i] * 0.30,
-        )
+    for i, a in annonces_avec_coords:
+        coord_key = (round(float(a["latitude"]), 4), round(float(a["longitude"]), 4))
 
-        distance_ref = None
-        if lieu_geocode and annonce.get("latitude") and annonce.get("longitude"):
-            distance_ref = round(scoreur_contextuel._haversine(
-                lieu_geocode["latitude"], lieu_geocode["longitude"],
-                float(annonce["latitude"]), float(annonce["longitude"]),
-            ), 2)
-
-        analyse_quartier = {}
-        if annonce.get("latitude") and annonce.get("longitude"):
-            analyse_quartier = scoreur_contextuel.analyser_contexte_quartier(
-                float(annonce["latitude"]), float(annonce["longitude"])
+        if coord_key not in cache_quartier:
+            cache_quartier[coord_key] = scoreur_contextuel.analyser_contexte_quartier(
+                float(a["latitude"]), float(a["longitude"])
             )
 
-        culte_annonce = []
-        if requete.religion and annonce.get("latitude") and annonce.get("longitude"):
-            culte_annonce = scoreur_contextuel.chercher_lieux_proches(
-                lat       = float(annonce["latitude"]),
-                lon       = float(annonce["longitude"]),
+        if requete.religion and coord_key not in cache_culte:
+            cache_culte[coord_key] = scoreur_contextuel.chercher_lieux_proches(
+                lat       = float(a["latitude"]),
+                lon       = float(a["longitude"]),
                 type_lieu = "place_of_worship",
                 religion  = requete.religion,
                 rayon_km  = 2,
             )[:3]
 
-        prediction = moteur.prix.predire_prix(
-            ville            = annonce.get("ville", ""),
-            categorie        = annonce.get("categorie", ""),
-            surface_m2       = annonce.get("surface_m2") or 50,
-            nb_chambres      = annonce.get("nb_chambres") or 1,
-            meuble           = annonce.get("meuble") or False,
-            type_transaction = annonce.get("type_transaction", "location"),
-            quartier= annonce.get("quartier", "Inconnu"),
+    resultats = []
+    for i, annonce in enumerate(filtrees):
+
+        # CORRECTION 1 : round() avec ndigits=4 (sans ndigits → arrondi à 0 ou 1 !)
+        score_final = round(
+            float(scores_proximite[i]) * 0.40 +
+            float(scores_prix[i])      * 0.30 +
+            float(scores_nlp[i])       * 0.30,
+            4
         )
+
+        distance_ref = None
+        analyse_quartier = {}
+        culte_annonce    = []
+
+        if annonce.get("latitude") and annonce.get("longitude"):
+            coord_key = (round(float(annonce["latitude"]), 4), round(float(annonce["longitude"]), 4))
+
+            if lieu_geocode:
+                distance_ref = round(scoreur_contextuel._haversine(
+                    lieu_geocode["latitude"], lieu_geocode["longitude"],
+                    float(annonce["latitude"]), float(annonce["longitude"]),
+                ), 2)
+
+            # Lire depuis le cache pré-calculé (pas de nouvel appel réseau)
+            analyse_quartier = cache_quartier.get(coord_key, {})
+            if requete.religion:
+                culte_annonce = cache_culte.get(coord_key, [])
+
+        # Prix estimé : optionnel, seulement si le modèle est prêt
+        prix_estime = None
+        if moteur.prix.est_entraine:
+            prediction = moteur.prix.predire_prix(
+                ville            = annonce.get("ville", ""),
+                categorie        = annonce.get("categorie", ""),
+                surface_m2       = annonce.get("surface_m2") or 50,
+                nb_chambres      = annonce.get("nb_chambres") or 1,
+                meuble           = annonce.get("meuble") or False,
+                type_transaction = annonce.get("type_transaction", "location"),
+                quartier         = annonce.get("quartier", "Inconnu"),
+            )
+            prix_estime = prediction.get("prix_estime")
 
         resultats.append({
             "id_annonce":          annonce["id"],
@@ -456,7 +452,7 @@ def recherche_contextuelle(
             "latitude":            annonce.get("latitude"),
             "longitude":           annonce.get("longitude"),
             "photo":               annonce.get("photo"),
-            "score_final":         round(float(score_final), 4),
+            "score_final":         score_final,
             "score_proximite":     round(float(scores_proximite[i]), 4),
             "score_nlp":           round(float(scores_nlp[i]), 4),
             "score_prix":          round(float(scores_prix[i]), 4),
@@ -464,7 +460,7 @@ def recherche_contextuelle(
             "lieux_culte_proches": culte_annonce,
             "analyse_quartier":    analyse_quartier,
             "commodites_proches":  commodites_trouvees,
-            "prix_estime":         prediction.get("prix_estime"),
+            "prix_estime":         prix_estime,
             "raison":              _generer_raison_contextuelle(
                 score_final, scores_proximite[i], distance_ref,
                 requete, culte_annonce, analyse_quartier,
@@ -495,97 +491,72 @@ def analyser_quartier(
 ):
     return scoreur_contextuel.analyser_contexte_quartier(lat, lon)
 
+
+# ─────────────────────────────────────────────────────
+# /api/ia/recherche-nlp
+# ─────────────────────────────────────────────────────
+
 @router.post("/ia/recherche-nlp")
 def recherche_nlp(
-    requete : RequeteNLP,           # remplace par RequeteNLP si tu ajoutes le schema
+    requete : RequeteNLP,
     db      : Session = Depends(get_db),
     _       : None    = Depends(verifier_api_key),
 ):
-    # description = requete.description
-    # limite = requete.limite
-    """
-    Recherche par description en langage naturel.
-    Flux :
-      1. Extraction des critères structurés (regex NLP léger)
-      2. Pré-filtrage SQL via fetch_annonces + filtres durs
-      3. Scoring TF-IDF via moteur.nlp.calculer_similarite()
-      4. Scoring prix via moteur._score_prix()
-      5. Tri et retour avec criteres_extraits + mots_cles_nlp
-    """
     description = requete.description.strip()
-    limite = requete.limite or 12
-    
+    limite      = requete.limite or 12
+
     if len(description) < 5:
         raise HTTPException(status_code=400, detail="Description trop courte (min 5 caractères).")
 
-    # ── 1. Extraire les critères depuis la description ──
     criteres = extraire_criteres_nlp(description)
     logger.info(f"[NLP] Critères extraits : {criteres}")
 
-    # ── 2. Charger les annonces et pré-filtrer ──
     annonces = fetch_annonces(db)
     if not annonces:
-        return {
-            "criteres_extraits" : criteres,
-            "mots_cles_nlp"     : [],
-            "recommandations"   : [],
-            "total"             : 0,
-        }
+        return {"criteres_extraits": criteres, "mots_cles_nlp": [], "recommandations": [], "total": 0}
 
-    # Pré-filtrage dur (rapide, avant le NLP coûteux)
     filtrees = annonces
     if criteres.get("ville"):
-        filtrees = [a for a in filtrees
-                    if criteres["ville"].lower() in (a.get("ville") or "").lower()]
+        filtrees = [a for a in filtrees if criteres["ville"].lower() in (a.get("ville") or "").lower()]
     if criteres.get("type_bien"):
-        filtrees = [a for a in filtrees
-                    if criteres["type_bien"].lower() in (a.get("categorie") or "").lower()]
+        filtrees = [a for a in filtrees if criteres["type_bien"].lower() in (a.get("categorie") or "").lower()]
     if criteres.get("type_transaction"):
-        filtrees = [a for a in filtrees
-                    if a.get("type_transaction") == criteres["type_transaction"]]
+        filtrees = [a for a in filtrees if a.get("type_transaction") == criteres["type_transaction"]]
     if criteres.get("budget_max"):
-        filtrees = [a for a in filtrees
-                    if float(a.get("prix") or 0) <= criteres["budget_max"]]
+        filtrees = [a for a in filtrees if float(a.get("prix") or 0) <= criteres["budget_max"]]
     if criteres.get("nb_chambres"):
-        filtrees = [a for a in filtrees
-                    if int(a.get("nb_chambres") or 0) >= criteres["nb_chambres"]]
+        filtrees = [a for a in filtrees if int(a.get("nb_chambres") or 0) >= criteres["nb_chambres"]]
     if criteres.get("surface_min"):
-        filtrees = [a for a in filtrees
-                    if float(a.get("surface_m2") or 0) >= criteres["surface_min"]]
+        filtrees = [a for a in filtrees if float(a.get("surface_m2") or 0) >= criteres["surface_min"]]
     if criteres.get("meuble"):
         filtrees = [a for a in filtrees if a.get("meuble")]
 
-    # Si le pré-filtrage est trop restrictif, on élargit sur toutes les annonces
     if len(filtrees) < 3:
         logger.warning("[NLP] Pré-filtrage trop restrictif, élargissement.")
         filtrees = annonces[:100]
 
-    # ── 3. Scoring TF-IDF (ton modèle NLPAnalyser) ──
     scores_nlp  = moteur.nlp.calculer_similarite(description, filtrees)
-
-    # ── 4. Scoring prix ──
     scores_prix = moteur._score_prix(filtrees, criteres)
 
-    # ── 5. Assembler et trier ──
     resultats = []
     for i, annonce in enumerate(filtrees):
         score_nlp   = float(scores_nlp[i])
         score_prix  = float(scores_prix[i])
-        # Pondération : NLP 70% + Prix 30%
         score_final = round(score_nlp * 0.70 + score_prix * 0.30, 4)
 
-        # Prédiction prix via ton modèle ML
-        prediction = moteur.prix.predire_prix(
-            ville            = annonce.get("ville", ""),
-            categorie        = annonce.get("categorie", ""),
-            surface_m2       = annonce.get("surface_m2") or 50,
-            nb_chambres      = annonce.get("nb_chambres") or 1,
-            meuble           = annonce.get("meuble") or False,
-            type_transaction = annonce.get("type_transaction", "location"),
-            quartier         = annonce.get("quartier") or "Inconnu",
-        )
+        prix_estime = None
+        if moteur.prix.est_entraine:
+            prediction = moteur.prix.predire_prix(
+                ville            = annonce.get("ville", ""),
+                categorie        = annonce.get("categorie", ""),
+                surface_m2       = annonce.get("surface_m2") or 50,
+                nb_chambres      = annonce.get("nb_chambres") or 1,
+                meuble           = annonce.get("meuble") or False,
+                type_transaction = annonce.get("type_transaction", "location"),
+                quartier         = annonce.get("quartier") or "Inconnu",
+            )
+            prix_estime = prediction.get("prix_estime")
 
-        # Raison lisible
         raisons = []
         if score_nlp > 0.25:
             raisons.append("correspond à votre description")
@@ -614,15 +585,11 @@ def recherche_nlp(
             "score_final" : score_final,
             "score_nlp"   : round(score_nlp, 4),
             "score_prix"  : round(score_prix, 4),
-            "prix_estime" : prediction.get("prix_estime"),
-            "raison"      : ("Ce bien " + ", ".join(raisons) + ".") if raisons
-                            else "Correspond à votre recherche.",
+            "prix_estime" : prix_estime,
+            "raison"      : ("Ce bien " + ", ".join(raisons) + ".") if raisons else "Correspond à votre recherche.",
         })
 
-    # Tri par score décroissant
     resultats.sort(key=lambda x: x["score_final"], reverse=True)
-
-    # Mots-clés extraits par ton modèle TF-IDF
     mots_cles = moteur.nlp.extraire_mots_cles(description, n=6)
 
     return {
@@ -633,10 +600,8 @@ def recherche_nlp(
     }
 
 
-
-
 # ─────────────────────────────────────────────────────
-# Helper : raison contextuelle
+# Helpers
 # ─────────────────────────────────────────────────────
 
 def _generer_raison_contextuelle(score, score_prox, distance,
@@ -667,16 +632,10 @@ def _generer_raison_contextuelle(score, score_prox, distance,
     return "Ce bien " + ", ".join(raisons) + "."
 
 
-
 def extraire_criteres_nlp(texte: str) -> dict:
-    """
-    Extrait les critères structurés depuis une description libre.
-    Utilisé AVANT le TF-IDF pour pré-filtrer les annonces en base.
-    """
-    t = texte.lower()
+    t        = texte.lower()
     criteres = {}
 
-    # ── Type de bien ──
     types_bien = {
         'appartement' : ['appartement', 'appart'],
         'studio'      : ['studio', 'f1'],
@@ -690,7 +649,6 @@ def extraire_criteres_nlp(texte: str) -> dict:
             criteres['type_bien'] = type_bien
             break
 
-    # ── Ville ──
     villes = {
         'Douala'    : ['douala', 'dla'],
         'Yaounde'   : ['yaounde', 'yaoundé', 'capitale'],
@@ -703,7 +661,6 @@ def extraire_criteres_nlp(texte: str) -> dict:
             criteres['ville'] = ville
             break
 
-    # ── Quartier ──
     quartiers = {
         'Bonamoussadi' : ['bonamoussadi', 'bonams'],
         'Akwa'         : ['akwa'],
@@ -720,16 +677,14 @@ def extraire_criteres_nlp(texte: str) -> dict:
             criteres['quartier'] = quartier
             break
 
-    # ── Transaction ──
     if any(m in t for m in ['louer', 'location', 'à louer', 'mensuel', 'loyer']):
         criteres['type_transaction'] = 'location'
     elif any(m in t for m in ['acheter', 'achat', 'vente', 'à vendre', 'acquisition']):
         criteres['type_transaction'] = 'vente'
 
-    # ── Budget ──
     patterns_budget = [
         (r'(\d[\d\s]*)[\s]*(?:f\s*cfa|fcfa|cfa|xaf|francs?)', False),
-        (r'(\d+)\s*k\b',                                        True),   # 150k → 150000
+        (r'(\d+)\s*k\b',                                        True),
         (r'moins\s*de\s*(\d[\d\s]*)',                           False),
         (r'budget\s*(?:de|:)?\s*(\d[\d\s]*)',                   False),
         (r'(\d{2,})\s*000',                                     False),
@@ -744,12 +699,10 @@ def extraire_criteres_nlp(texte: str) -> dict:
                 criteres['budget_max'] = val
                 break
 
-    # Mots signalant budget bas → plafond par défaut 150k
     if 'budget_max' not in criteres:
         if any(m in t for m in ['pas cher', 'abordable', 'économique', 'bon marché', 'modeste']):
             criteres['budget_max'] = 150_000
 
-    # ── Chambres ──
     for pattern in [r'(\d+)\s*(?:chambre|pièce|piece)', r'f(\d)\b', r'(\d)\s*ch\b']:
         m = re.search(pattern, t, re.IGNORECASE)
         if m:
@@ -758,14 +711,12 @@ def extraire_criteres_nlp(texte: str) -> dict:
                 criteres['nb_chambres'] = nb
                 break
 
-    # ── Surface ──
     m = re.search(r'(\d+)\s*m[²2]', t, re.IGNORECASE)
     if m:
         s = int(m.group(1))
         if 10 < s < 2000:
             criteres['surface_min'] = s
 
-    # ── Caractéristiques booléennes ──
     if any(m in t for m in ['meublé', 'meuble', 'équipé', 'avec meubles']):
         criteres['meuble'] = True
 
