@@ -16,12 +16,20 @@ import joblib
 import re
 from functools                        import lru_cache
 from schemas.ia_schemas               import RequeteNLP
+from pathlib import Path
 
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
 moteur = MoteurHybride()
-model  = joblib.load('C:\www\projet-simmo\simmo_ia\simmo_ia\modeles\modele_prix.pkl')
+# model  = joblib.load('C:\www\projet-simmo\simmo_ia\simmo_ia\modeles\modele_prix.pkl')
+
+BASE_DIR = Path(__file__).resolve().parent
+
+model = joblib.load(
+    BASE_DIR / "models" / "modele_prix.pkl"
+)
+
 
 if not moteur.prix.charger_modele():
     print("modele prix non trouve. Lance POST /api/ia/entrainer une fois")
