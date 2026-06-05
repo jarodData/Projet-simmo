@@ -1,79 +1,90 @@
 <?php
 
 namespace App\Http\Controllers\Auth;
+
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\Utilisateur;
-use App\Mail\UtilisateurVerificationMail;
+use App\Services\BrevoMailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class UtilisateurAuthController extends Controller
 {
-    
-        //  INSCRIPTION
-   public function register(Request $request)
-{
-    $request->validate([
-        'nom'          => 'required|string|max:100',
-        'prenom'       => 'required|string|max:100',
-        'email'        => 'required|email|unique:utilisateurs,email',
-        'mot_de_passe' => 'required|string|min:6|confirmed',
-        'telephone'    => 'nullable|string|max:20',
-        'type_user'    => 'required|in:etudiant,famille,professionnel',
-    ]);
+    // ── INSCRIPTION ──────────────────────────────────
+    public function register(Request $request)
+    {
+        $request->validate([
+            'nom'          => 'required|string|max:100',
+            'prenom'       => 'required|string|max:100',
+            'email'        => 'required|email|unique:utilisateurs,email',
+            'mot_de_passe' => 'required|string|min:6|confirmed',
+            'telephone'    => 'nullable|string|max:20',
+            'type_user'    => 'required|in:etudiant,famille,professionnel',
+        ]);
 
-    $token = Str::random(64);
+        $token = Str::random(64);
 
-    $utilisateur = Utilisateur::create([
-        'nom'                => $request->nom,
-        'prenom'             => $request->prenom,
-        'email'              => $request->email,
-        'mot_de_passe_hash'  => Hash::make($request->mot_de_passe), 
-        'telephone'          => $request->telephone,
-        'type_user'          => $request->type_user,
-        'token_verification' => $token,
-        'is_verified'        => false,
-    ]);
+        $utilisateur = Utilisateur::create([
+            'nom'                => $request->nom,
+            'prenom'             => $request->prenom,
+            'email'              => $request->email,
+            'mot_de_passe_hash'  => Hash::make($request->mot_de_passe),
+            'telephone'          => $request->telephone,
+            'type_user'          => $request->type_user,
+            'token_verification' => $token,
+            'is_verified'        => false,
+        ]);
 
-    try {
-    Mail::to($utilisateur->email)
-        ->send(new UtilisateurVerificationMail($utilisateur, $token));
-} catch (\Exception $e) {
-    Log::error('Mail error: ' . $e->getMessage());
-    // ← Ne pas retourner 500, l'utilisateur est créé quand même
-}
+        // Envoi mail via API Brevo (pas SMTP)
+        $lien  = url('/api/auth/utilisateur/verify/' . $token);
+        $html  = "
+            <div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto'>
+                <h2 style='color:#2563eb'>Bienvenue sur SIMMo !</h2>
+                <p>Bonjour <strong>{$utilisateur->prenom}</strong>,</p>
+                <p>Merci de vous être inscrit. Cliquez sur le bouton ci-dessous pour vérifier votre compte :</p>
+                <a href='{$lien}'
+                   style='display:inline-block;background:#2563eb;color:white;
+                          padding:12px 24px;border-radius:8px;text-decoration:none;
+                          font-weight:bold;margin:16px 0'>
+                    Vérifier mon compte
+                </a>
+                <p style='color:#64748b;font-size:13px'>Ce lien expire dans 24h.</p>
+                <p style='color:#64748b;font-size:13px'>Si vous n'avez pas créé de compte, ignorez cet email.</p>
+            </div>
+        ";
 
-return response()->json([
-    'message' => 'Inscription réussie ! Vérifiez votre email.',
-    'success' => true,
-], 201);
-}
+        $brevo = new BrevoMailService();
+        $brevo->send($utilisateur->email, $utilisateur->prenom, 'Vérifiez votre compte SIMMo', $html);
 
-
-   public function verify($token)
-{
-    $utilisateur = Utilisateur::where('token_verification', $token)->first();
-
-    if (!$utilisateur) {
         return response()->json([
-            'message' => 'Token invalide',
-            'token_recu' => $token
-        ], 404);
+            'message' => 'Inscription réussie ! Vérifiez votre email.',
+            'success' => true,
+        ], 201);
     }
 
-    $utilisateur->update([
-        'is_verified' => true,
-        'token_verification' => null,
-    ]);
+    // ── VÉRIFICATION EMAIL ───────────────────────────
+    public function verify($token)
+    {
+        $utilisateur = Utilisateur::where('token_verification', $token)->first();
 
-    return response()->json([
-        'message' => 'Compte vérifié avec succès'
-    ]);
-}
-    //  CONNEXION
+        if (!$utilisateur) {
+            return response()->json([
+                'message'    => 'Token invalide',
+                'token_recu' => $token,
+            ], 404);
+        }
+
+        $utilisateur->update([
+            'is_verified'        => true,
+            'token_verification' => null,
+        ]);
+
+        return response()->json(['message' => 'Compte vérifié avec succès']);
+    }
+
+    // ── CONNEXION ────────────────────────────────────
     public function login(Request $request)
     {
         $request->validate([
@@ -106,20 +117,20 @@ return response()->json([
         ], 200);
     }
 
-    //  DECONNEXION
+    // ── DÉCONNEXION ──────────────────────────────────
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
         return response()->json(['message' => 'Déconnexion réussie.'], 200);
     }
 
-    //  PROFIL
+    // ── PROFIL ───────────────────────────────────────
     public function profil(Request $request)
     {
         return response()->json($request->user());
     }
 
-    //  MODIFIER PROFIL
+    // ── MODIFIER PROFIL ──────────────────────────────
     public function updateProfil(Request $request)
     {
         $request->validate([
@@ -136,50 +147,4 @@ return response()->json([
             'utilisateur' => $request->user(),
         ]);
     }
-
-    public function verifyEmail($token)
-{
-    // 1. Trouver l'utilisateur par token
-    $utilisateur = Utilisateur::where('email_verification_token', $token)
-        ->where('email_verified_at', null)
-        ->first();
-
-    if (!$utilisateur) {
-        // Token invalide ou déjà utilisé → rediriger avec erreur
-        return redirect(config('app.frontend_url') . '/login.html?verified=error');
-    }
-
-    // 2. Activer le compte
-    $utilisateur->update([
-        'email_verified_at'        => now(),
-        'email_verification_token' => null,
-        'statut'                   => 'actif',
-    ]);
-
-    // 3. Générer un token Sanctum pour auto-login
-    $sanctumToken = $utilisateur->createToken('auto-login-verification')->plainTextToken;
-
-    // 4. Rediriger vers le frontend avec le token
-    $redirectUrl = config('app.frontend_url')
-        . '/login.html'
-        . '?verified=success'
-        . '&token=' . $sanctumToken
-        . '&user=' . urlencode(json_encode([
-            'id'     => $utilisateur->id,
-            'prenom' => $utilisateur->prenom,
-            'nom'    => $utilisateur->nom,
-            'email'  => $utilisateur->email,
-            'role'   => $utilisateur->type_user,
-        ]));
-
-    return redirect($redirectUrl);
-}
-// app/Models/AgentImmobilier.php
-
-public function getAuthPassword()
-{
-    return $this->mot_de_passe_hash;
-}
-
-
 }
