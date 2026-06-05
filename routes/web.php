@@ -12,9 +12,8 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-
 Route::get('/', function () {
-    return view('welcome');
+    return file_get_contents(public_path('index.html'));
 });
 use App\Http\Controllers\Admin\CniController;
 
