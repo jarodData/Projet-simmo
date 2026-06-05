@@ -37,14 +37,14 @@ class BrevoMailService
 
             if ($response->failed()) {
                 Log::error('Brevo error: ' . $response->body());
-                return false;
+                throw new \Exception('Brevo: ' . $response->body());
             }
 
             return true;
 
         } catch (\Exception $e) {
             Log::error('Brevo mail error: ' . $e->getMessage());
-            return false;
+            throw $e;
         }
     }
 }
