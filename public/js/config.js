@@ -1,9 +1,16 @@
 // js/config.js — VERSION FINALE
 
+// const CONFIG = {
+//     API_URL    : 'http://localhost:8000/api',
+//     STORAGE_URL: 'http://localhost:8000/storage',
+//     IA_URL     : 'http://localhost:8001',
+//     IA_KEY     : 'simmo-secret-key-2026',
+// }
+
 const CONFIG = {
-    API_URL    : 'http://localhost:8000/api',
-    STORAGE_URL: 'http://localhost:8000/storage',
-    IA_URL     : 'http://localhost:8001',
+    API_URL    : 'https://simmo-laravel.onrender.com/api',
+    STORAGE_URL: 'https://simmo-laravel.onrender.com/storage',
+    IA_URL     : 'https://simmo-ia-1.onrender.com',
     IA_KEY     : 'simmo-secret-key-2026',
 }
 
