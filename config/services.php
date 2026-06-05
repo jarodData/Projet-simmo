@@ -35,6 +35,10 @@ return [
         'key' => env('ANTHROPIC_API_KEY'),
     ],
 
+    'brevo' => [
+    'key' => env('BREVO_API_KEY'),
+],
+
 ];
 // return [
 //     // ... autres services existants ...
