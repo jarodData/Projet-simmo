@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Auth;
-
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\Utilisateur;
 use App\Mail\UtilisateurVerificationMail;
@@ -39,20 +39,17 @@ class UtilisateurAuthController extends Controller
     ]);
 
     try {
-        Mail::to($utilisateur->email)
-            ->send(new UtilisateurVerificationMail($utilisateur, $token));
-    } catch (\Exception $e) {
-        Log::error('Mail error: ' . $e->getMessage()); // ✅ Log importé
-        return response()->json([
-            'message' => 'Inscription réussie mais échec de l\'envoi du mail.',
-            'success' => false,
-        ], 500);
-    }
+    Mail::to($utilisateur->email)
+        ->send(new UtilisateurVerificationMail($utilisateur, $token));
+} catch (\Exception $e) {
+    Log::error('Mail error: ' . $e->getMessage());
+    // ← Ne pas retourner 500, l'utilisateur est créé quand même
+}
 
-    return response()->json([
-        'message' => 'Inscription réussie ! Vérifiez votre email.',
-        'success' => true,
-    ], 201);
+return response()->json([
+    'message' => 'Inscription réussie ! Vérifiez votre email.',
+    'success' => true,
+], 201);
 }
 
 
