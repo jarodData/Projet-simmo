@@ -381,17 +381,17 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
         Route::post('/decision/{agent}',    [CniController::class, 'decision']) ->name('decision');
     });
 });
-
 Route::get('/test-mail', function () {
     try {
-        \Illuminate\Support\Facades\Mail::raw('Test SIMMo', function ($m) {
-            $m->to('testjarod12@gmail.com')->subject('Test SIMMo');
-        });
-        return response()->json(['message' => 'Mail envoyé !']);
+        $brevo = new \App\Services\BrevoMailService();
+        $result = $brevo->send(
+            'jarodstj@gmail.com',
+            'Jarod',
+            'Test SIMMo',
+            '<h1>Test mail Brevo API ✅</h1>'
+        );
+        return response()->json(['message' => $result ? 'Mail envoyé !' : 'Echec envoi']);
     } catch (\Throwable $e) {
-        return response()->json([
-            'erreur' => $e->getMessage(),
-            'class'  => get_class($e),
-        ]);
+        return response()->json(['erreur' => $e->getMessage()]);
     }
 });
