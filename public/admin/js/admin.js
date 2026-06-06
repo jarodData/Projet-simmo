@@ -1,8 +1,9 @@
 // ============================================
 // CONFIG ADMIN
 // ============================================
-const ADMIN_API = 'http://localhost:8000/api/admin'
+// const ADMIN_API = 'http://localhost:8000/api/admin'
 
+const ADMIN_API = (typeof CONFIG !== 'undefined' ? CONFIG.API_URL : 'https://simmo-laravel.onrender.com/api') + '/admin'
 function getAdminToken() {
     return localStorage.getItem('simmo_admin_token')
 }

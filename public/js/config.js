@@ -7,12 +7,24 @@
 //     IA_KEY     : 'simmo-secret-key-2026',
 // }
 
+
+const IS_LOCAL = window.location.hostname === 'localhost' 
+              || window.location.hostname === '127.0.0.1';
+
 const CONFIG = {
-    API_URL    : 'https://simmo-laravel.onrender.com/api',
-    STORAGE_URL: 'https://simmo-laravel.onrender.com/storage',
-    IA_URL     : 'https://simmo-ia-1.onrender.com',
+    API_URL    : IS_LOCAL ? 'http://localhost:8000/api'     : 'https://simmo-laravel.onrender.com/api',
+    STORAGE_URL: IS_LOCAL ? 'http://localhost:8000/storage' : 'https://simmo-laravel.onrender.com/storage',
+    IA_URL     : IS_LOCAL ? 'http://localhost:8001'         : 'https://simmo-ia-1.onrender.com',
     IA_KEY     : 'simmo-secret-key-2026',
 }
+
+
+// const CONFIG = {
+//     API_URL    : 'https://simmo-laravel.onrender.com/api',
+//     STORAGE_URL: 'https://simmo-laravel.onrender.com/storage',
+//     IA_URL     : 'https://simmo-ia-1.onrender.com',
+//     IA_KEY     : 'simmo-secret-key-2026',
+// }
 
 // const BASE_URL = window.location.origin
 

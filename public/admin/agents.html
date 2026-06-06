@@ -354,7 +354,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             — ${badgeStatut(agent.documents[0].statut_verification)}
                                         </p>
                                     </div>
-                                    <a href="http://localhost:8000/storage/${agent.documents[0].chemin_fichier}"
+                                    <a href="${CONFIG.STORAGE_URL}/${agent.documents[0].chemin_fichier}"
                                         target="_blank"
                                         class="btn btn-sm btn-outline-primary ms-auto">
                                         <i class="bi bi-eye me-1"></i>Voir
@@ -410,12 +410,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="col-md-6">
                     <h6 class="fw-bold mb-3">Document CNI</h6>
                     ${doc ? `
-                        <img src="http://localhost:8000/storage/${doc.chemin_fichier}"
+                        <img src="${CONFIG.STORAGE_URL}${doc.chemin_fichier}"
                             class="img-fluid rounded-3 border mb-3"
                             style="max-height:300px;width:100%;object-fit:contain"
                             onerror="this.src='../img/pdf-icon.png'"
                             alt="CNI">
-                        <a href="http://localhost:8000/storage/${doc.chemin_fichier}"
+                        <a href="${CONFIG.STORAGE_URL}${doc.chemin_fichier}"
                             target="_blank"
                             class="btn btn-outline-primary btn-sm w-100">
                             <i class="bi bi-download me-2"></i>

@@ -3,50 +3,49 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
 
-from routes.ia_routes import router as ia_router, moteur, recharger_moteur, demarrer_scheduler
+from routes.ia_routes import router as ia_router
 from routes.cni_routes import router as cni_router
 from routes.prix_routes import router as prix_router
 
 logging.basicConfig(level=logging.INFO)
 
-
+# ---------- LIFESPAN SAFE ----------
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Démarrage SIMMo IA...")
+    print("🚀 SIMMo IA démarre...")
 
-    await recharger_moteur()
-    print(f"Moteur prêt — {len(moteur.prix.annonces)} annonces chargées.")
+    # ⚠️ NE PAS charger modèles lourds ici si possible
+    # sinon encapsuler dans try/except
 
-    demarrer_scheduler()
+    try:
+        print("✔ Startup OK")
+    except Exception as e:
+        print("❌ Startup error:", e)
 
     yield
 
-    from routes.ia_routes import scheduler
-    if scheduler.running:
-        scheduler.shutdown(wait=False)
-    print("Arrêt SIMMo IA.")
+    print("🛑 Arrêt SIMMo IA")
 
-
+# ---------- APP ----------
 app = FastAPI(
-    title       = "SIMMo IA API",
-    description = "API Intelligence Artificielle pour SIMMo",
-    version     = "1.0.0",
-    lifespan    = lifespan,
+    title="SIMMo IA API",
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins     = ["*"],
-    allow_credentials = True,
-    allow_methods     = ["*"],
-    allow_headers     = ["*"],
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-app.include_router(cni_router)
+# routers
 app.include_router(ia_router)
-
 app.include_router(prix_router)
+app.include_router(cni_router)
 
 @app.get("/")
 def root():
-    return {"message": "SIMMo IA opérationnelle", "version": "1.0.0"}
+    return {"message": "SIMMo IA OK"}

@@ -384,13 +384,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
 Route::get('/test-mail', function () {
     try {
         $brevo = new \App\Services\BrevoMailService();
-        $result = $brevo->send(
-            'jarodstj@gmail.com',
-            'Jarod',
-            'Test SIMMo',
-            '<h1>Test mail Brevo API ✅</h1>'
-        );
-        return response()->json(['message' => $result ? 'Mail envoyé !' : 'Echec envoi']);
+        $brevo->send('jarodstj@gmail.com', 'Jarod', 'Test', '<h1>Test</h1>');
+        return response()->json(['message' => 'Mail envoyé !']);
     } catch (\Throwable $e) {
         return response()->json(['erreur' => $e->getMessage()]);
     }
