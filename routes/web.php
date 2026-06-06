@@ -18,7 +18,7 @@ Route::get('/', function () {
 use App\Http\Controllers\Admin\CniController;
 
 // Groupe admin avec middleware auth + admin
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
+Route::prefix('admin')->name('admin.')->group(function () {
 
     // ── CNI ──────────────────────────────────────
     Route::prefix('cni')->name('cni.')->group(function () {
@@ -34,4 +34,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
         Route::post('/decision/{agent}',    [CniController::class, 'decision']) ->name('decision');
     });
 });
+
+Route::get('/login', function () {
+    return redirect('/login.html');
+})->name('login');
 
