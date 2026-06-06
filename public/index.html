@@ -1109,9 +1109,7 @@ async function toggleFavori(event, annonceId) {
         console.error('Erreur favori:', e.message)
     }
 }
-// ── Chargement annonces récentes ──────────────
-//── Chargement annonces avec user_id pour personnalisation ──
-// index.html — version robuste
+// ── Chargement annonces récentes ────────────
 async function chargerAnnonces() {
     const container = document.getElementById('annoncesRecentes')
     container.innerHTML =
@@ -1119,55 +1117,43 @@ async function chargerAnnonces() {
             '<div class="spinner-border text-primary"></div>' +
         '</div>'
 
-    // Charger les favoris — ne bloque pas si ça échoue
-    await chargerIdsFavoris().catch(() => {})
-
     const user   = getUser()
     const userId = user?.id || null
 
+    // ÉTAPE 1 — Charger Laravel immédiatement (rapide)
     try {
-        // Tentative IA
+        const res = await fetch(CONFIG.API_URL + '/annonces?limit=6', {
+            headers: { 'Accept': 'application/json' }
+        })
+        if (res.ok) {
+            const data     = await res.json()
+            const annonces = data.data || data.annonces || []
+            if (annonces.length > 0) {
+                container.innerHTML = annonces.map(a => carteAnnonceClassique(a)).join('')
+            }
+        }
+    } catch (e) {
+        console.warn('Laravel fallback:', e.message)
+    }
+
+    // Charger les favoris en parallèle sans bloquer
+    chargerIdsFavoris().catch(() => {})
+
+    // ÉTAPE 2 — Améliorer avec l'IA en arrière-plan (sans bloquer l'affichage)
+    try {
         const iaData = await appelIA('/ia/recommander', {
             limite : 6,
             user_id: userId,
         })
-
         if (iaData?.recommandations?.length > 0) {
+            // Remplacer silencieusement avec les recommandations IA
             container.innerHTML = iaData.recommandations
                 .map(r => carteAnnonceIA(r))
                 .join('')
-            return
         }
-
-        // Fallback Laravel — sans auth, route publique
-        const res = await fetch(CONFIG.API_URL + '/annonces?limit=6', {
-            headers: { 'Accept': 'application/json' }
-        })
-
-        if (!res.ok) throw new Error('Laravel ' + res.status)
-
-        const data    = await res.json()
-        const annonces = data.data || data.annonces || []
-
-        if (annonces.length === 0) {
-            container.innerHTML =
-                '<div class="col-12 text-center py-5 text-muted">' +
-                    '<p>Aucune annonce disponible.</p>' +
-                '</div>'
-            return
-        }
-
-        container.innerHTML = annonces
-            .map(a => carteAnnonceClassique(a))
-            .join('')
-
     } catch (e) {
-        console.error('Erreur chargement annonces:', e.message)
-        container.innerHTML =
-            '<div class="col-12 text-center text-muted py-5">' +
-                '<i class="bi bi-wifi-off fs-2 d-block mb-2 opacity-25"></i>' +
-                '<p class="small">Impossible de charger les annonces.</p>' +
-            '</div>'
+        // L'IA a échoué — les annonces Laravel sont déjà affichées, pas de problème
+        console.warn('IA indisponible, annonces classiques affichées')
     }
 }
 
