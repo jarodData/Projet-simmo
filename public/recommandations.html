@@ -391,66 +391,115 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Section Estimation -->
-            <div id="section_estimation" class="section-filtre">
-                <h5 class="fw-bold mb-4"><i class="bi bi-calculator text-success me-2"></i>Estimation de prix par l'IA</h5>
-                <div class="row g-3">
-                    <div class="col-12">
-                        <div class="alert alert-warning border-0 d-flex align-items-center gap-2 py-2">
-                            <i class="bi bi-info-circle-fill"></i>
-                            <small>Notre IA predit le prix juste selon les caracteristiques du bien et les donnees du marche.</small>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label fw-semibold small">Ville</label>
-                        <select id="estVille" class="form-select">
-                            <option value="">Selectionner...</option>
-                            <option value="Douala">Douala</option>
-                            <option value="Yaounde">Yaounde</option>
-                            <option value="Bafoussam">Bafoussam</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label fw-semibold small">Categorie</label>
-                        <select id="estCategorie" class="form-select">
-                            <option value="appartement">Appartement</option>
-                            <option value="studio">Studio</option>
-                            <option value="villa">Villa</option>
-                            <option value="chambre">Chambre</option>
-                            <option value="bureau">Bureau</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label fw-semibold small">Surface (m2)</label>
-                        <input type="number" id="estSurface" class="form-control" placeholder="50">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label fw-semibold small">Chambres</label>
-                        <input type="number" id="estChambres" class="form-control" placeholder="2">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label fw-semibold small">Transaction</label>
-                        <select id="estTransaction" class="form-select">
-                            <option value="location">Location</option>
-                            <option value="vente">Vente</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3 d-flex align-items-center">
-                        <div class="form-check mt-3">
-                            <input class="form-check-input" type="checkbox" id="estMeuble">
-                            <label class="form-check-label fw-semibold" for="estMeuble">Meuble</label>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label fw-semibold small">&nbsp;</label>
-                        <button class="btn btn-success w-100 fw-bold" id="btnEstimer" onclick="lancerEstimation()">
-                            <i class="bi bi-calculator me-2"></i>Estimer le prix
-                        </button>
-                    </div>
-                    <div class="col-12"><div id="resultatEstimation" class="d-none"></div></div>
-                </div>
+<!-- Section Estimation — VERSION AVEC QUARTIER -->
+<div id="section_estimation" class="section-filtre">
+    <h5 class="fw-bold mb-4">
+        <i class="bi bi-calculator text-success me-2"></i>
+        Estimation de prix par l'IA
+    </h5>
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="alert alert-warning border-0 d-flex align-items-center gap-2 py-2">
+                <i class="bi bi-info-circle-fill"></i>
+                <small>Notre IA prédit le prix juste selon les caractéristiques du bien, le quartier et les données du marché camerounais.</small>
             </div>
+        </div>
+
+        <!-- Ville -->
+        <div class="col-md-3">
+            <label class="form-label fw-semibold small">Ville</label>
+            <select id="estVille" class="form-select" onchange="mettreAJourQuartiers()">
+                <option value="">Sélectionner...</option>
+                <option value="Douala">Douala</option>
+                <option value="Yaounde">Yaoundé</option>
+                <option value="Bafoussam">Bafoussam</option>
+                <option value="Garoua">Garoua</option>
+                <option value="Bamenda">Bamenda</option>
+            </select>
+        </div>
+
+        <!-- Quartier -->
+        <div class="col-md-3">
+            <label class="form-label fw-semibold small">
+                Quartier
+                <span class="text-muted" style="font-weight:400;font-size:11px">
+                    (impact sur le prix)
+                </span>
+            </label>
+            <div class="position-relative">
+                <input type="text" id="estQuartier" class="form-control"
+                       placeholder="Ex: Bonamoussadi, Bastos..."
+                       list="listeQuartiers"
+                       autocomplete="off">
+                <datalist id="listeQuartiers"></datalist>
+            </div>
+            <!-- Badge zone de prix -->
+            <div id="badgeZone" class="mt-1" style="display:none">
+                <span id="labelZone" class="badge" style="font-size:11px"></span>
+            </div>
+        </div>
+
+        <!-- Catégorie -->
+        <div class="col-md-2">
+            <label class="form-label fw-semibold small">Catégorie</label>
+            <select id="estCategorie" class="form-select">
+                <option value="appartement">Appartement</option>
+                <option value="studio">Studio</option>
+                <option value="villa">Villa</option>
+                <option value="chambre">Chambre</option>
+                <option value="bureau">Bureau</option>
+                <option value="terrain">Terrain</option>
+            </select>
+        </div>
+
+        <!-- Surface -->
+        <div class="col-md-2">
+            <label class="form-label fw-semibold small">Surface (m²)</label>
+            <input type="number" id="estSurface" class="form-control"
+                   placeholder="50" min="5" max="2000">
+        </div>
+
+        <!-- Chambres -->
+        <div class="col-md-2">
+            <label class="form-label fw-semibold small">Chambres</label>
+            <input type="number" id="estChambres" class="form-control"
+                   placeholder="2" min="0" max="20">
+        </div>
+
+        <!-- Transaction -->
+        <div class="col-md-3">
+            <label class="form-label fw-semibold small">Transaction</label>
+            <select id="estTransaction" class="form-select">
+                <option value="location">Location</option>
+                <option value="vente">Vente</option>
+            </select>
+        </div>
+
+        <!-- Meublé -->
+        <div class="col-md-3 d-flex align-items-center">
+            <div class="form-check mt-3">
+                <input class="form-check-input" type="checkbox" id="estMeuble">
+                <label class="form-check-label fw-semibold" for="estMeuble">
+                    Meublé
+                </label>
+            </div>
+        </div>
+
+        <!-- Bouton -->
+        <div class="col-md-3">
+            <label class="form-label fw-semibold small">&nbsp;</label>
+            <button class="btn btn-success w-100 fw-bold" id="btnEstimer"
+                    onclick="lancerEstimation()">
+                <i class="bi bi-calculator me-2"></i>Estimer le prix
+            </button>
+        </div>
+
+        <!-- Résultat -->
+        <div class="col-12">
+            <div id="resultatEstimation" class="d-none"></div>
+        </div>
+    </div>
+</div>
 
             <!-- Section Description libre (NLP) -->
             <div id="section_description" class="section-filtre">
@@ -867,40 +916,58 @@
         })
         .catch(function(e) { console.error(e); document.getElementById('aucunResultatIA').classList.remove('d-none') })
     }
-
-    function lancerEstimation() {
-        if (!estConnecte()) { verifierActionConnectee("estimer un prix"); return }
-        var ville = document.getElementById('estVille').value
-        var surface = document.getElementById('estSurface').value
-        var chambres = document.getElementById('estChambres').value
-        if (!ville || !surface || !chambres) { alert('Veuillez remplir tous les champs obligatoires.'); return }
-        var btn = document.getElementById('btnEstimer')
-        btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Calcul...'
-        fetch(CONFIG.IA_URL + '/api/ia/predire-prix', {
-            method:'POST', headers:{'Content-Type':'application/json','X-API-Key':CONFIG.IA_KEY},
-            body:JSON.stringify({ ville:ville, categorie:document.getElementById('estCategorie').value,
-                surface_m2:parseFloat(surface), nb_chambres:parseInt(chambres),
-                meuble:document.getElementById('estMeuble').checked,
-                type_transaction:document.getElementById('estTransaction').value })
-        })
-        .then(function(r){return r.json()})
-        .then(function(data) {
-            var box = document.getElementById('resultatEstimation')
-            box.classList.remove('d-none')
-            box.innerHTML = '<div class="prix-estime-box">' +
-                '<div class="d-flex justify-content-between align-items-center mb-2">' +
-                '<span class="fw-bold">Estimation IA</span>' +
-                '<span class="badge bg-success bg-opacity-10 text-success">Fiabilite : ' + (data.fiabilite||'moyenne') + '</span></div>' +
-                '<h3 class="fw-bold text-success mb-1">' + formatPrix(data.prix_estime) + '</h3>' +
-                '<p class="text-muted small mb-0">Fourchette : ' + formatPrix(data.fourchette_min) + ' - ' + formatPrix(data.fourchette_max) + '</p></div>'
-        })
-        .catch(function() {
-            var box = document.getElementById('resultatEstimation')
-            box.classList.remove('d-none')
-            box.innerHTML = '<div class="alert alert-warning mb-0">Service d\'estimation temporairement indisponible.</div>'
-        })
-        .finally(function() { btn.disabled=false; btn.innerHTML='<i class="bi bi-calculator me-2"></i>Estimer le prix' })
+function lancerEstimation() {
+    if (!estConnecte()) { verifierActionConnectee("estimer un prix"); return }
+    
+    var ville       = document.getElementById('estVille').value
+    var quartier    = document.getElementById('estQuartier')?.value.trim() || 'Inconnu'
+    var surface     = document.getElementById('estSurface').value
+    var chambres    = document.getElementById('estChambres').value
+    
+    if (!ville || !surface || !chambres) { 
+        alert('Veuillez remplir tous les champs obligatoires.'); return 
     }
+    
+    var btn = document.getElementById('btnEstimer')
+    btn.disabled = true
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Calcul...'
+    
+    fetch(CONFIG.IA_URL + '/api/ia/predire-prix', {
+        method : 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': CONFIG.IA_KEY },
+        body   : JSON.stringify({
+            ville            : ville,
+            quartier         : quartier,
+            categorie        : document.getElementById('estCategorie').value,
+            surface_m2       : parseFloat(surface),
+            nb_chambres      : parseInt(chambres),
+            meuble           : document.getElementById('estMeuble').checked,
+            type_transaction : document.getElementById('estTransaction').value,
+        })
+    })
+    .then(function(r) { return r.json() })
+    .then(function(data) {
+        var box = document.getElementById('resultatEstimation')
+        box.classList.remove('d-none')
+        box.innerHTML = '<div class="prix-estime-box">' +
+            '<div class="d-flex justify-content-between align-items-center mb-2">' +
+            '<span class="fw-bold">Estimation IA</span>' +
+            '<span class="badge bg-success bg-opacity-10 text-success">Fiabilité : ' + (data.fiabilite || 'moyenne') + '</span></div>' +
+            '<h3 class="fw-bold text-success mb-1">' + formatPrix(data.prix_estime) + '</h3>' +
+            '<p class="text-muted small mb-0">Fourchette : ' + formatPrix(data.fourchette_min) + ' — ' + formatPrix(data.fourchette_max) + '</p>' +
+            (quartier && quartier !== 'Inconnu' ? '<p class="text-muted small mb-0 mt-1"><i class="bi bi-geo-alt me-1"></i>Quartier : <strong>' + quartier + '</strong></p>' : '') +
+            '</div>'
+    })
+    .catch(function() {
+        var box = document.getElementById('resultatEstimation')
+        box.classList.remove('d-none')
+        box.innerHTML = '<div class="alert alert-warning mb-0">Service d\'estimation temporairement indisponible.</div>'
+    })
+    .finally(function() { 
+        btn.disabled = false
+        btn.innerHTML = '<i class="bi bi-calculator me-2"></i>Estimer le prix' 
+    })
+}
 
     // ============================================
     // ANALYSE NLP LOCALE (extraction de criteres)
@@ -1176,6 +1243,125 @@
         })
         document.getElementById('etatInitialIA').classList.remove('d-none')
     }
+    
+// ── Quartiers par ville ──────────────────────────────
+const QUARTIERS = {
+    Douala: [
+        // Luxe
+        { nom: 'Bonapriso',     zone: 'Luxe',      couleur: '#7c3aed' },
+        { nom: 'Akwa',          zone: 'Luxe',      couleur: '#7c3aed' },
+        { nom: 'Bonanjo',       zone: 'Luxe',      couleur: '#7c3aed' },
+        { nom: 'Dragage',       zone: 'Luxe',      couleur: '#7c3aed' },
+        { nom: 'Plateau Joss',  zone: 'Luxe',      couleur: '#7c3aed' },
+        // Moyen+
+        { nom: 'Bonamoussadi',  zone: 'Moyen+',    couleur: '#2563eb' },
+        { nom: 'Makepe',        zone: 'Moyen+',    couleur: '#2563eb' },
+        { nom: 'Deido',         zone: 'Moyen+',    couleur: '#2563eb' },
+        { nom: 'Ndokoti',       zone: 'Moyen+',    couleur: '#2563eb' },
+        { nom: 'Omnisports',    zone: 'Moyen+',    couleur: '#2563eb' },
+        { nom: 'Nyalla',        zone: 'Moyen+',    couleur: '#2563eb' },
+        { nom: 'Logbaba',       zone: 'Moyen+',    couleur: '#2563eb' },
+        // Moyen
+        { nom: 'Bepanda',       zone: 'Moyen',     couleur: '#16a34a' },
+        { nom: 'New Bell',      zone: 'Moyen',     couleur: '#16a34a' },
+        { nom: 'Bali',          zone: 'Moyen',     couleur: '#16a34a' },
+        { nom: 'Logpom',        zone: 'Moyen',     couleur: '#16a34a' },
+        { nom: 'Cité SIC',      zone: 'Moyen',     couleur: '#16a34a' },
+        { nom: 'Sodikombo',     zone: 'Moyen',     couleur: '#16a34a' },
+        // Populaire
+        { nom: 'Ndogbong',      zone: 'Populaire', couleur: '#d97706' },
+        { nom: 'Ndogpassi',     zone: 'Populaire', couleur: '#d97706' },
+        { nom: 'Pk14',          zone: 'Populaire', couleur: '#d97706' },
+        { nom: 'Pk12',          zone: 'Populaire', couleur: '#d97706' },
+        { nom: 'Pk10',          zone: 'Populaire', couleur: '#d97706' },
+    ],
+    Yaounde: [
+        { nom: 'Bastos',        zone: 'Luxe',      couleur: '#7c3aed' },
+        { nom: 'Nlongkak',      zone: 'Luxe',      couleur: '#7c3aed' },
+        { nom: 'Omnisports',    zone: 'Luxe',      couleur: '#7c3aed' },
+        { nom: 'Essos',         zone: 'Moyen+',    couleur: '#2563eb' },
+        { nom: 'Mvan',          zone: 'Moyen+',    couleur: '#2563eb' },
+        { nom: 'Ekounou',       zone: 'Moyen',     couleur: '#16a34a' },
+        { nom: 'Mendong',       zone: 'Moyen',     couleur: '#16a34a' },
+        { nom: 'Nkolbisson',    zone: 'Moyen',     couleur: '#16a34a' },
+        { nom: 'Biyem-Assi',    zone: 'Moyen',     couleur: '#16a34a' },
+        { nom: 'Mvog-Ada',      zone: 'Populaire', couleur: '#d97706' },
+        { nom: 'Nkoldongo',     zone: 'Populaire', couleur: '#d97706' },
+        { nom: 'Odza',          zone: 'Populaire', couleur: '#d97706' },
+        { nom: 'Nsimeyong',     zone: 'Populaire', couleur: '#d97706' },
+    ],
+    Bafoussam: [
+        { nom: 'Centre ville',  zone: 'Moyen+',    couleur: '#2563eb' },
+        { nom: 'Tamdja',        zone: 'Moyen',     couleur: '#16a34a' },
+        { nom: 'Ngomgham',      zone: 'Moyen',     couleur: '#16a34a' },
+        { nom: 'Djeleng',       zone: 'Populaire', couleur: '#d97706' },
+    ],
+    Garoua: [
+        { nom: 'Centre',        zone: 'Moyen+',    couleur: '#2563eb' },
+        { nom: 'Bocklé',        zone: 'Moyen',     couleur: '#16a34a' },
+    ],
+    Bamenda: [
+        { nom: 'Commercial Avenue', zone: 'Moyen+', couleur: '#2563eb' },
+        { nom: 'Up Station',    zone: 'Moyen+',    couleur: '#2563eb' },
+        { nom: 'Nkwen',         zone: 'Moyen',     couleur: '#16a34a' },
+    ],
+};
+
+const ZONES_LABELS = {
+    'Luxe'     : { label: '🟣 Zone Luxe — Prix élevés',       bg: '#f3e8ff', color: '#7c3aed' },
+    'Moyen+'   : { label: '🔵 Zone Moyen+ — Prix confortables', bg: '#dbeafe', color: '#2563eb' },
+    'Moyen'    : { label: '🟢 Zone Moyenne — Prix raisonnables', bg: '#dcfce7', color: '#16a34a' },
+    'Populaire': { label: '🟡 Zone Populaire — Prix accessibles', bg: '#fef9c3', color: '#d97706' },
+};
+
+function mettreAJourQuartiers() {
+    const ville   = document.getElementById('estVille').value;
+    const datalist= document.getElementById('listeQuartiers');
+    const input   = document.getElementById('estQuartier');
+
+    datalist.innerHTML = '';
+    input.value        = '';
+    document.getElementById('badgeZone').style.display = 'none';
+
+    if (!ville || !QUARTIERS[ville]) return;
+
+    QUARTIERS[ville].forEach(q => {
+        const option  = document.createElement('option');
+        option.value  = q.nom;
+        datalist.appendChild(option);
+    });
+
+    input.placeholder = `Ex: ${QUARTIERS[ville][0]?.nom || 'Nom du quartier'}...`;
+}
+
+document.getElementById('estQuartier').addEventListener('input', function () {
+    const ville    = document.getElementById('estVille').value;
+    const quartier = this.value.trim();
+    const badge    = document.getElementById('badgeZone');
+    const label    = document.getElementById('labelZone');
+
+    if (!ville || !quartier) {
+        badge.style.display = 'none';
+        return;
+    }
+
+    const liste = QUARTIERS[ville] || [];
+    const found = liste.find(q =>
+        q.nom.toLowerCase() === quartier.toLowerCase()
+    );
+
+    if (found) {
+        const zone = ZONES_LABELS[found.zone];
+        label.textContent        = zone.label;
+        label.style.background   = zone.bg;
+        label.style.color        = zone.color;
+        label.style.border       = `1px solid ${zone.color}`;
+        badge.style.display      = 'block';
+    } else {
+        badge.style.display = 'none';
+    }
+});
+
 </script>
 </body>
 </html>
