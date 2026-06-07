@@ -144,16 +144,14 @@ function imageUrl(chemin) {
 
     // Compression automatique des images Unsplash
     if (chemin.includes('unsplash.com')) {
-        return chemin
-            .replace(/[?&]w=\d+/, '')      // supprimer ancien w=
-            .replace(/[?&]q=\d+/, '')      // supprimer ancien q=
-            + (chemin.includes('?') ? '&' : '?') + 'w=400&q=70&auto=format'
+        // Garder l'URL de base et remplacer les paramètres
+        const base = chemin.split('?')[0]
+        return base + '?w=400&q=70&auto=format'
     }
 
     if (chemin.startsWith('http')) return chemin
     return CONFIG.STORAGE_URL + '/' + chemin.replace(/^\/+/, '')
 }
-
 function genererPlaceholder(texte) {
     try {
         const c = document.createElement('canvas')
