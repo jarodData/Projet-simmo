@@ -390,3 +390,11 @@ Route::get('/test-mail', function () {
         return response()->json(['erreur' => $e->getMessage()]);
     }
 });
+
+Route::get('/clear-cache', function () {
+    \Illuminate\Support\Facades\Cache::flush();
+    \Illuminate\Support\Facades\Artisan::call('cache:clear');
+    \Illuminate\Support\Facades\Artisan::call('config:clear');
+    \Illuminate\Support\Facades\Artisan::call('view:clear');
+    return response()->json(['message' => 'Cache vidé ✅']);
+});
