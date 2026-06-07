@@ -1,5 +1,3 @@
-// js/config.js — VERSION FINALE
-
 // const CONFIG = {
 //     API_URL    : 'http://localhost:8000/api',
 //     STORAGE_URL: 'http://localhost:8000/storage',
@@ -143,6 +141,15 @@ function imageUrl(chemin) {
     if (!chemin || ['null','undefined','None',''].includes(String(chemin))) {
         return genererPlaceholder('SIMMo')
     }
+
+    // Compression automatique des images Unsplash
+    if (chemin.includes('unsplash.com')) {
+        return chemin
+            .replace(/[?&]w=\d+/, '')      // supprimer ancien w=
+            .replace(/[?&]q=\d+/, '')      // supprimer ancien q=
+            + (chemin.includes('?') ? '&' : '?') + 'w=400&q=70&auto=format'
+    }
+
     if (chemin.startsWith('http')) return chemin
     return CONFIG.STORAGE_URL + '/' + chemin.replace(/^\/+/, '')
 }

@@ -1259,7 +1259,7 @@ function carteAnnonceClassique(a) {
             ' class="carte-annonce card border-0 shadow-sm text-decoration-none">' +
             '<div class="card-img-wrapper">' +
                 '<img src="' + urlPhoto + '"' +
-                    ' class="card-img-top" alt="' + a.titre + '"' +
+                    ' class="card-img-top" alt="' + a.titre + '" loading="lazy">' +
                     ' onerror="this.onerror=null;this.src=genererPlaceholder(\'' +
                         titreSafe + '\')">' +   
                 badge +
@@ -1295,7 +1295,7 @@ function afficherAnnoncesIA(recommandations, container) {
                 ' class="carte-annonce card border-0 shadow-sm text-decoration-none">' +
                 '<div class="card-img-wrapper position-relative">' +
                     '<img src="' + urlPhoto + '"' +
-                        ' class="card-img-top" alt="' + r.titre + '"' +
+                        ' class="card-img-top" alt="' + r.titre + '" loading="lazy">' +
                         ' onerror="this.onerror=null;this.src=genererPlaceholder(\'' +
                             titreSafe + '\')">' +    
                     '<span class="badge badge-transaction ' +
