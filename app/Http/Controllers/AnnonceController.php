@@ -1,6 +1,8 @@
 <?php
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Cache;
+
 use App\Models\Annonce;
 use App\Models\CategorieBien;
 use App\Models\Localisation;
@@ -11,24 +13,19 @@ use Illuminate\Support\Facades\Storage;
 
 class AnnonceController extends Controller
 {
-    // ============================================
-    // ROUTES PUBLIQUES
-    // ============================================
 
-    //  Liste publique des annonces
-    //  Retourner directement la pagination
+
 public function index(Request $request)
 {
-    $limit = $request->get('limit', 12);
+    $limit    = $request->get('limit', 12);
+    $cacheKey = "annonces_actives_{$limit}";
 
-    $annonces = Annonce::with(
-            'localisation',
-            'categorie',
-            'photoPrincipale'
-        )
-        ->where('statut', 'active')
-        ->orderBy('created_at', 'desc')
-        ->paginate($limit);
+    $annonces = Cache::remember($cacheKey, 300, function () use ($limit) {
+        return Annonce::with('localisation', 'categorie', 'photoPrincipale')
+            ->where('statut', 'active')
+            ->orderBy('created_at', 'desc')
+            ->paginate($limit);
+    });
 
     return response()->json($annonces);
 }

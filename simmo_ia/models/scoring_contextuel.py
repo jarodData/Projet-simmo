@@ -1,4 +1,4 @@
-# models/scoring_contextuel.py — VERSION ANTI-429
+# models/scoring_contextuel.py — VERSION FINALE OPTIMISÉE
 import requests
 import math
 import json
@@ -66,9 +66,9 @@ class ScoringContextuel:
 
     HEADERS = {'User-Agent': 'SIMMo-App/1.0'}
 
-    # Délai minimum entre deux appels Overpass (secondes)
-    _dernier_appel_overpass: float = 0
-    DELAI_MIN_OVERPASS = 1.5  # 1.5s entre chaque appel
+    # Délai minimum entre appels Overpass (anti-429)
+    _dernier_appel: float = 0
+    DELAI_MIN = 1.5
 
     def __init__(self):
         self._cache = _charger_cache()
@@ -83,35 +83,32 @@ class ScoringContextuel:
         self._cache[cle] = {'data': data, 'ts': time.time()}
         _sauvegarder_cache(self._cache)
 
-    def _appel_overpass(self, query: str, max_retries: int = 3) -> dict:
+    def _appel_overpass(self, query: str, max_retries: int = 2) -> dict:
         """
         Appel Overpass avec :
-        - Délai minimum entre appels (anti-429)
-        - Retry automatique avec backoff exponentiel
-        - Cache des erreurs pour éviter retry immédiat
+        - Délai anti-429
+        - Timeout réduit à 8s (au lieu de 15)
+        - Retry avec backoff
+        - Fallback vide rapide
         """
-        # Respecter le délai minimum entre appels
-        maintenant = time.time()
-        delai_attente = ScoringContextuel.DELAI_MIN_OVERPASS - (
-            maintenant - ScoringContextuel._dernier_appel_overpass
-        )
+        maintenant    = time.time()
+        delai_attente = self.DELAI_MIN - (maintenant - ScoringContextuel._dernier_appel)
         if delai_attente > 0:
             time.sleep(delai_attente)
 
         for tentative in range(max_retries):
             try:
-                ScoringContextuel._dernier_appel_overpass = time.time()
+                ScoringContextuel._dernier_appel = time.time()
                 resp = requests.post(
                     'https://overpass-api.de/api/interpreter',
-                    data={'data': query},
-                    headers=self.HEADERS,
-                    timeout=15,
+                    data    = {'data': query},
+                    headers = self.HEADERS,
+                    timeout = 8,  # CORRECTION : timeout réduit à 8s
                 )
 
                 if resp.status_code == 429:
-                    # Too Many Requests — attendre plus longtemps
                     attente = 3 * (tentative + 1)
-                    print(f"Overpass 429 — attente {attente}s (tentative {tentative+1})")
+                    print(f"Overpass 429 — attente {attente}s")
                     time.sleep(attente)
                     continue
 
@@ -119,18 +116,18 @@ class ScoringContextuel:
                 return resp.json()
 
             except requests.exceptions.Timeout:
-                print(f"Overpass timeout (tentative {tentative+1})")
-                if tentative < max_retries - 1:
-                    time.sleep(2)
+                print(f"Overpass timeout {tentative+1}/{max_retries} — fallback vide")
+                # Ne pas retry sur timeout — retourner vide immédiatement
+                return {'elements': []}
             except Exception as e:
-                print(f"Erreur Overpass: {e}")
+                print(f"Overpass erreur: {e}")
                 if tentative < max_retries - 1:
-                    time.sleep(2)
+                    time.sleep(1)
 
-        return {'elements': []}  # fallback vide après tous les retries
+        return {'elements': []}
 
     def geocoder_lieu(self, nom_lieu: str, ville: str = '') -> Optional[dict]:
-        cle = f"geo_{nom_lieu}_{ville}"
+        cle    = f"geo_{nom_lieu}_{ville}"
         cached = self._get_cache(cle)
         if cached is not None:
             return cached
@@ -139,8 +136,9 @@ class ScoringContextuel:
             query = f"{nom_lieu}, {ville}, Cameroun" if ville else f"{nom_lieu}, Cameroun"
             resp  = requests.get(
                 'https://nominatim.openstreetmap.org/search',
-                params={'q': query, 'format': 'json', 'limit': 1, 'addressdetails': 1},
-                headers=self.HEADERS, timeout=5
+                params  = {'q': query, 'format': 'json', 'limit': 1, 'addressdetails': 1},
+                headers = self.HEADERS,
+                timeout = 5,
             )
             resp.raise_for_status()
             data   = resp.json()
@@ -169,7 +167,7 @@ class ScoringContextuel:
         if religion and religion.lower() in self.RELIGION_TAGS:
             tag_religion = self.RELIGION_TAGS[religion.lower()]
             query = (
-                f'[out:json][timeout:10];'
+                f'[out:json][timeout:8];'
                 f'(node["amenity"="place_of_worship"]["religion"="{tag_religion}"]'
                 f'(around:{rayon_m},{lat},{lon});'
                 f'way["amenity"="place_of_worship"]["religion"="{tag_religion}"]'
@@ -181,7 +179,7 @@ class ScoringContextuel:
                 f'node["amenity"="{a}"](around:{rayon_m},{lat},{lon});'
                 for a in amenities
             )
-            query = f'[out:json][timeout:10];({nodes});out center;'
+            query = f'[out:json][timeout:8];({nodes});out center;'
 
         data  = self._appel_overpass(query)
         lieux = []
@@ -207,10 +205,7 @@ class ScoringContextuel:
         self, lat_ref: float, lon_ref: float,
         religion: str, rayon_km: float = 5
     ) -> dict:
-        """
-        UN SEUL appel Overpass pour tous les lieux de culte
-        dans un grand rayon autour du point de référence.
-        """
+        """UN SEUL appel Overpass pour tous les lieux de culte."""
         cle    = _cle_cache(lat_ref, lon_ref, 'culte_ref', religion, rayon_km)
         cached = self._get_cache(cle)
         if cached is not None:
@@ -262,7 +257,7 @@ class ScoringContextuel:
             return cached
 
         query = (
-            '[out:json][timeout:15];('
+            '[out:json][timeout:8];('
             f'node["amenity"="mosque"](around:2000,{lat},{lon});'
             f'node["amenity"="place_of_worship"](around:2000,{lat},{lon});'
             f'node["amenity"="school"](around:2000,{lat},{lon});'

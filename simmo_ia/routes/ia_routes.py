@@ -284,7 +284,15 @@ def statut_moteur(_: None = Depends(verifier_api_key)):
 # /api/ia/health
 # ─────────────────────────────────────────────────────
 
-@router.get("/ia/health")
+# @router.get("/ia/health")
+# def health():
+#     return {
+#         "statut":          "ok",
+#         "version":         settings.VERSION,
+#         "modele_entraine": moteur.prix.est_entraine,
+#     }
+
+@router.api_route("/ia/health", methods=["GET", "HEAD"])
 def health():
     return {
         "statut":          "ok",
