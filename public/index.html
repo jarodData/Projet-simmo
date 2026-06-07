@@ -1253,33 +1253,35 @@ function carteAnnonceClassique(a) {
     var prixMois  = a.type_transaction === 'location'
         ? '<span class="text-muted fs-6 fw-normal">/mois</span>' : ''
     var titreSafe = (a.titre || '').replace(/'/g, '')
-
-    return '<div class="col-12 col-md-6 col-lg-4">' +
-        '<a href="annonce-detail.html?id=' + a.id + '"' +
-            ' class="carte-annonce card border-0 shadow-sm text-decoration-none">' +
-            '<div class="card-img-wrapper">' +
-                '<img src="' + urlPhoto + '"' +
-                    ' class="card-img-top" alt="' + a.titre + '" loading="lazy">' +
-                    ' onerror="this.onerror=null;this.src=genererPlaceholder(\'' +
-                        titreSafe + '\')">' +   
-                badge +
+return '<div class="col-12 col-md-6 col-lg-4">' +
+    '<a href="annonce-detail.html?id=' + a.id + '"' +
+        ' class="carte-annonce card border-0 shadow-sm text-decoration-none" tabindex="0">' +
+        '<div class="card-img-wrapper">' +
+            '<img src="' + urlPhoto + '"' +
+                ' class="card-img-top" alt="' + (a.titre||'Annonce') + '" loading="lazy"' +
+                ' onerror="this.onerror=null;this.src=genererPlaceholder(\'' + titreSafe + '\')">' +
+            badge +
+            (a.meuble ? '<span class="badge bg-info position-absolute" style="top:8px;right:8px">Meublé</span>' : '') +
+        '</div>' +
+        '<div class="card-body">' +
+            '<p class="text-primary small fw-bold text-uppercase mb-1">' + categorie + '</p>' +
+            '<h5 class="card-title fw-bold text-truncate">' + (a.titre||'Sans titre') + '</h5>' +
+            '<p class="text-muted small mb-1">' +
+                '<i class="bi bi-geo-alt text-primary"></i> ' + quartier + ville +
+            '</p>' +
+            '<p class="text-muted small mb-2">' +
+                (a.surface_m2 ? '<i class="bi bi-aspect-ratio me-1"></i>' + a.surface_m2 + ' m²&nbsp;&nbsp;' : '') +
+                (a.nb_chambres ? '<i class="bi bi-door-open me-1"></i>' + a.nb_chambres + ' ch.' : '') +
+            '</p>' +
+            '<div class="d-flex justify-content-between align-items-center">' +
+                '<span class="prix-annonce">' + formatPrix(a.prix) + prixMois + '</span>' +
+                '<span class="text-muted small">' +
+                    '<i class="bi bi-eye me-1"></i>' + (a.vues||0) +
+                '</span>' +
             '</div>' +
-            '<div class="card-body">' +
-                '<p class="text-primary small fw-bold text-uppercase mb-1">' +
-                    categorie + '</p>' +
-                '<h5 class="card-title fw-bold text-truncate">' + a.titre + '</h5>' +
-                '<p class="text-muted small mb-2">' +
-                    '<i class="bi bi-geo-alt text-primary"></i> ' +
-                    quartier + ville + '</p>' +
-                '<div class="d-flex justify-content-between align-items-center">' +
-                    '<span class="prix-annonce">' +
-                        formatPrix(a.prix) + prixMois + '</span>' +
-                    '<span class="text-muted small">' +
-                        '<i class="bi bi-eye me-1"></i>' + a.vues + '</span>' +
-                '</div>' +
-            '</div>' +
-        '</a>' +
-    '</div>'
+        '</div>' +
+    '</a>' +
+'</div>'
 }
 
                   
